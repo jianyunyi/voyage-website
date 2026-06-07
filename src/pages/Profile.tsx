@@ -1,9 +1,13 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useFavorites } from "../context/FavoritesContext";
 import { usePreferences } from "../context/PreferencesContext";
 import { useAuth } from "../context/AuthContext";
-import { Heart, Trash2, Map, BookOpen, Coffee, Building, User, Filter, ArrowUpDown, Settings } from "lucide-react";
+import {
+  Heart, Trash2, Map, BookOpen, Coffee, Building, User, Filter, ArrowUpDown, Settings,
+  FileText, ThumbsUp, MessageSquare, Loader2, ChevronDown, ChevronUp, MapPin, Star,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { fetchMySubmissions, type UserSubmission } from "../lib/submissionService";
 
 export default function Profile() {
   const { favorites, removeFavorite } = useFavorites();
@@ -11,6 +15,58 @@ export default function Profile() {
   const { user } = useAuth();
   const [filterType, setFilterType] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('time_desc');
+  const [submissions, setSubmissions] = useState<UserSubmission[]>([]);
+  const [statusLabels, setStatusLabels] = useState<Record<string, string>>({});
+  const [submissionsLoading, setSubmissionsLoading] = useState(true);
+  const [submissionFilter, setSubmissionFilter] = useState<'all' | 'guide' | 'food'>('all');
+  const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
+
+  const loadSubmissions = useCallback(async () => {
+    if (!user?.id) {
+      setSubmissions([]);
+      setSubmissionsLoading(false);
+      return;
+    }
+    setSubmissionsLoading(true);
+    const data = await fetchMySubmissions(user.id);
+    setSubmissions(data.submissions);
+    setStatusLabels(data.statusLabels);
+    setSubmissionsLoading(false);
+  }, [user?.id]);
+
+  useEffect(() => {
+    loadSubmissions();
+  }, [loadSubmissions]);
+
+  const filteredSubmissions = useMemo(() => {
+    if (submissionFilter === 'all') return submissions;
+    return submissions.filter((s) => s.type === submissionFilter);
+  }, [submissions, submissionFilter]);
+
+  const toggleComments = (id: string) => {
+    setExpandedComments((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const getStatusBadgeClass = (status: string) => {
+    switch (status) {
+      case 'published':
+      case 'approved':
+        return 'bg-emerald-100 text-emerald-700';
+      case 'pending_review':
+      case 'needs_manual_review':
+        return 'bg-amber-100 text-amber-700';
+      case 'rejected':
+      case 'auto_rejected':
+        return 'bg-red-100 text-red-700';
+      default:
+        return 'bg-gray-100 text-gray-600';
+    }
+  };
 
   const getIcon = (type: string) => {
     switch(type) {
@@ -99,7 +155,7 @@ export default function Profile() {
             <h1 className="text-4xl font-serif font-bold text-gray-900 mb-2">
               {user ? `你好，${user.name}` : '个人中心'}
             </h1>
-            <p className="text-gray-600 font-medium">管理您的旅行收藏与偏好</p>
+            <p className="text-gray-600 font-medium">管理您的投稿、收藏与偏好</p>
           </div>
         </div>
 
@@ -194,6 +250,209 @@ export default function Profile() {
           </div>
         </div>
       </div>
+
+        {/* My Submissions Section */}
+        <div className="bg-white rounded-[32px] shadow-sm border border-gray-100 overflow-hidden mb-12">
+          <div className="p-8 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+            <div className="flex items-center gap-3">
+              <FileText className="w-6 h-6 text-violet-600" />
+              <h2 className="text-2xl font-serif font-bold text-gray-900">
+                我的投稿 ({submissions.length})
+              </h2>
+            </div>
+            {submissions.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {(['all', 'guide', 'food'] as const).map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setSubmissionFilter(type)}
+                    className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${
+                      submissionFilter === type
+                        ? 'bg-violet-600 text-white shadow-sm'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {type === 'all' ? '全部' : type === 'guide' ? '攻略' : '美食'}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="p-8">
+            {submissionsLoading ? (
+              <div className="flex items-center justify-center py-20 text-gray-500 gap-3">
+                <Loader2 className="w-6 h-6 animate-spin" />
+                <span>加载投稿中...</span>
+              </div>
+            ) : submissions.length === 0 ? (
+              <div className="text-center py-20">
+                <FileText className="w-20 h-20 text-gray-200 mx-auto mb-6" />
+                <p className="text-gray-500 text-xl font-medium">您还没有发布任何内容</p>
+                <p className="text-gray-400 text-base mt-3">
+                  前往攻略或美食板块，点击「发布攻略」或「推荐美食」即可投稿
+                </p>
+              </div>
+            ) : filteredSubmissions.length === 0 ? (
+              <div className="text-center py-20">
+                <Filter className="w-20 h-20 text-gray-200 mx-auto mb-6" />
+                <p className="text-gray-500 text-xl font-medium">没有找到符合条件的投稿</p>
+                <button
+                  onClick={() => setSubmissionFilter('all')}
+                  className="mt-6 text-violet-600 hover:text-violet-700 font-bold px-6 py-2 bg-violet-50 rounded-full transition-colors"
+                >
+                  查看全部
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {filteredSubmissions.map((item) => {
+                  const isGuide = item.type === 'guide';
+                  const commentCount = item.comments.length;
+                  const showComments = expandedComments.has(item.id);
+
+                  return (
+                    <motion.div
+                      key={item.id}
+                      layout
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="rounded-2xl border border-gray-100 overflow-hidden bg-white hover:shadow-lg transition-all duration-300"
+                    >
+                      <div className="flex flex-col md:flex-row">
+                        <div className="md:w-48 h-40 md:h-auto flex-shrink-0 overflow-hidden">
+                          <img
+                            src={item.image}
+                            alt={item.title}
+                            className="w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                        <div className="flex-grow p-6">
+                          <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full ${
+                                isGuide ? 'bg-blue-50 text-blue-700' : 'bg-orange-50 text-orange-700'
+                              }`}>
+                                {isGuide ? <BookOpen className="w-3.5 h-3.5" /> : <Coffee className="w-3.5 h-3.5" />}
+                                {isGuide ? '攻略' : '美食'}
+                              </span>
+                              <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${getStatusBadgeClass(item.status)}`}>
+                                {statusLabels[item.status] || item.status}
+                              </span>
+                            </div>
+                            <span className="text-xs text-gray-400 font-medium">
+                              {new Date(item.createdAt).toLocaleDateString('zh-CN')}
+                            </span>
+                          </div>
+
+                          <h3 className="text-xl font-bold text-gray-900 mb-2">{item.title}</h3>
+
+                          {isGuide ? (
+                            <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 mb-3">
+                              <span className="flex items-center gap-1">
+                                <MapPin className="w-4 h-4" /> {item.destination}
+                              </span>
+                              <span>{item.days} 天</span>
+                              <span>¥{item.budget}</span>
+                            </div>
+                          ) : (
+                            <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 mb-3">
+                              <span className="flex items-center gap-1">
+                                <MapPin className="w-4 h-4" /> {item.city} · {item.typeLabel}
+                              </span>
+                              <span className="text-emerald-600 font-bold">{item.price}</span>
+                            </div>
+                          )}
+
+                          <p className="text-sm text-gray-500 line-clamp-2 mb-4">
+                            {isGuide ? item.content : item.description}
+                          </p>
+
+                          <div className="flex flex-wrap items-center gap-4 text-sm font-bold text-gray-500">
+                            {isGuide ? (
+                              <span className="flex items-center gap-1.5 text-orange-600">
+                                <ThumbsUp className="w-4 h-4" />
+                                {item.likes} 点赞
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1.5 text-amber-500">
+                                <Star className="w-4 h-4 fill-amber-400" />
+                                {item.rating.toFixed(1)} 评分
+                              </span>
+                            )}
+                            <span className="flex items-center gap-1.5 text-red-500">
+                              <Heart className="w-4 h-4" />
+                              {item.favoritesCount} 收藏
+                            </span>
+                            <span className="flex items-center gap-1.5 text-blue-600">
+                              <MessageSquare className="w-4 h-4" />
+                              {isGuide ? commentCount : item.reviews} 评论
+                            </span>
+                          </div>
+
+                          {(commentCount > 0 || (!isGuide && item.reviews > 0)) && (
+                            <button
+                              onClick={() => toggleComments(item.id)}
+                              className="mt-4 flex items-center gap-1.5 text-sm font-bold text-violet-600 hover:text-violet-700 transition-colors"
+                            >
+                              {showComments ? (
+                                <>
+                                  <ChevronUp className="w-4 h-4" /> 收起评论
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronDown className="w-4 h-4" /> 查看评论
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <AnimatePresence>
+                        {showComments && item.comments.length > 0 && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="border-t border-gray-100 bg-gray-50/50 overflow-hidden"
+                          >
+                            <div className="p-6 space-y-4">
+                              {item.comments.map((comment, idx) => (
+                                <div key={idx} className="bg-white rounded-xl p-4 border border-gray-100">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="font-bold text-gray-900 text-sm">{comment.user}</span>
+                                    <div className="flex items-center gap-2">
+                                      {comment.rating !== undefined && (
+                                        <span className="flex items-center gap-0.5 text-amber-500 text-xs font-bold">
+                                          <Star className="w-3 h-3 fill-amber-400" />
+                                          {comment.rating}
+                                        </span>
+                                      )}
+                                      <span className="text-xs text-gray-400">{comment.date}</span>
+                                    </div>
+                                  </div>
+                                  <p className="text-sm text-gray-600 leading-relaxed">{comment.content}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
+                      {showComments && item.comments.length === 0 && !isGuide && (
+                        <div className="border-t border-gray-100 bg-gray-50/50 p-6 text-center text-sm text-gray-400">
+                          暂无评论内容
+                        </div>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
 
         <div className="bg-white rounded-[32px] shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-8 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-6">

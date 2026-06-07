@@ -11,28 +11,118 @@ import { seedFoodsIfEmpty } from '../lib/database/seedFoods';
 import User, { type IUser } from '../lib/database/models/User';
 import { registerGuideRoutes } from './guideRoutes';
 import { registerFoodRoutes } from './foodRoutes';
+import { registerAvatarRoutes } from './avatarRoutes';
+import { registerModerationRoutes } from './moderationRoutes';
+import { registerSubmissionRoutes } from './submissionRoutes';
+import { SmsChallengeService, hashSecurityValue } from './security/smsSecurity';
 
 const app = express();
 const PORT = Number(process.env.SERVER_PORT) || 3001;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '6mb' }));
 
 registerGuideRoutes(app);
 registerFoodRoutes(app);
+registerAvatarRoutes(app);
+registerModerationRoutes(app);
+registerSubmissionRoutes(app);
+
+const smsChallenges = new SmsChallengeService({
+  sendLimitPerPhoneWindow: Number(process.env.SMS_PHONE_WINDOW_LIMIT) || 3,
+  sendLimitPerEmailWindow: Number(process.env.SMS_EMAIL_WINDOW_LIMIT) || 3,
+  globalBudgetPerHour: Number(process.env.SMS_GLOBAL_HOURLY_BUDGET) || 500,
+});
 
 function buildAvatar(name: string): string {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
 }
 
 function toPublicUser(doc: Pick<IUser, 'email' | 'name'> & { _id: { toString(): string } }) {
+  const id = doc._id.toString();
   return {
-    id: doc._id.toString(),
+    id,
     email: doc.email,
     name: doc.name,
-    avatar: buildAvatar(doc.name),
+    avatar: `/api/users/${encodeURIComponent(id)}/avatar`,
   };
 }
+
+app.post('/api/auth/login/sms/request', async (req, res) => {
+  const { email, phone } = req.body as { email?: string; phone?: string };
+  const result = await smsChallenges.requestChallenge({
+    email: email ?? '',
+    phone: phone ?? '',
+    ip: req.ip,
+    deviceId: req.headers['user-agent'],
+  });
+
+  if (!result.success) {
+    const status = result.code === 'SMS_BUDGET_EXHAUSTED' ? 503 : result.code === 'SMS_INVALID_INPUT' ? 400 : 429;
+    return res.status(status).json(result);
+  }
+
+  return res.status(202).json({
+    success: true,
+    challengeId: result.challengeId,
+    expiresInSeconds: result.expiresInSeconds,
+    retryAfterSeconds: result.retryAfterSeconds,
+    debugCode: process.env.NODE_ENV === 'production' ? undefined : result.debugCode,
+    message: 'If the account can receive verification, a code has been sent.',
+  });
+});
+
+app.post('/api/auth/login/sms/verify', async (req, res) => {
+  const { challengeId, code } = req.body as { challengeId?: string; code?: string };
+  const result = await smsChallenges.verifyChallenge({
+    challengeId: challengeId ?? '',
+    code: code ?? '',
+  });
+
+  if (!result.success) {
+    const status =
+      result.code === 'SMS_CHALLENGE_EXPIRED'
+        ? 410
+        : result.code === 'SMS_CHALLENGE_LOCKED'
+          ? 423
+          : result.code === 'SMS_INVALID_CODE'
+            ? 401
+            : 400;
+    return res.status(status).json(result);
+  }
+
+  const user = await User.findOne({ email: result.email });
+  if (!user) {
+    return res.status(401).json({
+      success: false,
+      code: 'INVALID_CREDENTIALS',
+      message: 'Invalid verification challenge.',
+    });
+  }
+
+  const phoneHash = hashSecurityValue(result.phone);
+  if (user.phoneHash && user.phoneHash !== phoneHash) {
+    return res.status(401).json({
+      success: false,
+      code: 'INVALID_CREDENTIALS',
+      message: 'Invalid verification challenge.',
+    });
+  }
+
+  user.phoneHash = phoneHash;
+  user.phoneEncrypted = result.phone;
+  user.phoneVerifiedAt = new Date();
+  user.lastLoginAt = new Date();
+  await user.save();
+
+  return res.json({
+    success: true,
+    user: toPublicUser(user),
+    session: {
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+  });
+});
 
 app.post('/api/auth/register', async (req, res) => {
   try {

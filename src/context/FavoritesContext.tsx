@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { syncFavoriteToServer } from '../lib/submissionService';
 
 export type FavoriteType = 'guide' | 'food' | 'hotel' | 'route';
 
@@ -33,9 +34,30 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     localStorage.setItem('voyagex_favorites', JSON.stringify(favorites));
   }, [favorites]);
 
+  const toServerItemId = (item: FavoriteItem): string => {
+    if (item.type === 'food' && item.id.startsWith('food-')) {
+      return item.id.slice(5);
+    }
+    return item.id;
+  };
+
+  const syncFavorite = (item: FavoriteItem, favorited: boolean) => {
+    const storedUser = localStorage.getItem('voyage_user');
+    if (!storedUser) return;
+    try {
+      const { id: userId } = JSON.parse(storedUser) as { id?: string };
+      if (userId && (item.type === 'guide' || item.type === 'food')) {
+        void syncFavoriteToServer(userId, toServerItemId(item), item.type, favorited);
+      }
+    } catch {
+      // ignore sync errors; local favorites still work
+    }
+  };
+
   const addFavorite = (item: FavoriteItem) => {
     setFavorites(prev => {
       if (!prev.find(f => f.id === item.id)) {
+        syncFavorite(item, true);
         return [...prev, { ...item, addedAt: Date.now() }];
       }
       return prev;
@@ -43,7 +65,11 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const removeFavorite = (id: string) => {
-    setFavorites(prev => prev.filter(f => f.id !== id));
+    setFavorites(prev => {
+      const removed = prev.find(f => f.id === id);
+      if (removed) syncFavorite(removed, false);
+      return prev.filter(f => f.id !== id);
+    });
   };
 
   const isFavorite = (id: string) => {
