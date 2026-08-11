@@ -8,6 +8,7 @@
 
 interface Env {
   ASSETS: { fetch: (req: Request) => Promise<Response> };
+  FAVORITES_KV: KVNamespace;
 }
 
 export default {
@@ -33,6 +34,11 @@ export default {
 
     if (path === "/api/compare") {
       return handleCompare(request, url, corsHeaders);
+    }
+
+    if (path === "/api/user/favorites" || path.startsWith("/api/user/favorites/")) {
+      const { handleFavorites } = await import("./favorites");
+      return handleFavorites(request, url, env);
     }
 
     // ---- Static Assets / SPA Fallback ----

@@ -33,7 +33,7 @@ _Avoid_: 爬虫、scraper
 _Avoid_: 渠道、channel
 
 **Favorite**:
-用户收藏的旅行商品（酒店/航班/路线），当前存储在 localStorage，计划迁移到后端持久化。
+用户收藏的旅行商品（酒店/航班/路线），存储在 Cloudflare KV（/api/user/favorites），localStorage 仅作前端缓存。
 _Avoid_: 收藏夹、bookmark
 
 ### AI 能力

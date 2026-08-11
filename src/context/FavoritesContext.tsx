@@ -1,17 +1,9 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { fetchFavorites, addFavoriteRemote, removeFavoriteRemote, type FavoriteItem } from '../lib/api';
 
 export type FavoriteType = 'guide' | 'food' | 'hotel' | 'route';
 
-export interface FavoriteItem {
-  id: string;
-  type: FavoriteType;
-  title: string;
-  subtitle?: string;
-  image?: string;
-  rating?: number;
-  price?: string;
-  addedAt?: number;
-}
+export type { FavoriteItem } from "../lib/api";
 
 interface FavoritesContextType {
   favorites: FavoriteItem[];
@@ -19,6 +11,8 @@ interface FavoritesContextType {
   removeFavorite: (id: string) => void;
   isFavorite: (id: string) => boolean;
   toggleFavorite: (item: FavoriteItem) => void;
+  syncStatus: "idle" | "syncing" | "synced" | "error";
+  syncFavorites: () => Promise<void>;
 }
 
 const FavoritesContext = createContext<FavoritesContextType | undefined>(undefined);
@@ -28,22 +22,60 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const saved = localStorage.getItem('voyagex_favorites');
     return saved ? JSON.parse(saved) : [];
   });
+  const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "synced" | "error">("idle");
 
+  // 本地缓存
   useEffect(() => {
     localStorage.setItem('voyagex_favorites', JSON.stringify(favorites));
   }, [favorites]);
 
+  // 启动时从 KV 同步（远端优先，若远端为空则保持本地）
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setSyncStatus("syncing");
+        const remote = await fetchFavorites();
+        if (cancelled) return;
+        if (remote.length > 0) {
+          setFavorites(remote);
+        }
+        setSyncStatus("synced");
+      } catch {
+        if (!cancelled) setSyncStatus("error");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const syncFavorites = useCallback(async () => {
+    setSyncStatus("syncing");
+    try {
+      const remote = await fetchFavorites();
+      setFavorites(remote);
+      setSyncStatus("synced");
+    } catch {
+      setSyncStatus("error");
+    }
+  }, []);
+
   const addFavorite = (item: FavoriteItem) => {
     setFavorites(prev => {
-      if (!prev.find(f => f.id === item.id)) {
-        return [...prev, { ...item, addedAt: Date.now() }];
-      }
-      return prev;
+      if (prev.find(f => f.id === item.id)) return prev;
+      const next = [...prev, { ...item, addedAt: Date.now() }];
+      // 异步同步到 KV（失败静默，不阻塞 UI）
+      addFavoriteRemote(next[next.length - 1]).catch(() => setSyncStatus("error"));
+      return next;
     });
   };
 
   const removeFavorite = (id: string) => {
-    setFavorites(prev => prev.filter(f => f.id !== id));
+    setFavorites(prev => {
+      const next = prev.filter(f => f.id !== id);
+      // 异步同步到 KV
+      removeFavoriteRemote(id).catch(() => setSyncStatus("error"));
+      return next;
+    });
   };
 
   const isFavorite = (id: string) => {
@@ -59,7 +91,7 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   return (
-    <FavoritesContext.Provider value={{ favorites, addFavorite, removeFavorite, isFavorite, toggleFavorite }}>
+    <FavoritesContext.Provider value={{ favorites, addFavorite, removeFavorite, isFavorite, toggleFavorite, syncStatus, syncFavorites }}>
       {children}
     </FavoritesContext.Provider>
   );

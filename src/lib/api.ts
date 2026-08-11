@@ -38,6 +38,52 @@ export async function fetchCompare(params: CompareParams): Promise<CompareItem[]
   if (!res.ok) {
     throw new Error(`比价服务异常 (${res.status})`);
   }
-  const data = await res.json();
-  return data.items as CompareItem[];
+  const data = await res.json() as { items: CompareItem[] };
+  return data.items;
+}
+
+
+// ============================================================
+// Favorites API
+// ============================================================
+
+export interface FavoriteItem {
+  id: string;
+  type: "guide" | "food" | "hotel" | "route";
+  title: string;
+  subtitle?: string;
+  image?: string;
+  rating?: number;
+  price?: string;
+  addedAt?: number;
+}
+
+/** 获取全部收藏 */
+export async function fetchFavorites(): Promise<FavoriteItem[]> {
+  const res = await fetch("/api/user/favorites");
+  if (!res.ok) throw new Error(`获取收藏失败 (${res.status})`);
+  const data = await res.json() as { favorites: FavoriteItem[] };
+  return data.favorites;
+}
+
+/** 新增收藏 */
+export async function addFavoriteRemote(item: FavoriteItem): Promise<FavoriteItem[]> {
+  const res = await fetch("/api/user/favorites", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(item),
+  });
+  if (!res.ok) throw new Error(`添加收藏失败 (${res.status})`);
+  const data = await res.json() as { favorites: FavoriteItem[] };
+  return data.favorites;
+}
+
+/** 删除收藏 */
+export async function removeFavoriteRemote(id: string): Promise<FavoriteItem[]> {
+  const res = await fetch(`/api/user/favorites/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error(`删除收藏失败 (${res.status})`);
+  const data = await res.json() as { favorites: FavoriteItem[] };
+  return data.favorites;
 }
