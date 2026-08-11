@@ -2,8 +2,8 @@ import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFavorites } from "../context/FavoritesContext";
 import { useAuth } from "../context/AuthContext";
-import { fetchMySubmissions, type Submission } from "../lib/api";
-import { Heart, Trash2, Map, BookOpen, Coffee, Building, Filter, ArrowUpDown, LogOut, Sparkles, FileText, Clock } from "lucide-react";
+import { fetchMySubmissions, fetchMyItineraries, type Submission, type SavedItinerary } from "../lib/api";
+import { Heart, Trash2, Map, BookOpen, Coffee, Building, Filter, ArrowUpDown, LogOut, Sparkles, FileText, Clock, MapPin } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Profile() {
@@ -14,6 +14,8 @@ export default function Profile() {
   const [sortBy, setSortBy] = useState<string>('time_desc');
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [subsLoading, setSubsLoading] = useState(false);
+  const [itineraries, setItineraries] = useState<SavedItinerary[]>([]);
+  const [itinsLoading, setItinsLoading] = useState(false);
 
   // 加载我的投稿
   useEffect(() => {
@@ -23,6 +25,16 @@ export default function Profile() {
       .then(setSubmissions)
       .catch(() => undefined)
       .finally(() => setSubsLoading(false));
+  }, [accessToken]);
+
+  // 加载我的行程
+  useEffect(() => {
+    if (!accessToken) return;
+    setItinsLoading(true);
+    fetchMyItineraries(accessToken)
+      .then(setItineraries)
+      .catch(() => undefined)
+      .finally(() => setItinsLoading(false));
   }, [accessToken]);
 
   const getIcon = (type: string) => {
@@ -99,6 +111,46 @@ export default function Profile() {
           <LogOut className="w-4 h-4" />
           退出登录
         </button>
+      </div>
+
+      {/* 我的行程 */}
+      <div className="mb-8">
+        <div className="flex items-center gap-2 mb-4">
+          <MapPin className="w-5 h-5 text-orange-600" />
+          <h2 className="text-xl font-bold text-gray-900">我的行程</h2>
+          <span className="text-sm text-gray-500">({itineraries.length})</span>
+        </div>
+        {itinsLoading ? (
+          <p className="text-sm text-gray-400">加载中...</p>
+        ) : itineraries.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-8 text-center">
+            <MapPin className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+            <p className="text-sm text-gray-500">还没有保存的行程，去 AI 行程页生成并保存吧</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {itineraries.map(it => (
+              <div key={it.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="font-medium text-gray-900">{it.title}</div>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">
+                    {it.days} 天
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  {it.destination && <span>📍 {it.destination}</span>}
+                  {it.budget && <span>· {it.budget}</span>}
+                  {it.startDate && <span>· {it.startDate}</span>}
+                  <span>· {new Date(it.createdAt).toLocaleDateString("zh-CN")}</span>
+                </div>
+                <div className="flex items-center gap-1 text-xs text-gray-400 mt-1.5">
+                  <span className="text-orange-500">{it.dayData.length} 天计划</span>
+                  <span>· 首日 {it.dayData[0]?.steps[0]?.title || ""}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 我的投稿 */}

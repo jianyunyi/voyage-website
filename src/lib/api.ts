@@ -308,3 +308,48 @@ export async function fetchMySubmissions(accessToken?: string | null): Promise<S
   const data = await res.json() as { submissions: Submission[] };
   return data.submissions;
 }
+
+
+// ============================================================
+// Saved Itineraries API（AI 行程保存）
+// ============================================================
+
+export interface SavedItineraryDay {
+  day: number;
+  date: string;
+  steps: Array<{ time: string; type: string; title: string; description: string }>;
+}
+
+export interface SavedItinerary {
+  id: string;
+  title: string;
+  destination?: string;
+  days: number;
+  startDate?: string;
+  endDate?: string;
+  budget?: string;
+  dayData: SavedItineraryDay[];
+  createdAt: number;
+}
+
+/** 保存 AI 行程（需登录） */
+export async function saveItineraryRemote(payload: { title: string; destination?: string; days?: number; startDate?: string; endDate?: string; budget?: string; dayData: SavedItineraryDay[] }, accessToken?: string | null): Promise<SavedItinerary> {
+  const res = await fetch("/api/itineraries", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(accessToken ? { Authorization: "Bearer " + accessToken } : {}) },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json() as { itinerary: SavedItinerary; error?: { message?: string } };
+  if (!res.ok) throw new Error(data.error?.message || "保存行程失败");
+  return data.itinerary;
+}
+
+/** 我的行程（需登录） */
+export async function fetchMyItineraries(accessToken?: string | null): Promise<SavedItinerary[]> {
+  const res = await fetch("/api/itineraries", {
+    headers: accessToken ? { Authorization: "Bearer " + accessToken } : undefined,
+  });
+  if (!res.ok) throw new Error(`获取行程失败 (${res.status})`);
+  const data = await res.json() as { itineraries: SavedItinerary[] };
+  return data.itineraries;
+}

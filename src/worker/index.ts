@@ -111,6 +111,15 @@ export default {
       });
     }
 
+    if (path === "/api/itineraries") {
+      const { handleItineraries } = await import("./itineraries");
+      return handleItineraries(request, {
+        FAVORITES_KV: env.FAVORITES_KV,
+        AUTH_KV: env.AUTH_KV,
+        JWT_SECRET: env.JWT_SECRET || "dev-secret-change-me",
+      });
+    }
+
     // ---- Static Assets / SPA Fallback ----
     return env.ASSETS.fetch(request);
   },

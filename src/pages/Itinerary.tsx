@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Coffee, Building, Plane, Calendar, Sparkles, Loader2, Plus, X, Clock } from "lucide-react";
-import { generateItineraryRemote, type ItineraryDay } from "../lib/api";
+import { generateItineraryRemote, saveItineraryRemote, type ItineraryDay } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
+import { Bookmark } from "lucide-react";
 
 const CITIES = ["北京", "上海", "广州", "成都", "西安", "重庆", "厦门", "泉州"];
 
@@ -34,6 +36,7 @@ const typeLabel: Record<string, string> = {
 };
 
 export default function Itinerary() {
+  const { accessToken } = useAuth();
   const [origin, setOrigin] = useState("北京");
   const [destinations, setDestinations] = useState<string[]>(["成都"]);
   const [destInput, setDestInput] = useState("");
@@ -46,6 +49,8 @@ export default function Itinerary() {
   const [sources, setSources] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const addDestination = () => {
     const city = destInput.trim();
@@ -95,6 +100,28 @@ export default function Itinerary() {
   };
 
   const isAi = sources.includes("deepseek");
+
+  const handleSave = async () => {
+    if (!days || saving) return;
+    setSaving(true);
+    try {
+      await saveItineraryRemote({
+        title: `${destinations.join("、")} ${days.length}日行程`,
+        destination: destinations.join("、"),
+        days: days.length,
+        startDate: startDate,
+        endDate: endDate,
+        budget: BUDGETS.find(b => b.id === budget)?.name,
+        dayData: days.map(d => ({ day: d.day, date: d.date, steps: d.steps })),
+      }, accessToken);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "保存失败");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="bg-gray-50 min-h-screen py-12">
@@ -254,8 +281,18 @@ export default function Itinerary() {
 
         {!loading && days && (
           <div>
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-6 flex-wrap">
               <h2 className="text-2xl font-serif font-bold text-gray-900">我的行程</h2>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className={`ml-auto flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full font-medium transition-all ${
+                  saved ? "bg-emerald-100 text-emerald-700" : "bg-orange-100 text-orange-700 hover:bg-orange-200"
+                }`}
+              >
+                <Bookmark className={`w-3.5 h-3.5 ${saved ? "fill-emerald-600" : ""}`} />
+                {saved ? "已保存" : saving ? "保存中..." : "保存行程"}
+              </button>
               {isAi ? (
                 <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 font-medium">
                   <Sparkles className="w-3 h-3" /> AI 生成
