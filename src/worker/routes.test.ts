@@ -1,0 +1,55 @@
+import { describe, it, expect } from "vitest";
+import { getRoutes } from "./routes";
+
+describe("getRoutes", () => {
+  it("北京→成都返回 3 种方案", async () => {
+    const routes = await getRoutes("c1", "c4");
+    expect(routes).toHaveLength(3);
+    const types = routes.map(r => r.type);
+    expect(types).toContain("driving");
+    expect(types).toContain("train");
+    expect(types).toContain("flight");
+  });
+
+  it("驾车方案包含距离与耗时", async () => {
+    const routes = await getRoutes("c1", "c4");
+    const driving = routes.find(r => r.type === "driving");
+    expect(driving).toBeDefined();
+    expect(driving!.timeSec).toBeGreaterThan(0);
+    expect(driving!.distanceMeters).toBeGreaterThan(0);
+    expect(driving!.source).toBe("amap");
+  });
+
+  it("高铁价格合理且快于驾车", async () => {
+    const routes = await getRoutes("c1", "c4");
+    const driving = routes.find(r => r.type === "driving")!;
+    const train = routes.find(r => r.type === "train")!;
+    expect(train.timeSec).toBeLessThan(driving.timeSec);
+    expect(train.priceValue).toBeGreaterThan(0);
+    expect(train.source).toBe("estimate");
+  });
+
+  it("飞机最快但价格最高", async () => {
+    const routes = await getRoutes("c1", "c4");
+    const flight = routes.find(r => r.type === "flight")!;
+    const train = routes.find(r => r.type === "train")!;
+    expect(flight.timeSec).toBeLessThan(train.timeSec);
+    expect(flight.priceValue).toBeGreaterThan(train.priceValue!);
+  });
+
+  it("相同城市返回空", async () => {
+    const routes = await getRoutes("c1", "c1");
+    expect(routes).toEqual([]);
+  });
+
+  it("无效城市返回空", async () => {
+    const routes = await getRoutes("c1", "c99");
+    expect(routes).toEqual([]);
+  });
+
+  it("距离估算可复现（同城市对一致）", async () => {
+    const a = await getRoutes("c2", "c7"); // 上海→厦门
+    const b = await getRoutes("c2", "c7");
+    expect(a[0].distanceMeters).toBe(b[0].distanceMeters);
+  });
+});
