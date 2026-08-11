@@ -25,6 +25,10 @@ export default function MapPlanner() {
   const [mapInstance, setMapInstance] = useState<any>(null);
   const [AMapObj, setAMapObj] = useState<any>(null);
   const drivingRef = useRef<any>(null);
+  const poiMarkersRef = useRef<any[]>([]);
+  const [poiType, setPoiType] = useState<"景点" | "美食" | "酒店">("景点");
+  const [poiList, setPoiList] = useState<any[]>([]);
+  const [poiLoading, setPoiLoading] = useState(false);
 
   useEffect(() => {
     // 高德地图密钥从环境变量注入（vite.config.ts define）
@@ -45,7 +49,7 @@ export default function MapPlanner() {
     AMapLoader.load({
       key: amapKey,
       version: "2.0",
-      plugins: ["AMap.Driving", "AMap.ToolBar", "AMap.Scale"],
+      plugins: ["AMap.Driving", "AMap.ToolBar", "AMap.Scale", "AMap.PlaceSearch", "AMap.InfoWindow"],
     })
       .then((AMap) => {
         setAMapObj(AMap);
@@ -80,6 +84,55 @@ export default function MapPlanner() {
 
   const originCity = cities.find(c => c.id === origin);
   const destCity = cities.find(c => c.id === destination);
+
+  const poiKeywords: Record<string, string> = { "景点": "风景名胜", "美食": "美食", "酒店": "酒店" };
+  const poiColors: Record<string, string> = { "景点": "#0891B2", "美食": "#EA580C", "酒店": "#7C3AED" };
+
+  const searchPoi = () => {
+    if (!mapInstance || !AMapObj || !destCity) return;
+    setPoiLoading(true);
+    const placeSearch = new AMapObj.PlaceSearch({
+      pageSize: 6,
+      city: destCity.name,
+      extensions: "all",
+    });
+    placeSearch.search(poiKeywords[poiType], (status: string, result: any) => {
+      // 清除旧 marker
+      poiMarkersRef.current.forEach(m => m.setMap(null));
+      poiMarkersRef.current = [];
+      if (status === "complete" && result.poiList?.pois) {
+        const pois = result.poiList.pois;
+        setPoiList(pois);
+        const markers = pois.map((poi: any) => {
+          const marker = new AMapObj.Marker({
+            position: [poi.location.lng, poi.location.lat],
+            content: `<div style="background:${poiColors[poiType]};color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:12px;box-shadow:0 2px 6px rgba(0,0,0,.3);">${poiType[0]}</div>`,
+            offset: new AMapObj.Pixel(-14, -14),
+            title: poi.name,
+          });
+          marker.on("click", () => {
+            const info = new AMapObj.InfoWindow({
+              content: `<div style="padding:10px;max-width:220px;"><strong>${poi.name}</strong><br/><span style="color:#666;font-size:12px;">${poi.address || poi.district || ""}</span></div>`,
+              offset: new AMapObj.Pixel(0, -30),
+            });
+            info.open(mapInstance, marker.getPosition());
+          });
+          marker.setMap(mapInstance);
+          return marker;
+        });
+        poiMarkersRef.current = markers;
+        if (markers.length > 0) mapInstance.setFitView(markers, false, [60, 60, 60, 60]);
+      } else {
+        setPoiList([]);
+      }
+      setPoiLoading(false);
+    });
+  };
+
+  // 目的地/POI 类型变化时搜索周边 POI（地图就绪后）
+  useEffect(() => {
+    if (mapInstance && destCity) searchPoi();
+  }, [mapInstance, destination, poiType]);
 
   const handleSearch = () => {
     if (origin && destination && origin !== destination && drivingRef.current) {
@@ -159,6 +212,51 @@ export default function MapPlanner() {
       <div className="w-full md:w-96 bg-white border-r border-gray-200 flex flex-col shadow-lg z-10">
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">路线规划</h2>
+
+          {/* POI 聚合 */}
+          <div className="mb-6 p-4 rounded-xl bg-orange-50/60 border border-orange-100">
+            <div className="flex items-center gap-2 mb-2">
+              <MapPin className="w-4 h-4 text-orange-600" />
+              <span className="text-sm font-semibold text-gray-800">周边 POI（{destCity?.name}）</span>
+            </div>
+            <div className="flex gap-2 mb-3">
+              {(["景点", "美食", "酒店"] as const).map(t => (
+                <button
+                  key={t}
+                  onClick={() => setPoiType(t)}
+                  className={`text-xs px-3 py-1 rounded-full font-medium transition-colors ${
+                    poiType === t
+                      ? "bg-orange-600 text-white"
+                      : "bg-white text-gray-600 border border-gray-200 hover:border-orange-300"
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+            {poiLoading ? (
+              <p className="text-xs text-gray-400">搜索中...</p>
+            ) : poiList.length > 0 ? (
+              <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                {poiList.map((poi, i) => (
+                  <div key={i} className="flex items-start gap-2 text-xs">
+                    <span
+                      className="w-4 h-4 rounded-full text-white flex items-center justify-center text-[10px] flex-shrink-0 mt-0.5"
+                      style={{ background: poiColors[poiType] }}
+                    >
+                      {i + 1}
+                    </span>
+                    <div>
+                      <div className="font-medium text-gray-800">{poi.name}</div>
+                      <div className="text-gray-400">{poi.address || poi.district || ""}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400">点击上方分类查看周边 POI</p>
+            )}
+          </div>
           
           <div className="space-y-4 relative">
             {/* Connection Line */}

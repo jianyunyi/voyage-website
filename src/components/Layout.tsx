@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { Map, Compass, ArrowLeftRight, Menu, X, Globe, BookOpen, User, Utensils, Sparkles } from "lucide-react";
+import { Map, Compass, ArrowLeftRight, Menu, X, Globe, BookOpen, User, Utensils, Sparkles, Sun, Moon } from "lucide-react";
 import { useState } from "react";
 import { cn } from "../lib/utils";
 import { useAuth } from "../context/AuthContext";
@@ -8,6 +8,25 @@ export default function Layout() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const { user } = useAuth();
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains("dark"));
+
+  const toggleTheme = () => {
+    const next = !isDark;
+    setIsDark(next);
+    document.documentElement.classList.toggle("dark", next);
+    document.body.classList.toggle("dark", next);
+    localStorage.setItem("voyagex_theme", next ? "dark" : "light");
+  };
+
+  // 初始化主题
+  useState(() => {
+    const saved = localStorage.getItem("voyagex_theme");
+    if (saved === "dark" || (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+      document.documentElement.classList.add("dark");
+      document.body.classList.add("dark");
+      setIsDark(true);
+    }
+  });
 
   const navItems = [
     { name: "探索", path: "/", icon: Globe },
@@ -20,13 +39,13 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col font-sans">
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm shadow-gray-200/50">
+      <header className="sticky top-0 z-50 bg-white/80 dark:bg-stone-950/80 backdrop-blur-md border-b border-gray-200 dark:border-stone-800 shadow-sm shadow-gray-200/50 dark:shadow-stone-950/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <Link to="/" className="flex items-center gap-2">
                 <Compass className="h-8 w-8 text-orange-600" />
-                <span className="font-serif font-bold text-xl tracking-tight text-gray-900">
+                <span className="font-serif font-bold text-xl tracking-tight text-gray-900 dark:text-stone-100">
                   Voyage<span className="text-orange-600">X</span>
                 </span>
               </Link>
@@ -44,7 +63,7 @@ export default function Layout() {
                       "inline-flex items-center gap-2 px-1 pt-1 border-b-2 text-sm font-medium transition-colors",
                       isActive
                         ? "border-orange-600 text-orange-600"
-                        : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-900"
+                        : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-900 dark:text-stone-400 dark:hover:text-stone-100"
                     )}
                   >
                     <item.icon className={cn("w-4 h-4", isActive ? "text-orange-600" : "text-gray-400")} />
@@ -56,6 +75,14 @@ export default function Layout() {
 
             {/* Desktop Profile & Mobile menu button */}
             <div className="flex items-center gap-4">
+              {/* 主题切换 */}
+              <button
+                onClick={toggleTheme}
+                aria-label="切换深色/浅色模式"
+                className="w-9 h-9 rounded-full flex items-center justify-center text-gray-500 hover:text-orange-600 hover:bg-orange-50 dark:text-stone-400 dark:hover:text-orange-400 dark:hover:bg-stone-800 transition-colors"
+              >
+                {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </button>
               <Link 
                 to="/profile" 
                 className={cn(

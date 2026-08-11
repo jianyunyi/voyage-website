@@ -1,8 +1,8 @@
-import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, type FormEvent } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { subscribeAlertRemote } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
-import { Bell } from "lucide-react";
+import { Bell, Share2 } from "lucide-react";
 import { Plane, Car, Building, ArrowRight, Check, Info, Search, MapPin, Calendar, Users, Loader2, Star } from "lucide-react";
 import { motion } from "framer-motion";
 import { fetchCompare, type CompareItem } from "../lib/api";
@@ -22,6 +22,8 @@ export default function Compare() {
   const [activeCategory, setActiveCategory] = useState("hotel");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const [urlParams] = useSearchParams();
+  const [shared, setShared] = useState(false);
   const [searchParams, setSearchParams] = useState({
     destination: "成都",
     checkIn: "2026-10-01",
@@ -32,6 +34,61 @@ export default function Compare() {
 
   const [results, setResults] = useState<CompareItem[]>([]);
   const [error, setError] = useState<string>("");
+
+  // 分享链接：携带参数自动搜索
+  useEffect(() => {
+    const cat = urlParams.get("category");
+    const dest = urlParams.get("destination");
+    if (!cat || !dest) return;
+    const initial = {
+      destination: dest,
+      checkIn: urlParams.get("checkIn") || "2026-10-01",
+      checkOut: urlParams.get("checkOut") || "2026-10-07",
+      adults: Number(urlParams.get("adults")) || 2,
+      origin: urlParams.get("origin") || "北京",
+    };
+    setActiveCategory(cat);
+    setSearchParams(initial);
+    (async () => {
+      setIsLoading(true);
+      setError("");
+      try {
+        const items = await fetchCompare({
+          category: cat as "transport" | "hotel" | "car",
+          destination: initial.destination,
+          origin: initial.origin,
+          checkIn: initial.checkIn,
+          checkOut: initial.checkOut,
+        });
+        setResults(items);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "比价服务暂时不可用");
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 分享：复制带参数的链接
+  const handleShare = async () => {
+    const params = new URLSearchParams({
+      category: activeCategory,
+      destination: searchParams.destination,
+      origin: searchParams.origin,
+      checkIn: searchParams.checkIn,
+      checkOut: searchParams.checkOut,
+      adults: String(searchParams.adults),
+    });
+    const url = `${window.location.origin}/compare?${params.toString()}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setShared(true);
+      setTimeout(() => setShared(false), 2000);
+    } catch {
+      window.prompt("复制比价分享链接：", url);
+    }
+  };
 
   const handleSearch = async (e: FormEvent) => {
     e.preventDefault();
@@ -86,7 +143,16 @@ export default function Compare() {
         </div>
 
         {/* Category Tabs */}
-        <div className="flex justify-center mb-12">
+        <div className="flex items-center justify-center gap-3 mb-12 flex-wrap">
+          <button
+            onClick={handleShare}
+            className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-full font-medium transition-all ${
+              shared ? "bg-emerald-100 text-emerald-700" : "bg-white text-orange-600 border border-orange-200 hover:bg-orange-50"
+            }`}
+          >
+            {shared ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
+            {shared ? "已复制" : "分享比价"}
+          </button>
           <div className="bg-white p-1 rounded-2xl shadow-sm inline-flex">
             {categories.map((cat) => {
               const isActive = activeCategory === cat.id;

@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Filter, MapPin, Calendar, ThumbsUp, PlusCircle } from "lucide-react";
+import { toggleLikeRemote, fetchLikesRemote } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
 import { motion } from "framer-motion";
 import SubmissionModal from "../components/SubmissionModal";
 
@@ -10,11 +12,46 @@ export default function Guides() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false);
+  const { accessToken } = useAuth();
+  const [likesMap, setLikesMap] = useState<Record<string, { count: number; liked: boolean }>>({});
+
+  // 加载点赞状态
+  useEffect(() => {
+    if (!accessToken) return;
+    fetchLikesRemote(travelGuides.map(g => g.id), accessToken)
+      .then(setLikesMap)
+      .catch(() => undefined);
+  }, [accessToken]);
+
+  const handleLike = async (guideId: string) => {
+    if (!accessToken) return;
+    try {
+      const res = await toggleLikeRemote(guideId, accessToken);
+      setLikesMap(prev => ({ ...prev, [guideId]: { count: res.count, liked: res.liked } }));
+    } catch {
+      // 忽略
+    }
+  };
 
   const filteredGuides = travelGuides.filter(guide => 
     guide.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
     guide.destination.includes(searchQuery)
   );
+
+  // 搜索词高亮
+  const highlight = (text: string) => {
+    if (!searchQuery.trim()) return text;
+    const q = searchQuery.trim();
+    const idx = text.toLowerCase().indexOf(q.toLowerCase());
+    if (idx === -1) return text;
+    return (
+      <>
+        {text.slice(0, idx)}
+        <mark className="bg-orange-100 text-orange-700 rounded px-0.5">{text.slice(idx, idx + q.length)}</mark>
+        {text.slice(idx + q.length)}
+      </>
+    );
+  };
 
   return (
     <div className="bg-gray-50 min-h-screen pb-20">
@@ -85,11 +122,11 @@ export default function Guides() {
               
               <div className="p-6 flex flex-col flex-grow">
                 <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-orange-600 transition-colors">
-                  {guide.title}
+                  {highlight(guide.title)}
                 </h3>
                 
                 <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
-                  <span className="flex items-center gap-1"><MapPin className="w-4 h-4" /> {guide.destination}</span>
+                  <span className="flex items-center gap-1"><MapPin className="w-4 h-4" /> {highlight(guide.destination)}</span>
                   <span className="flex items-center gap-1"><Calendar className="w-4 h-4" /> {guide.days}天</span>
                   <span className="flex items-center gap-1">¥{guide.budget}</span>
                 </div>
@@ -101,10 +138,15 @@ export default function Guides() {
                     </div>
                     <span className="text-sm text-gray-600">{guide.author}</span>
                   </div>
-                  <div className="flex items-center gap-1 text-gray-400 text-sm">
-                    <ThumbsUp className="w-4 h-4" />
-                    <span>{guide.likes}</span>
-                  </div>
+                  <button
+                    onClick={() => handleLike(guide.id)}
+                    className={`flex items-center gap-1 text-sm transition-colors ${
+                      likesMap[guide.id]?.liked ? "text-orange-600" : "text-gray-400 hover:text-orange-500"
+                    }`}
+                  >
+                    <ThumbsUp className={`w-4 h-4 ${likesMap[guide.id]?.liked ? "fill-orange-600" : ""}`} />
+                    <span>{(likesMap[guide.id]?.count ?? guide.likes).toLocaleString()}</span>
+                  </button>
                 </div>
               </div>
             </motion.div>

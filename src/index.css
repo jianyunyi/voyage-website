@@ -1,6 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 @import "tailwindcss";
 
+/* 黑暗模式：class 策略（html.dark） */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Playfair Display", ui-serif, Georgia, serif;
@@ -11,6 +14,20 @@ body {
   color: #0f172a;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+body.dark {
+  background-color: #0c0a09;
+  color: #e7e5e4;
+  color-scheme: dark;
+}
+
+/* 深色滚动条 */
+body.dark ::-webkit-scrollbar-thumb {
+  background: rgba(234, 88, 12, 0.4);
+}
+body.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(234, 88, 12, 0.6);
 }
 
 /* ---------- Browser surfaces（选择/光标/滚动条/焦点环）---------- */

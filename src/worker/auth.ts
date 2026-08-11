@@ -30,6 +30,7 @@ interface User {
   nickname: string;
   passwordHash: string;
   salt: string;
+  avatar?: string;
   createdAt: number;
 }
 
@@ -124,6 +125,7 @@ export async function handleAuth(request: Request, url: URL, env: AuthEnv): Prom
       case "refresh": return await handleRefresh(request, env);
       case "logout": return await handleLogout(request, env);
       case "me": return await handleMe(request, env);
+      case "avatar": return await handleAvatar(request, env);
       default:
         return json({ error: { code: "NOT_FOUND", message: "auth endpoint not found" } }, 404);
     }
@@ -275,8 +277,42 @@ async function handleMe(request: Request, env: AuthEnv): Promise<Response> {
   return json({ user: publicUser(user) }, 200);
 }
 
+// ---- POST /api/auth/avatar（上传头像 base64）----
+
+async function handleAvatar(request: Request, env: AuthEnv): Promise<Response> {
+  if (request.method !== "POST") return json({ error: { code: "METHOD_NOT_ALLOWED", message: "POST only" } }, 405);
+
+  const auth = request.headers.get("Authorization") || "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+  if (!token) return json({ error: { code: "UNAUTHORIZED", message: "未登录" } }, 401);
+
+  const payload = await verifyJwt(token, env.JWT_SECRET);
+  if (!payload || payload.type !== "access") {
+    return json({ error: { code: "UNAUTHORIZED", message: "登录已过期" } }, 401);
+  }
+
+  try {
+    const body = await request.json() as { avatar?: string };
+    if (!body.avatar || typeof body.avatar !== "string" || !body.avatar.startsWith("data:image/")) {
+      return json({ error: { code: "INVALID_AVATAR", message: "avatar must be a data:image base64 string" } }, 400);
+    }
+    if (body.avatar.length > 500_000) {
+      return json({ error: { code: "AVATAR_TOO_LARGE", message: "头像过大（限 500KB）" } }, 400);
+    }
+
+    const raw = await env.AUTH_KV.get(kUser(payload.sub));
+    if (!raw) return json({ error: { code: "UNAUTHORIZED", message: "用户不存在" } }, 401);
+    const user = JSON.parse(raw) as User;
+    user.avatar = body.avatar;
+    await env.AUTH_KV.put(kUser(payload.sub), JSON.stringify(user));
+    return json({ user: publicUser(user) }, 200);
+  } catch {
+    return json({ error: { code: "INVALID_JSON", message: "invalid JSON body" } }, 400);
+  }
+}
+
 function publicUser(user: User) {
-  return { id: user.id, nickname: user.nickname, createdAt: user.createdAt };
+  return { id: user.id, nickname: user.nickname, avatar: user.avatar || null, createdAt: user.createdAt };
 }
 
 // ============================================================

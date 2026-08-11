@@ -18,6 +18,14 @@ interface FavoritesContextType {
 
 const FavoritesContext = createContext<FavoritesContextType | undefined>(undefined);
 
+// 合并去重：本地（保留离线添加）+ 远端（更新状态），同 id 远端优先
+function mergeFavorites(local: FavoriteItem[], remote: FavoriteItem[]): FavoriteItem[] {
+  const map = new Map<string, FavoriteItem>();
+  for (const item of local) map.set(item.id, item);
+  for (const item of remote) map.set(item.id, item);
+  return Array.from(map.values());
+}
+
 export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { accessToken } = useAuth();
   const [favorites, setFavorites] = useState<FavoriteItem[]>(() => {
@@ -31,7 +39,7 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     localStorage.setItem('voyagex_favorites', JSON.stringify(favorites));
   }, [favorites]);
 
-  // 启动时从 KV 同步（远端优先，若远端为空则保持本地）
+  // 启动时从 KV 同步（合并去重：本地 + 远端，本地独有项回推远端）
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -39,9 +47,18 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setSyncStatus("syncing");
         const remote = await fetchFavorites(accessToken);
         if (cancelled) return;
-        if (remote.length > 0) {
-          setFavorites(remote);
-        }
+        setFavorites(prev => {
+          const merged = mergeFavorites(prev, remote);
+          // 本地独有项回推远端（补齐离线添加）
+          const remoteIds = new Set(remote.map(r => r.id));
+          const localOnly = prev.filter(p => !remoteIds.has(p.id));
+          if (localOnly.length > 0 && accessToken) {
+            localOnly.forEach(item => {
+              addFavoriteRemote(item, accessToken).catch(() => undefined);
+            });
+          }
+          return merged;
+        });
         setSyncStatus("synced");
       } catch {
         if (!cancelled) setSyncStatus("error");
@@ -54,7 +71,7 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setSyncStatus("syncing");
     try {
       const remote = await fetchFavorites(accessToken);
-      setFavorites(remote);
+      setFavorites(prev => mergeFavorites(prev, remote));
       setSyncStatus("synced");
     } catch {
       setSyncStatus("error");

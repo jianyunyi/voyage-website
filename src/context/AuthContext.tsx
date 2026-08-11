@@ -9,6 +9,7 @@ interface AuthContextValue {
   login: (nickname: string, password: string) => Promise<void>;
   register: (nickname: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  updateUser: (u: AuthUser) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -22,13 +23,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // 更新用户并同步 localStorage
+  const applyUser = (u: AuthUser | null) => {
+    setUser(u);
+    if (u) localStorage.setItem(LS_USER, JSON.stringify(u));
+  };
+
   // 启动时恢复会话
   useEffect(() => {
     const token = localStorage.getItem(LS_ACCESS);
     const savedUser = localStorage.getItem(LS_USER);
     if (token && savedUser) {
       setAccessToken(token);
-      setUser(JSON.parse(savedUser) as AuthUser);
+      applyUser(JSON.parse(savedUser) as AuthUser);
       // 后台验证 access token，失效则尝试 refresh
       fetchMe(token).catch(() => {
         const refresh = localStorage.getItem(LS_REFRESH);
@@ -91,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       logout,
+      updateUser: applyUser,
     }}>
       {children}
     </AuthContext.Provider>

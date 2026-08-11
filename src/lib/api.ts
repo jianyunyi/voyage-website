@@ -209,6 +209,7 @@ export async function generateItineraryRemote(req: ItineraryRequest): Promise<{ 
 export interface AuthUser {
   id: string;
   nickname: string;
+  avatar?: string | null;
   createdAt: number;
 }
 
@@ -402,4 +403,44 @@ export async function checkAlertsRemote(accessToken?: string | null): Promise<Pr
   if (!res.ok) throw new Error(`检查降价失败 (${res.status})`);
   const data = await res.json() as { alerts: PriceAlert[] };
   return data.alerts;
+}
+
+
+// ============================================================
+// Likes API（点赞互动）
+// ============================================================
+
+/** 点赞/取消（需登录） */
+export async function toggleLikeRemote(itemId: string, accessToken?: string | null): Promise<{ count: number; liked: boolean }> {
+  const res = await fetch("/api/likes/toggle", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(accessToken ? { Authorization: "Bearer " + accessToken } : {}) },
+    body: JSON.stringify({ itemId }),
+  });
+  const data = await res.json() as { count: number; liked: boolean; error?: { message?: string } };
+  if (!res.ok) throw new Error(data.error?.message || "点赞失败");
+  return { count: data.count, liked: data.liked };
+}
+
+/** 批量查询点赞数 + 已赞状态（需登录） */
+export async function fetchLikesRemote(ids: string[], accessToken?: string | null): Promise<Record<string, { count: number; liked: boolean }>> {
+  const res = await fetch(`/api/likes?ids=${encodeURIComponent(ids.join(","))}`, {
+    headers: accessToken ? { Authorization: "Bearer " + accessToken } : undefined,
+  });
+  if (!res.ok) throw new Error(`获取点赞失败 (${res.status})`);
+  const data = await res.json() as { likes: Record<string, { count: number; liked: boolean }> };
+  return data.likes;
+}
+
+
+/** 上传头像（base64 data URL，需登录） */
+export async function uploadAvatarRemote(avatar: string, accessToken?: string | null): Promise<AuthUser> {
+  const res = await fetch("/api/auth/avatar", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(accessToken ? { Authorization: "Bearer " + accessToken } : {}) },
+    body: JSON.stringify({ avatar }),
+  });
+  const data = await res.json() as { user: AuthUser; error?: { message?: string } };
+  if (!res.ok) throw new Error(data.error?.message || "上传头像失败");
+  return data.user;
 }
