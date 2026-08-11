@@ -107,10 +107,10 @@ export default function Home() {
         </AnimatePresence>
         
         {/* Carousel Controls */}
-        <button onClick={prevSlide} className="absolute left-4 z-20 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all">
+        <button onClick={prevSlide} aria-label="上一张" className="absolute left-4 z-20 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all">
           <ChevronLeft className="w-6 h-6" />
         </button>
-        <button onClick={nextSlide} className="absolute right-4 z-20 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all">
+        <button onClick={nextSlide} aria-label="下一张" className="absolute right-4 z-20 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all">
           <ChevronRight className="w-6 h-6" />
         </button>
 
@@ -155,6 +155,7 @@ export default function Home() {
             <button
               key={idx}
               onClick={() => setCurrentSlide(idx)}
+              aria-label={`第 ${idx + 1} 张图片`}
               className={`w-2.5 h-2.5 rounded-full transition-all ${idx === currentSlide ? "bg-white w-8" : "bg-white/50 hover:bg-white/80"}`}
             />
           ))}

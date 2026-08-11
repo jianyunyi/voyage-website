@@ -111,6 +111,15 @@ export default {
       });
     }
 
+    if (path === "/api/errors") {
+      const { handleErrors } = await import("./errors");
+      return handleErrors(request, {
+        FAVORITES_KV: env.FAVORITES_KV,
+        AUTH_KV: env.AUTH_KV,
+        JWT_SECRET: env.JWT_SECRET || "dev-secret-change-me",
+      });
+    }
+
     if (path === "/api/likes" || path === "/api/likes/toggle") {
       const { handleLikes } = await import("./likes");
       return handleLikes(request, url, {

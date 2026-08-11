@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useFavorites } from "../context/FavoritesContext";
 import { useAuth } from "../context/AuthContext";
 import { uploadAvatarRemote } from "../lib/api";
+import { useToast } from "../context/ToastContext";
+import EmptyState from "../components/EmptyState";
 import { Camera } from "lucide-react";
 import { exportIcs, exportPdf } from "../lib/export";
 import { fetchMySubmissions, fetchMyItineraries, fetchAlertsRemote, checkAlertsRemote, type Submission, type SavedItinerary, type PriceAlert } from "../lib/api";
@@ -13,6 +15,7 @@ export default function Profile() {
   const navigate = useNavigate();
   const { favorites, removeFavorite } = useFavorites();
   const { user, logout, accessToken, updateUser } = useAuth();
+  const toast = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
 
@@ -20,7 +23,7 @@ export default function Profile() {
     const file = e.target.files?.[0];
     if (!file || !accessToken) return;
     if (file.size > 500 * 1024) {
-      alert("头像不能超过 500KB");
+      toast.error("头像不能超过 500KB");
       return;
     }
     setAvatarUploading(true);
@@ -30,6 +33,7 @@ export default function Profile() {
         try {
           const updated = await uploadAvatarRemote(String(reader.result), accessToken);
           updateUser(updated);
+          toast.success("头像已更新");
         } finally {
           setAvatarUploading(false);
         }
@@ -230,10 +234,7 @@ export default function Profile() {
         {alertsLoading ? (
           <p className="text-sm text-gray-400 dark:text-stone-500">加载中...</p>
         ) : alerts.length === 0 ? (
-          <div className="bg-white dark:bg-stone-900 rounded-2xl border border-dashed border-gray-200 dark:border-stone-700 dark:border-stone-700 p-8 text-center">
-            <Bell className="w-8 h-8 text-gray-300 dark:text-stone-600 mx-auto mb-2" />
-            <p className="text-sm text-gray-500 dark:text-stone-400">还没有订阅比价，去 全网比价 页订阅降价提醒吧</p>
-          </div>
+          <EmptyState icon={<Bell className="w-8 h-8 text-gray-300 dark:text-stone-600" />} title="还没有订阅比价" description="去 全网比价 页订阅降价提醒吧" />
         ) : (
           <div className="space-y-3">
             {alerts.map(a => (
@@ -269,10 +270,7 @@ export default function Profile() {
         {itinsLoading ? (
           <p className="text-sm text-gray-400 dark:text-stone-500">加载中...</p>
         ) : itineraries.length === 0 ? (
-          <div className="bg-white dark:bg-stone-900 rounded-2xl border border-dashed border-gray-200 dark:border-stone-700 dark:border-stone-700 p-8 text-center">
-            <MapPin className="w-8 h-8 text-gray-300 dark:text-stone-600 mx-auto mb-2" />
-            <p className="text-sm text-gray-500 dark:text-stone-400">还没有保存的行程，去 AI 行程页生成并保存吧</p>
-          </div>
+          <EmptyState icon={<MapPin className="w-8 h-8 text-gray-300 dark:text-stone-600" />} title="还没有保存的行程" description="去 AI 行程页生成并保存吧" />
         ) : (
           <div className="space-y-3">
             {itineraries.map(it => (
@@ -323,10 +321,7 @@ export default function Profile() {
         {subsLoading ? (
           <p className="text-sm text-gray-400 dark:text-stone-500">加载中...</p>
         ) : submissions.length === 0 ? (
-          <div className="bg-white dark:bg-stone-900 rounded-2xl border border-dashed border-gray-200 dark:border-stone-700 dark:border-stone-700 p-8 text-center">
-            <FileText className="w-8 h-8 text-gray-300 dark:text-stone-600 mx-auto mb-2" />
-            <p className="text-sm text-gray-500 dark:text-stone-400">还没有投稿，去 攻略/美食 页分享你的旅行经验吧</p>
-          </div>
+          <EmptyState icon={<FileText className="w-8 h-8 text-gray-300 dark:text-stone-600" />} title="还没有投稿" description="去 攻略/美食 页分享你的旅行经验吧" />
         ) : (
           <div className="space-y-3">
             {submissions.map(s => (

@@ -8,6 +8,7 @@ import { Suspense, lazy, type ReactNode } from "react";
 import { FavoritesProvider } from "./context/FavoritesContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { ToastProvider } from "./context/ToastContext";
 
 const Layout = lazy(() => import("./components/Layout"));
 const Home = lazy(() => import("./pages/Home"));
@@ -32,6 +33,7 @@ function Protected({ children }: { children: ReactNode }) {
 
 export default function App() {
   return (
+    <ToastProvider>
     <AuthProvider>
       <FavoritesProvider>
         <BrowserRouter>
@@ -57,5 +59,6 @@ export default function App() {
       </BrowserRouter>
       </FavoritesProvider>
     </AuthProvider>
+    </ToastProvider>
   );
 }

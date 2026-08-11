@@ -444,3 +444,21 @@ export async function uploadAvatarRemote(avatar: string, accessToken?: string | 
   if (!res.ok) throw new Error(data.error?.message || "上传头像失败");
   return data.user;
 }
+
+
+// ============================================================
+// Errors API（错误上报）
+// ============================================================
+
+/** 上报前端错误（fire-and-forget，无需登录） */
+export async function reportErrorRemote(payload: { message: string; stack?: string; url?: string; type?: string }): Promise<void> {
+  try {
+    await fetch("/api/errors", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    // 上报失败不阻塞
+  }
+}

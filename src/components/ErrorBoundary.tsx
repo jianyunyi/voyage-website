@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { reportErrorRemote } from "../lib/api";
 
 interface Props {
   children: ReactNode;
@@ -21,6 +22,13 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(err: unknown) {
     console.error("[ErrorBoundary]", err);
+    // 上报错误（Sentry-lite）
+    reportErrorRemote({
+      message: err instanceof Error ? err.message : "unknown error",
+      stack: err instanceof Error ? err.stack : undefined,
+      url: typeof window !== "undefined" ? window.location.href : undefined,
+      type: "react-boundary",
+    });
   }
 
   render() {

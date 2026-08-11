@@ -62,6 +62,7 @@ export default function GuideDetail() {
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
           <button
             onClick={() => navigate(-1)}
+            aria-label="返回上一页"
             className="absolute top-5 left-5 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
