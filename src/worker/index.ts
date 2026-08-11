@@ -223,8 +223,15 @@ async function handleItinerary(request: Request, requestId: string, env: Env): P
 
   try {
     const body = await request.json() as import("./itinerary").ItineraryRequest;
+    // 缓存：同参数 10 分钟（DeepSeek 调用 ~1-3s，缓存命中秒回）
+    const cacheKey = `itinerary:${JSON.stringify(body)}`;
+    const cached = cacheGet<Record<string, unknown>>(cacheKey);
+    if (cached) {
+      return json({ ...cached, cached: true }, 200, { ...CORS_HEADERS, "X-Request-Id": requestId });
+    }
     const { generateItinerary } = await import("./itinerary");
     const itinerary = await generateItinerary(body, env);
+    cacheSet(cacheKey, itinerary, 600_000);
     return json(itinerary, 200, { ...CORS_HEADERS, "X-Request-Id": requestId });
   } catch (e) {
     return json({ error: { code: "INVALID_ITINERARY", message: "invalid request body" } }, 400, { ...CORS_HEADERS, "X-Request-Id": requestId });
