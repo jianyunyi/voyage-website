@@ -353,3 +353,53 @@ export async function fetchMyItineraries(accessToken?: string | null): Promise<S
   const data = await res.json() as { itineraries: SavedItinerary[] };
   return data.itineraries;
 }
+
+
+// ============================================================
+// Price Alerts API（比价降价提醒）
+// ============================================================
+
+export interface PriceAlert {
+  id: string;
+  itemId: string;
+  title: string;
+  category: "transport" | "hotel" | "car";
+  subscribedPrice: number;
+  currentPrice: number;
+  dropped: boolean;
+  dropPercent?: number;
+  createdAt: number;
+}
+
+/** 订阅比价项（需登录） */
+export async function subscribeAlertRemote(payload: { itemId: string; title: string; category?: string; subscribedPrice: number }, accessToken?: string | null): Promise<PriceAlert[]> {
+  const res = await fetch("/api/price-alerts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(accessToken ? { Authorization: "Bearer " + accessToken } : {}) },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json() as { alerts: PriceAlert[]; error?: { message?: string } };
+  if (!res.ok) throw new Error(data.error?.message || "订阅失败");
+  return data.alerts;
+}
+
+/** 我的订阅列表（需登录） */
+export async function fetchAlertsRemote(accessToken?: string | null): Promise<PriceAlert[]> {
+  const res = await fetch("/api/price-alerts", {
+    headers: accessToken ? { Authorization: "Bearer " + accessToken } : undefined,
+  });
+  if (!res.ok) throw new Error(`获取订阅失败 (${res.status})`);
+  const data = await res.json() as { alerts: PriceAlert[] };
+  return data.alerts;
+}
+
+/** 检查降价（需登录，模拟波动） */
+export async function checkAlertsRemote(accessToken?: string | null): Promise<PriceAlert[]> {
+  const res = await fetch("/api/price-alerts/check", {
+    method: "POST",
+    headers: accessToken ? { Authorization: "Bearer " + accessToken } : undefined,
+  });
+  if (!res.ok) throw new Error(`检查降价失败 (${res.status})`);
+  const data = await res.json() as { alerts: PriceAlert[] };
+  return data.alerts;
+}

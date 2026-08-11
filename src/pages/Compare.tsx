@@ -1,5 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { subscribeAlertRemote } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
+import { Bell } from "lucide-react";
 import { Plane, Car, Building, ArrowRight, Check, Info, Search, MapPin, Calendar, Users, Loader2, Star } from "lucide-react";
 import { motion } from "framer-motion";
 import { fetchCompare, type CompareItem } from "../lib/api";
@@ -13,6 +16,9 @@ const categories = [
 
 
 export default function Compare() {
+  const { accessToken } = useAuth();
+  const [subscribedIds, setSubscribedIds] = useState<string[]>([]);
+  const [subscribing, setSubscribing] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState("hotel");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -53,6 +59,19 @@ export default function Compare() {
       navigate(`/hotel/${item.id}`);
     } else if (item.url) {
       window.open(item.url, '_blank');
+    }
+  };
+
+  const handleSubscribe = async (item: { id: string; title: string; category: string; price: number }) => {
+    if (subscribing) return;
+    setSubscribing(item.id);
+    try {
+      const alerts = await subscribeAlertRemote({ itemId: item.id, title: item.title, category: item.category, subscribedPrice: item.price }, accessToken);
+      setSubscribedIds(alerts.map(a => a.itemId));
+    } catch (err) {
+      console.error("订阅失败:", err);
+    } finally {
+      setSubscribing(null);
     }
   };
 
@@ -233,15 +252,29 @@ export default function Compare() {
                   
                   <div className="flex flex-row md:flex-col items-center md:items-end justify-between w-full md:w-auto gap-4">
                     <div className="text-3xl font-bold text-orange-600 num">{item.price}</div>
-                    <button 
-                      onClick={() => handleBook(item)}
-                      className={`px-8 py-3 rounded-xl font-medium transition-colors ${
-                      index === 0 
-                        ? "bg-orange-600 hover:bg-orange-700 text-white shadow-md" 
-                        : "bg-gray-100 hover:bg-gray-200 text-gray-900"
-                    }`}>
-                      去预订
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleSubscribe({ id: item.id, title: item.title, category: activeCategory, price: Number(item.priceValue ?? 0) })}
+                        disabled={subscribing === item.id || subscribedIds.includes(item.id)}
+                        className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                          subscribedIds.includes(item.id)
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-white border border-orange-200 text-orange-600 hover:bg-orange-50"
+                        }`}
+                      >
+                        <Bell className={`w-4 h-4 ${subscribedIds.includes(item.id) ? "fill-emerald-600" : ""}`} />
+                        {subscribedIds.includes(item.id) ? "已订阅" : subscribing === item.id ? "订阅中..." : "订阅降价"}
+                      </button>
+                      <button 
+                        onClick={() => handleBook(item)}
+                        className={`px-8 py-3 rounded-xl font-medium transition-colors ${
+                        index === 0 
+                          ? "bg-orange-600 hover:bg-orange-700 text-white shadow-md" 
+                          : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                      }`}>
+                        去预订
+                      </button>
+                    </div>
                   </div>
                 </div>
               </motion.div>

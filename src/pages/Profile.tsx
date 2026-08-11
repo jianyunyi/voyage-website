@@ -2,8 +2,8 @@ import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFavorites } from "../context/FavoritesContext";
 import { useAuth } from "../context/AuthContext";
-import { fetchMySubmissions, fetchMyItineraries, type Submission, type SavedItinerary } from "../lib/api";
-import { Heart, Trash2, Map, BookOpen, Coffee, Building, Filter, ArrowUpDown, LogOut, Sparkles, FileText, Clock, MapPin } from "lucide-react";
+import { fetchMySubmissions, fetchMyItineraries, fetchAlertsRemote, checkAlertsRemote, type Submission, type SavedItinerary, type PriceAlert } from "../lib/api";
+import { Heart, Trash2, Map, BookOpen, Coffee, Building, Filter, ArrowUpDown, LogOut, Sparkles, FileText, Clock, MapPin, Bell, TrendingDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Profile() {
@@ -16,6 +16,9 @@ export default function Profile() {
   const [subsLoading, setSubsLoading] = useState(false);
   const [itineraries, setItineraries] = useState<SavedItinerary[]>([]);
   const [itinsLoading, setItinsLoading] = useState(false);
+  const [alerts, setAlerts] = useState<PriceAlert[]>([]);
+  const [alertsLoading, setAlertsLoading] = useState(false);
+  const [checking, setChecking] = useState(false);
 
   // 加载我的投稿
   useEffect(() => {
@@ -36,6 +39,29 @@ export default function Profile() {
       .catch(() => undefined)
       .finally(() => setItinsLoading(false));
   }, [accessToken]);
+
+  // 加载降价提醒
+  useEffect(() => {
+    if (!accessToken) return;
+    setAlertsLoading(true);
+    fetchAlertsRemote(accessToken)
+      .then(setAlerts)
+      .catch(() => undefined)
+      .finally(() => setAlertsLoading(false));
+  }, [accessToken]);
+
+  // 检查降价（模拟波动）
+  const handleCheck = async () => {
+    if (!accessToken || checking) return;
+    setChecking(true);
+    try {
+      setAlerts(await checkAlertsRemote(accessToken));
+    } catch {
+      // 忽略
+    } finally {
+      setChecking(false);
+    }
+  };
 
   const getIcon = (type: string) => {
     switch(type) {
@@ -111,6 +137,53 @@ export default function Profile() {
           <LogOut className="w-4 h-4" />
           退出登录
         </button>
+      </div>
+
+      {/* 降价提醒 */}
+      <div className="mb-8">
+        <div className="flex items-center gap-2 mb-4">
+          <Bell className="w-5 h-5 text-orange-600" />
+          <h2 className="text-xl font-bold text-gray-900">降价提醒</h2>
+          <span className="text-sm text-gray-500">({alerts.length})</span>
+          <button
+            onClick={handleCheck}
+            disabled={checking || alerts.length === 0}
+            className="ml-auto flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full bg-orange-100 text-orange-700 hover:bg-orange-200 disabled:opacity-50 transition-colors"
+          >
+            <TrendingDown className="w-3.5 h-3.5" />
+            {checking ? "检查中..." : "检查降价"}
+          </button>
+        </div>
+        {alertsLoading ? (
+          <p className="text-sm text-gray-400">加载中...</p>
+        ) : alerts.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-8 text-center">
+            <Bell className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+            <p className="text-sm text-gray-500">还没有订阅比价，去 全网比价 页订阅降价提醒吧</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {alerts.map(a => (
+              <div key={a.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="font-medium text-gray-900 truncate pr-3">{a.title}</div>
+                  {a.dropped ? (
+                    <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">
+                      <TrendingDown className="w-3 h-3" /> 降 {a.dropPercent}%
+                    </span>
+                  ) : (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">监控中</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-gray-400 line-through">¥{a.subscribedPrice}</span>
+                  <span className="text-orange-600 font-bold num">¥{a.currentPrice}</span>
+                  {a.dropped && <span className="text-emerald-600 text-xs">已降价，建议入手</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 我的行程 */}

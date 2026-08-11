@@ -111,6 +111,15 @@ export default {
       });
     }
 
+    if (path === "/api/price-alerts" || path === "/api/price-alerts/check") {
+      const { handlePriceAlerts } = await import("./price-alerts");
+      return handlePriceAlerts(request, url, {
+        FAVORITES_KV: env.FAVORITES_KV,
+        AUTH_KV: env.AUTH_KV,
+        JWT_SECRET: env.JWT_SECRET || "dev-secret-change-me",
+      });
+    }
+
     if (path === "/api/itineraries") {
       const { handleItineraries } = await import("./itineraries");
       return handleItineraries(request, {
