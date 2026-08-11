@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Map, ArrowRight, Star, Compass, ArrowLeftRight, Globe, Navigation, ChevronLeft, ChevronRight, MapPin, Flame, ThumbsUp, Utensils, Route } from "lucide-react";
 import { travelGuides } from "../data/guides";
@@ -62,13 +62,6 @@ const regions = [
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [activeRegion, setActiveRegion] = useState("east");
-  const [urlParams, setUrlParams] = useSearchParams();
-  const hotTab = (urlParams.get("tab") as "guides" | "food" | "routes") || "guides";
-
-  const setHotTab = (t: "guides" | "food" | "routes") => {
-    setUrlParams({ tab: t }, { replace: true });
-  };
-
   // 热门数据（按热度排序取 top 3）
   const hotGuides = [...travelGuides].sort((a, b) => b.likes - a.likes).slice(0, 3);
   const hotFood = [...foodRecommendations].sort((a, b) => b.reviews - a.reviews).slice(0, 3);
@@ -168,115 +161,116 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 热门内容（平行路由：攻略 / 美食 / 路线） */}
-      <section className="py-20 bg-[#fff7ed] dark:bg-stone-950">
+      {/* 热门内容（上下平行：攻略 / 美食 / 路线 三区块同时展示） */}
+      <section className="py-20 bg-white dark:bg-stone-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 dark:text-stone-100 mb-2 flex items-center gap-3">
-                <Flame className="w-8 h-8 text-orange-600" />
-                热门推荐
-              </h2>
-              <p className="text-gray-600 dark:text-stone-400">热度最高的攻略、美食与路线，旅行灵感从这里开始</p>
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 dark:text-stone-100 mb-2 flex items-center justify-center gap-3">
+              <Flame className="w-8 h-8 text-orange-600" />
+              热门推荐
+            </h2>
+            <p className="text-gray-600 dark:text-stone-400">热度最高的攻略、美食与路线，旅行灵感从这里开始</p>
+          </div>
+
+          {/* 热门攻略 */}
+          <div className="mb-14">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl md:text-2xl font-serif font-bold text-gray-900 dark:text-stone-100 flex items-center gap-2">
+                <ThumbsUp className="w-5 h-5 text-orange-600" /> 热门攻略
+              </h3>
+              <Link to="/guides" className="inline-flex items-center gap-1.5 text-sm font-medium text-orange-600 hover:text-orange-700 dark:text-orange-400 transition-colors">
+                查看全部 <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {hotGuides.map(g => (
+                <Link
+                  key={g.id}
+                  to={`/guide/${g.id}`}
+                  className="group bg-white dark:bg-stone-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-100 dark:border-stone-800"
+                >
+                  <div className="relative h-44 overflow-hidden">
+                    <img src={g.image} alt={g.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <span className="absolute top-3 left-3 bg-black/50 backdrop-blur-md text-white text-xs px-2 py-1 rounded-md flex items-center gap-1">
+                      <ThumbsUp className="w-3 h-3 text-orange-400" /> {(g.likes / 1000).toFixed(1)}k
+                    </span>
+                  </div>
+                  <div className="p-5">
+                    <h4 className="font-bold text-gray-900 dark:text-stone-100 line-clamp-2 mb-2 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">{g.title}</h4>
+                    <p className="text-sm text-gray-500 dark:text-stone-400 flex items-center gap-2">
+                      <MapPin className="w-3.5 h-3.5" /> {g.destination} · {g.days}天
+                    </p>
+                  </div>
+                </Link>
+              ))}
             </div>
           </div>
 
-          {/* 平行 Tab */}
-          <div className="flex gap-3 mb-10 border-b border-orange-100 dark:border-stone-800 pb-0">
-            {([
-              { id: "guides", label: "热门攻略", icon: ThumbsUp },
-              { id: "food", label: "地道美食", icon: Utensils },
-              { id: "routes", label: "热门路线", icon: Route },
-            ] as const).map(t => (
-              <button
-                key={t.id}
-                onClick={() => setHotTab(t.id)}
-                className={`flex items-center gap-2 px-5 py-3 rounded-t-xl text-sm font-medium transition-all border-b-2 ${
-                  hotTab === t.id
-                    ? "border-orange-600 text-orange-600 bg-white dark:bg-stone-900 dark:text-orange-400"
-                    : "border-transparent text-gray-500 dark:text-stone-400 hover:text-orange-500"
-                }`}
-              >
-                <t.icon className="w-4 h-4" />
-                {t.label}
-              </button>
-            ))}
+          {/* 地道美食 */}
+          <div className="mb-14">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl md:text-2xl font-serif font-bold text-gray-900 dark:text-stone-100 flex items-center gap-2">
+                <Utensils className="w-5 h-5 text-orange-600" /> 地道美食
+              </h3>
+              <Link to="/food" className="inline-flex items-center gap-1.5 text-sm font-medium text-orange-600 hover:text-orange-700 dark:text-orange-400 transition-colors">
+                查看全部 <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {hotFood.map(f => (
+                <Link
+                  key={f.id}
+                  to="/food"
+                  className="group bg-white dark:bg-stone-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-100 dark:border-stone-800"
+                >
+                  <div className="relative h-44 overflow-hidden">
+                    <img src={f.image} alt={f.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <span className="absolute top-3 left-3 bg-black/50 backdrop-blur-md text-white text-xs px-2 py-1 rounded-md flex items-center gap-1">
+                      <Star className="w-3 h-3 text-amber-400 fill-amber-400" /> {f.rating}
+                    </span>
+                  </div>
+                  <div className="p-5">
+                    <h4 className="font-bold text-gray-900 dark:text-stone-100 mb-1 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">{f.name}</h4>
+                    <p className="text-sm text-gray-500 dark:text-stone-400 flex items-center justify-between">
+                      <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {f.city} · {f.type}</span>
+                      <span className="text-orange-600 font-medium">{f.price}</span>
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
 
-          {/* Tab 内容 */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {hotTab === "guides" && hotGuides.map(g => (
-              <Link
-                key={g.id}
-                to={`/guide/${g.id}`}
-                className="group bg-white dark:bg-stone-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-100 dark:border-stone-800"
-              >
-                <div className="relative h-48 overflow-hidden">
-                  <img src={g.image} alt={g.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  <span className="absolute top-3 left-3 bg-black/50 backdrop-blur-md text-white text-xs px-2 py-1 rounded-md flex items-center gap-1">
-                    <ThumbsUp className="w-3 h-3 text-orange-400" /> {(g.likes / 1000).toFixed(1)}k
-                  </span>
-                </div>
-                <div className="p-5">
-                  <h3 className="font-bold text-gray-900 dark:text-stone-100 line-clamp-2 mb-2 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">{g.title}</h3>
-                  <p className="text-sm text-gray-500 dark:text-stone-400 flex items-center gap-2">
-                    <MapPin className="w-3.5 h-3.5" /> {g.destination} · {g.days}天
-                  </p>
-                </div>
+          {/* 热门路线 */}
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl md:text-2xl font-serif font-bold text-gray-900 dark:text-stone-100 flex items-center gap-2">
+                <Route className="w-5 h-5 text-orange-600" /> 热门路线
+              </h3>
+              <Link to="/planner" className="inline-flex items-center gap-1.5 text-sm font-medium text-orange-600 hover:text-orange-700 dark:text-orange-400 transition-colors">
+                查看全部 <ArrowRight className="w-4 h-4" />
               </Link>
-            ))}
-
-            {hotTab === "food" && hotFood.map(f => (
-              <Link
-                key={f.id}
-                to="/food"
-                className="group bg-white dark:bg-stone-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-100 dark:border-stone-800"
-              >
-                <div className="relative h-48 overflow-hidden">
-                  <img src={f.image} alt={f.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  <span className="absolute top-3 left-3 bg-black/50 backdrop-blur-md text-white text-xs px-2 py-1 rounded-md flex items-center gap-1">
-                    <Star className="w-3 h-3 text-amber-400 fill-amber-400" /> {f.rating}
-                  </span>
-                </div>
-                <div className="p-5">
-                  <h3 className="font-bold text-gray-900 dark:text-stone-100 mb-1 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">{f.name}</h3>
-                  <p className="text-sm text-gray-500 dark:text-stone-400 flex items-center justify-between">
-                    <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {f.city} · {f.type}</span>
-                    <span className="text-orange-600 font-medium">{f.price}</span>
-                  </p>
-                </div>
-              </Link>
-            ))}
-
-            {hotTab === "routes" && hotRoutes.map(r => (
-              <Link
-                key={r.id}
-                to="/planner"
-                className="group bg-white dark:bg-stone-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-100 dark:border-stone-800"
-              >
-                <div className="relative h-48 overflow-hidden">
-                  <img src={r.image} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  <span className="absolute top-3 left-3 bg-black/50 backdrop-blur-md text-white text-xs px-2 py-1 rounded-md">{r.tag}</span>
-                </div>
-                <div className="p-5">
-                  <h3 className="font-bold text-gray-900 dark:text-stone-100 mb-2 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">{r.title}</h3>
-                  <p className="text-sm text-gray-500 dark:text-stone-400 flex items-center gap-2">
-                    <Navigation className="w-3.5 h-3.5 text-orange-500" /> {r.from} → {r.to}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-
-          {/* 查看全部 */}
-          <div className="text-center mt-10">
-            <Link
-              to={hotTab === "guides" ? "/guides" : hotTab === "food" ? "/food" : "/planner"}
-              className="inline-flex items-center gap-2 text-sm font-medium text-orange-600 hover:text-orange-700 dark:text-orange-400 transition-colors"
-            >
-              查看全部 {hotTab === "guides" ? "攻略" : hotTab === "food" ? "美食" : "路线"}
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {hotRoutes.map(r => (
+                <Link
+                  key={r.id}
+                  to="/planner"
+                  className="group bg-white dark:bg-stone-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-100 dark:border-stone-800"
+                >
+                  <div className="relative h-44 overflow-hidden">
+                    <img src={r.image} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <span className="absolute top-3 left-3 bg-black/50 backdrop-blur-md text-white text-xs px-2 py-1 rounded-md">{r.tag}</span>
+                  </div>
+                  <div className="p-5">
+                    <h4 className="font-bold text-gray-900 dark:text-stone-100 mb-2 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">{r.title}</h4>
+                    <p className="text-sm text-gray-500 dark:text-stone-400 flex items-center gap-2">
+                      <Navigation className="w-3.5 h-3.5 text-orange-500" /> {r.from} → {r.to}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </section>
