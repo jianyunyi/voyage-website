@@ -1,6 +1,7 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Compass, Loader2, User, Lock, MapPin } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
 
 // ============================================================
@@ -193,12 +194,22 @@ export default function Login() {
       <div className="relative z-10 min-h-[100dvh] flex items-center justify-center px-4 py-16">
         <div className="w-full max-w-md">
           <div className="text-center mb-7">
-            <h1 className="text-3xl font-bold text-white drop-shadow-lg">
-              {mode === "login" ? "欢迎回来" : "创建账号"}
-            </h1>
-            <p className="text-sm text-white/75 mt-2 drop-shadow">
-              {mode === "login" ? "登录后同步你的收藏与 AI 行程" : "一分钟注册，开启 AI 旅行规划"}
-            </p>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={mode}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <h1 className="text-3xl font-bold text-white drop-shadow-lg">
+                  {mode === "login" ? "欢迎回来" : "创建账号"}
+                </h1>
+                <p className="text-sm text-white/75 mt-2 drop-shadow">
+                  {mode === "login" ? "登录后同步你的收藏与 AI 行程" : "一分钟注册，开启 AI 旅行规划"}
+                </p>
+              </motion.div>
+            </AnimatePresence>
           </div>
 
           {/* Liquid Glass 卡片（refraction：内边框 + 内高光） */}
@@ -228,7 +239,16 @@ export default function Login() {
               ))}
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <AnimatePresence mode="wait">
+            <motion.form
+              key={mode}
+              onSubmit={handleSubmit}
+              className="space-y-4"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            >
               <div>
                 <label htmlFor="nickname" className="block text-sm font-medium text-white/85 mb-1.5">昵称</label>
                 <div className="relative">
@@ -285,7 +305,8 @@ export default function Login() {
               >
                 {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> 请稍候...</> : (mode === "login" ? "登录" : "注册并登录")}
               </button>
-            </form>
+            </motion.form>
+            </AnimatePresence>
           </div>
 
           <p className="text-center text-xs text-white/50 mt-6">
