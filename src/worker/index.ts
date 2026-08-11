@@ -64,7 +64,7 @@ export default {
     }
 
     if (path === "/api/compare") {
-      return handleCompare(request, url, requestId);
+      return handleCompare(url, requestId);
     }
 
     if (path.startsWith("/api/hotel/")) {
@@ -78,7 +78,7 @@ export default {
     }
 
     if (path === "/api/route") {
-      return handleRoute(request, url, requestId);
+      return handleRoute(url, requestId);
     }
 
     if (path === "/api/itinerary") {
@@ -126,7 +126,7 @@ function json(data: unknown, status = 200, extraHeaders: Record<string, string> 
 // ============================================================
 // /api/compare — 带缓存
 // ============================================================
-async function handleCompare(request: Request, url: URL, requestId: string): Promise<Response> {
+async function handleCompare(url: URL, requestId: string): Promise<Response> {
   const category = url.searchParams.get("category") || "hotel";
   const destination = url.searchParams.get("destination") || "";
   const origin = url.searchParams.get("origin") || "";
@@ -155,7 +155,7 @@ async function handleCompare(request: Request, url: URL, requestId: string): Pro
 // ============================================================
 // /api/route — 路线聚合（带缓存）
 // ============================================================
-async function handleRoute(request: Request, url: URL, requestId: string): Promise<Response> {
+async function handleRoute(url: URL, requestId: string): Promise<Response> {
   const originId = url.searchParams.get("originId") || "";
   const destId = url.searchParams.get("destId") || "";
 

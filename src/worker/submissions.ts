@@ -9,7 +9,6 @@
  * 状态：status = "pending"（待审核，文案承诺审核后展示）
  */
 
-import type { resolveUser } from "./auth";
 
 interface SubmissionEnv {
   FAVORITES_KV: KVNamespace;  // 复用 KV（键前缀 submissions:）

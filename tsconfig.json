@@ -24,6 +24,8 @@
     "noEmit": true,
     "types": [
       "@cloudflare/workers-types"
-    ]
+    ],
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
   }
 }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Filter, MapPin, Calendar, Clock, ThumbsUp, PlusCircle } from "lucide-react";
+import { Search, Filter, MapPin, Calendar, ThumbsUp, PlusCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import SubmissionModal from "../components/SubmissionModal";
 

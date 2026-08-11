@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { MapPin, Phone, Star, Wifi, Coffee, Dumbbell, Car, ArrowLeft, Check, ExternalLink, Loader2 } from "lucide-react";
+import { MapPin, Phone, Star, ArrowLeft, Check, ExternalLink, Loader2 } from "lucide-react";
 import { fetchHotelDetail, type HotelDetail as HotelDetailType } from "../lib/api";
 
 

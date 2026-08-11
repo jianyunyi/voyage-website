@@ -18,7 +18,7 @@
  * - 常量时间比较防时序攻击
  */
 
-import { signJwt, verifyJwt, hashPassword, randomSalt, safeEqual, randomId, type JwtPayload } from "./jwt";
+import { signJwt, verifyJwt, hashPassword, randomSalt, safeEqual, randomId } from "./jwt";
 
 interface AuthEnv {
   AUTH_KV: KVNamespace;

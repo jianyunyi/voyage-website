@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useFavorites } from "../context/FavoritesContext";
 import { useAuth } from "../context/AuthContext";
 import { fetchMySubmissions, type Submission } from "../lib/api";
-import { Heart, Trash2, Map, BookOpen, Coffee, Building, User, Filter, ArrowUpDown, LogOut, Sparkles, FileText, Clock } from "lucide-react";
+import { Heart, Trash2, Map, BookOpen, Coffee, Building, Filter, ArrowUpDown, LogOut, Sparkles, FileText, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Profile() {

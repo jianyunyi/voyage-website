@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Compass, Loader2, User, Lock, MapPin } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
@@ -75,7 +75,6 @@ const SLIDE_MS = 6000;
 export default function Login() {
   const { login, register, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [nickname, setNickname] = useState("");
   const [password, setPassword] = useState("");
@@ -86,7 +85,6 @@ export default function Login() {
   // 高清图加载完成标记（渐进式 blur-up）
   const [loaded, setLoaded] = useState<boolean[]>(() => SLIDES.map(() => false));
 
-  const from = (location.state as { from?: string } | null)?.from || "/";
   const active = SLIDES[slide];
 
   // 已登录访问登录页 → 自动跳首页

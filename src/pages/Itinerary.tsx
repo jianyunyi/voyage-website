@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Coffee, Building, Plane, Calendar, Sparkles, Loader2, Plus, X, Clock, Check } from "lucide-react";
+import { MapPin, Coffee, Building, Plane, Calendar, Sparkles, Loader2, Plus, X, Clock } from "lucide-react";
 import { generateItineraryRemote, type ItineraryDay } from "../lib/api";
 
 const CITIES = ["北京", "上海", "广州", "成都", "西安", "重庆", "厦门", "泉州"];
