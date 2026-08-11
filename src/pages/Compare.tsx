@@ -232,7 +232,7 @@ export default function Compare() {
                   </div>
                   
                   <div className="flex flex-row md:flex-col items-center md:items-end justify-between w-full md:w-auto gap-4">
-                    <div className="text-3xl font-bold text-orange-600">{item.price}</div>
+                    <div className="text-3xl font-bold text-orange-600 num">{item.price}</div>
                     <button 
                       onClick={() => handleBook(item)}
                       className={`px-8 py-3 rounded-xl font-medium transition-colors ${

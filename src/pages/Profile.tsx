@@ -166,7 +166,7 @@ export default function Profile() {
                         </span>
                         <button 
                           onClick={() => removeFavorite(item.id)}
-                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                          className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
                           title="取消收藏"
                         >
                           <Trash2 className="w-4 h-4" />

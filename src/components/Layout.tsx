@@ -18,7 +18,7 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col font-sans">
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm shadow-gray-200/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
@@ -91,10 +91,10 @@ export default function Layout() {
                     to={item.path}
                     onClick={() => setIsMenuOpen(false)}
                     className={cn(
-                      "block pl-3 pr-4 py-2 border-l-4 text-base font-medium",
+                      "block px-4 py-2.5 text-base font-medium rounded-xl transition-colors",
                       isActive
-                        ? "bg-orange-50 border-orange-600 text-orange-700"
-                        : "border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
+                        ? "bg-orange-50 text-orange-700"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-800"
                     )}
                   >
                     <div className="flex items-center gap-2">
@@ -108,10 +108,10 @@ export default function Layout() {
                 to="/profile"
                 onClick={() => setIsMenuOpen(false)}
                 className={cn(
-                  "block pl-3 pr-4 py-2 border-l-4 text-base font-medium",
+                  "block px-4 py-2.5 text-base font-medium rounded-xl transition-colors",
                   location.pathname === "/profile"
-                    ? "bg-orange-50 border-orange-600 text-orange-700"
-                    : "border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
+                    ? "bg-orange-50 text-orange-700"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-800"
                 )}
               >
                 <div className="flex items-center gap-2">
