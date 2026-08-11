@@ -13,7 +13,8 @@
     "run_worker_first": true
   },
   "kv_namespaces": [
-    { "binding": "FAVORITES_KV", "id": "voyagex-favorites" }
+    { "binding": "FAVORITES_KV", "id": "voyagex-favorites" },
+    { "binding": "AUTH_KV", "id": "voyagex-auth" }
   ],
   "compatibility_flags": [
     "nodejs_compat"

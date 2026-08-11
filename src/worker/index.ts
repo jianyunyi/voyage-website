@@ -16,7 +16,9 @@ import { rateLimit, rateLimitSweep } from "./rate-limit";
 interface Env {
   ASSETS: { fetch: (req: Request) => Promise<Response> };
   FAVORITES_KV: KVNamespace;
+  AUTH_KV: KVNamespace;
   DEEPSEEK_API_KEY?: string; // 从 .dev.vars（本地）/ secrets（生产）注入
+  JWT_SECRET?: string;        // 从 .dev.vars（本地）/ secrets（生产）注入
 }
 
 const CORS_HEADERS = {
@@ -81,6 +83,14 @@ export default {
 
     if (path === "/api/itinerary") {
       return handleItinerary(request, requestId, env);
+    }
+
+    if (path.startsWith("/api/auth/")) {
+      const { handleAuth } = await import("./auth");
+      return handleAuth(request, url, {
+        AUTH_KV: env.AUTH_KV,
+        JWT_SECRET: env.JWT_SECRET || "dev-secret-change-me",
+      });
     }
 
     if (path === "/api/user/favorites" || path.startsWith("/api/user/favorites/")) {

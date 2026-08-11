@@ -1,10 +1,14 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useFavorites } from "../context/FavoritesContext";
-import { Heart, Trash2, Map, BookOpen, Coffee, Building, User, Filter, ArrowUpDown } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { Heart, Trash2, Map, BookOpen, Coffee, Building, User, Filter, ArrowUpDown, LogOut, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Profile() {
+  const navigate = useNavigate();
   const { favorites, removeFavorite } = useFavorites();
+  const { user, logout } = useAuth();
   const [filterType, setFilterType] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('time_desc');
 
@@ -55,16 +59,33 @@ export default function Profile() {
     return result;
   }, [favorites, filterType, sortBy]);
 
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="flex items-center gap-4 mb-10">
-        <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center text-orange-600">
-          <User className="w-8 h-8" />
+      <div className="flex items-center justify-between mb-10">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-full bg-orange-600 text-white flex items-center justify-center text-xl font-bold">
+            {user?.nickname?.charAt(0)?.toUpperCase() || "U"}
+          </div>
+          <div>
+            <h1 className="text-2xl font-serif font-bold text-gray-900 mb-0.5">{user?.nickname || "旅行者"}</h1>
+            <p className="text-sm text-gray-500 flex items-center gap-1">
+              <Sparkles className="w-3.5 h-3.5 text-orange-500" />
+              VoyageX 会员 · 收藏 {favorites.length} 项
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-3xl font-serif font-bold text-gray-900 mb-1">个人中心</h1>
-          <p className="text-gray-600">管理您的旅行收藏与偏好</p>
-        </div>
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 text-sm text-gray-500 hover:text-red-600 px-3 py-2 rounded-xl hover:bg-red-50 transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          退出登录
+        </button>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">

@@ -2,10 +2,12 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import { Map, Compass, ArrowLeftRight, Menu, X, Globe, BookOpen, User, Utensils, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { cn } from "../lib/utils";
+import { useAuth } from "../context/AuthContext";
 
 export default function Layout() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const { user } = useAuth();
 
   const navItems = [
     { name: "探索", path: "/", icon: Globe },
@@ -64,7 +66,13 @@ export default function Layout() {
                 )}
                 title="个人中心"
               >
-                <User className="w-5 h-5" />
+                {user ? (
+                  <span className="w-5 h-5 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center justify-center">
+                    {user.nickname.charAt(0).toUpperCase()}
+                  </span>
+                ) : (
+                  <User className="w-5 h-5" />
+                )}
               </Link>
 
               <div className="flex items-center md:hidden">

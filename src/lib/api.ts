@@ -197,3 +197,73 @@ export async function generateItineraryRemote(req: ItineraryRequest): Promise<{ 
   if (!res.ok) throw new Error(`生成行程失败 (${res.status})`);
   return await res.json();
 }
+
+
+// ============================================================
+// Auth API（JWT access/refresh）
+// ============================================================
+
+export interface AuthUser {
+  id: string;
+  nickname: string;
+  createdAt: number;
+}
+
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface AuthResult extends AuthTokens {
+  user: AuthUser;
+}
+
+export async function registerRemote(nickname: string, password: string): Promise<AuthResult> {
+  const res = await fetch("/api/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nickname, password }),
+  });
+  const data = await res.json() as AuthResult;
+  if (!res.ok) throw new Error((data as { error?: { message?: string } })?.error?.message || "注册失败");
+  return data;
+}
+
+export async function loginRemote(nickname: string, password: string): Promise<AuthResult> {
+  const res = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nickname, password }),
+  });
+  const data = await res.json() as AuthResult;
+  if (!res.ok) throw new Error((data as { error?: { message?: string } })?.error?.message || "登录失败");
+  return data;
+}
+
+export async function refreshRemote(refreshToken: string): Promise<AuthTokens> {
+  const res = await fetch("/api/auth/refresh", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refreshToken }),
+  });
+  const data = await res.json() as AuthTokens;
+  if (!res.ok) throw new Error((data as { error?: { message?: string } })?.error?.message || "登录已过期");
+  return data;
+}
+
+export async function logoutRemote(refreshToken: string): Promise<void> {
+  await fetch("/api/auth/logout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refreshToken }),
+  });
+}
+
+export async function fetchMe(accessToken: string): Promise<AuthUser> {
+  const res = await fetch("/api/auth/me", {
+    headers: { Authorization: "Bearer " + accessToken },
+  });
+  const data = await res.json() as { user: AuthUser; error?: { message?: string } };
+  if (!res.ok) throw new Error(data.error?.message || "获取用户失败");
+  return data.user;
+}
