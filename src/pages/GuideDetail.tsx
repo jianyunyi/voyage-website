@@ -55,17 +55,18 @@ export default function GuideDetail() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-stone-950 pb-20">
-      {/* Hero */}
-      <div className="relative h-[42vh] md:h-[52vh] bg-gray-900">
-        <img src={guide.image} alt={guide.title} className="w-full h-full object-cover opacity-85" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
-        <button
-          onClick={() => navigate(-1)}
-          className="absolute top-6 left-6 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
+      {/* Hero（与正文内容区同宽的文章头图） */}
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 mt-8">
+        <div className="relative h-[36vh] md:h-[44vh] bg-gray-900 rounded-2xl overflow-hidden shadow-lg">
+          <img src={guide.image} alt={guide.title} className="w-full h-full object-cover opacity-90" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+          <button
+            onClick={() => navigate(-1)}
+            className="absolute top-5 left-5 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
           <div className="flex items-center gap-2 text-white/85 text-sm mb-2">
             <MapPin className="w-4 h-4 text-orange-400" />
             {guide.destination}
@@ -81,11 +82,12 @@ export default function GuideDetail() {
             <span className="flex items-center gap-1"><ThumbsUp className="w-4 h-4 text-orange-400" /> {(likeState.count || guide.likes).toLocaleString()}</span>
             <span className="flex items-center gap-1"><MessageSquare className="w-4 h-4 text-orange-400" /> {guide.comments.length} 条评论</span>
             <span className="text-white/60">by {guide.author}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 mt-8">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 mt-10">
         {/* 操作栏 */}
         <div className="flex items-center gap-3 mb-8 flex-wrap">
           <button
