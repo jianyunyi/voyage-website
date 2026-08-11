@@ -1,44 +1,43 @@
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { MapPin, Phone, Star, Wifi, Coffee, Dumbbell, Car, ArrowLeft, Check, ExternalLink } from "lucide-react";
+import { MapPin, Phone, Star, Wifi, Coffee, Dumbbell, Car, ArrowLeft, Check, ExternalLink, Loader2 } from "lucide-react";
+import { fetchHotelDetail, type HotelDetail as HotelDetailType } from "../lib/api";
 
-// Mock data for hotel details
-const hotelDetails: Record<string, any> = {
-  "hotel-1": {
-    name: "市中心豪华酒店",
-    rating: 4.8,
-    reviewsCount: 1284,
-    address: "成都市锦江区春熙路步行街1号",
-    phone: "+86 28 1234 5678",
-    description: "位于成都市中心繁华地段，步行可达春熙路、太古里等核心商圈。酒店提供豪华舒适的客房，配备高品质床上用品和智能客控系统。顶楼设有全景餐厅和无边泳池，让您尽享城市美景。",
-    images: [
-      "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1000",
-      "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&q=80&w=1000",
-      "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&q=80&w=1000"
-    ],
-    amenities: [
-      { icon: Wifi, name: "免费高速WiFi" },
-      { icon: Coffee, name: "自助早餐" },
-      { icon: Dumbbell, name: "健身中心" },
-      { icon: Car, name: "免费停车" }
-    ],
-    rooms: [
-      { id: "r1", name: "豪华大床房", size: "45㎡", bed: "1张特大床", price: "¥450", features: ["含双早", "免费取消", "城市景观"] },
-      { id: "r2", name: "行政双床房", size: "55㎡", bed: "2张单人床", price: "¥680", features: ["含双早", "行政酒廊权益", "高楼层"] },
-      { id: "r3", name: "全景套房", size: "85㎡", bed: "1张特大床", price: "¥1280", features: ["含双早", "独立起居室", "270度全景"] }
-    ],
-    reviews: [
-      { id: 1, user: "张**", rating: 5, date: "2026-03-15", content: "位置非常好，下楼就是春熙路，逛街吃饭都很方便。房间很干净，床品舒适，早餐种类也很丰富。" },
-      { id: 2, user: "李**", rating: 4, date: "2026-03-10", content: "整体服务不错，前台小姐姐很热情。就是节假日人比较多，等电梯需要一点时间。" }
-    ]
-  }
-};
+
 
 export default function HotelDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  
-  // Use mock data or fallback to a default if id is not found
-  const hotel = hotelDetails[id as string] || hotelDetails["hotel-1"];
+  const [hotel, setHotel] = useState<HotelDetailType | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    fetchHotelDetail(id)
+      .then(h => { setHotel(h); setError(""); })
+      .catch(e => setError(e instanceof Error ? e.message : "加载失败"))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+        <Loader2 className="w-10 h-10 text-orange-500 animate-spin mb-4" />
+        <p className="text-gray-500">加载酒店详情...</p>
+      </div>
+    );
+  }
+
+  if (error || !hotel) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+        <p className="text-red-500 mb-4">{error || "酒店不存在"}</p>
+        <button onClick={() => navigate(-1)} className="text-gray-500 underline">返回</button>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-50 min-h-screen pb-20">
@@ -98,10 +97,10 @@ export default function HotelDetail() {
             <section className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <h2 className="text-xl font-bold text-gray-900 mb-4">热门设施</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {hotel.amenities.map((amenity: any, index: number) => (
+                {hotel.amenities.map((amenity, index) => (
                   <div key={index} className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-xl">
-                    <amenity.icon className="w-6 h-6 text-orange-600 mb-2" />
-                    <span className="text-sm font-medium text-gray-700">{amenity.name}</span>
+                    <Check className="w-6 h-6 text-orange-600 mb-2" />
+                    <span className="text-sm font-medium text-gray-700">{amenity}</span>
                   </div>
                 ))}
               </div>

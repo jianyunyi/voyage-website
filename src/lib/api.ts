@@ -87,3 +87,113 @@ export async function removeFavoriteRemote(id: string): Promise<FavoriteItem[]> 
   const data = await res.json() as { favorites: FavoriteItem[] };
   return data.favorites;
 }
+
+
+// ============================================================
+// Hotel Detail API
+// ============================================================
+
+export interface HotelRoom {
+  id: string;
+  name: string;
+  size: string;
+  bed: string;
+  price: string;
+  priceValue: number;
+  features: string[];
+}
+
+export interface HotelReview {
+  id: number;
+  user: string;
+  rating: number;
+  date: string;
+  content: string;
+}
+
+export interface HotelDetail {
+  id: string;
+  name: string;
+  platform: string;
+  rating: number;
+  reviewsCount: number;
+  address: string;
+  phone: string;
+  description: string;
+  images: string[];
+  amenities: string[];
+  rooms: HotelRoom[];
+  reviews: HotelReview[];
+}
+
+export async function fetchHotelDetail(id: string): Promise<HotelDetail> {
+  const res = await fetch(`/api/hotel/${encodeURIComponent(id)}`);
+  if (!res.ok) throw new Error(`获取酒店详情失败 (${res.status})`);
+  return await res.json() as HotelDetail;
+}
+
+// ============================================================
+// Route API
+// ============================================================
+
+export interface RouteOption {
+  id: string;
+  type: "driving" | "train" | "flight";
+  label: string;
+  timeSec: number;
+  timeLabel: string;
+  distanceMeters?: number;
+  distanceLabel?: string;
+  price?: string;
+  priceValue?: number;
+  tolls?: string;
+  tag?: string;
+  score: number;
+  source: "amap" | "estimate";
+}
+
+export async function fetchRoutes(originId: string, destId: string): Promise<RouteOption[]> {
+  const qs = new URLSearchParams({ originId, destId });
+  const res = await fetch(`/api/route?${qs.toString()}`);
+  if (!res.ok) throw new Error(`获取路线失败 (${res.status})`);
+  const data = await res.json() as { routes: RouteOption[] };
+  return data.routes;
+}
+
+// ============================================================
+// Itinerary API
+// ============================================================
+
+export interface ItineraryRequest {
+  origin: string;
+  destinations: string[];
+  dates: { start: string; end: string };
+  preferences: {
+    budget: "budget" | "moderate" | "luxury";
+    travel_mode: "fastest" | "relaxed" | "balanced";
+    interests?: string[];
+  };
+}
+
+export interface ItineraryStep {
+  time: string;
+  type: string;
+  title: string;
+  description: string;
+}
+
+export interface ItineraryDay {
+  day: number;
+  date: string;
+  steps: ItineraryStep[];
+}
+
+export async function generateItineraryRemote(req: ItineraryRequest): Promise<{ days: ItineraryDay[]; sources: string[] }> {
+  const res = await fetch("/api/itinerary", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) throw new Error(`生成行程失败 (${res.status})`);
+  return await res.json();
+}

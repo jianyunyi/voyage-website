@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import AMapLoader from "@amap/amap-jsapi-loader";
 import { MapPin, Navigation, Clock, Star, ChevronRight } from "lucide-react";
+import { fetchRoutes, type RouteOption } from "../lib/api";
 
 // Mock data for cities
 const cities = [
@@ -117,7 +118,20 @@ export default function MapPlanner() {
     }
   };
 
-  // Mock routes data mixed with real data if available
+  // 路线方案：驾车由高德实时计算，高铁/飞机由后端聚合 API 提供
+  const [apiRoutes, setApiRoutes] = useState<RouteOption[]>([]);
+
+  // 选择变化时获取高铁/飞机方案
+  useEffect(() => {
+    if (origin && destination && origin !== destination) {
+      fetchRoutes(origin, destination)
+        .then(r => setApiRoutes(r.filter(r => r.type !== "driving")))
+        .catch(() => setApiRoutes([]));
+    } else {
+      setApiRoutes([]);
+    }
+  }, [origin, destination]);
+
   const routes = [
     { 
       id: "r1", 
@@ -128,8 +142,15 @@ export default function MapPlanner() {
       score: 8.5, 
       tag: "最自由" 
     },
-    { id: "r2", type: "高铁 (预估)", duration: "8.5小时", price: "¥680", score: 8.8, tag: "性价比最高" },
-    { id: "r3", type: "飞机 (预估)", duration: "3小时", price: "¥850", score: 9.2, tag: "最快捷" },
+    ...apiRoutes.map(r => ({
+      id: r.id,
+      type: `${r.label} (${r.source === "estimate" ? "估算" : "实时"})`,
+      duration: r.timeLabel,
+      price: r.price || "价格未知",
+      distance: r.distanceLabel || "",
+      score: r.score,
+      tag: r.tag || "",
+    })),
   ];
 
   return (
