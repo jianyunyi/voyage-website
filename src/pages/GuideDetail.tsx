@@ -2,6 +2,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { ArrowLeft, MapPin, Calendar, Wallet, ThumbsUp, Check, Share2, Heart, MessageSquare, Star } from "lucide-react";
 import { findGuide, travelGuides } from "../data/guides";
+import { imgSrc } from "../lib/image";
 import { useFavorites } from "../context/FavoritesContext";
 import { useAuth } from "../context/AuthContext";
 import { toggleLikeRemote, fetchLikesRemote } from "../lib/api";
@@ -58,7 +59,7 @@ export default function GuideDetail() {
       {/* Hero（与正文内容区同宽的文章头图） */}
       <div className="max-w-3xl mx-auto px-4 sm:px-6 mt-8">
         <div className="relative h-[36vh] md:h-[44vh] bg-gray-900 rounded-2xl overflow-hidden shadow-lg">
-          <img src={guide.image} alt={guide.title} className="w-full h-full object-cover opacity-90" />
+          <img src={imgSrc(guide.image, 1280)} alt={guide.title} fetchPriority="high" className="w-full h-full object-cover opacity-90" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
           <button
             onClick={() => navigate(-1)}
@@ -180,7 +181,7 @@ export default function GuideDetail() {
                 className="group bg-white dark:bg-stone-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-100 dark:border-stone-800"
               >
                 <div className="relative h-36 overflow-hidden">
-                  <img src={rg.image} alt={rg.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <img src={imgSrc(rg.image, 600)} alt={rg.title} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 </div>
                 <div className="p-4">
                   <h3 className="font-bold text-sm text-gray-900 dark:text-stone-100 line-clamp-2 mb-2 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">{rg.title}</h3>

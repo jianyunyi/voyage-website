@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { MapPin, Phone, Star, ArrowLeft, Check, ExternalLink, Loader2 } from "lucide-react";
 import { fetchHotelDetail, type HotelDetail as HotelDetailType } from "../lib/api";
+import { imgSrc } from "../lib/image";
 
 
 
@@ -44,8 +45,9 @@ export default function HotelDetail() {
       {/* Header / Images */}
       <div className="relative h-[40vh] md:h-[50vh] bg-gray-900">
         <img 
-          src={hotel.images[0]} 
+          src={imgSrc(hotel.images[0], 1280)} 
           alt={hotel.name} 
+          fetchPriority="high"
           className="w-full h-full object-cover opacity-80"
           referrerPolicy="no-referrer"
         />

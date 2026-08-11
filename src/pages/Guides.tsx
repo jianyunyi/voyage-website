@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import SubmissionModal from "../components/SubmissionModal";
 
 import { travelGuides } from "../data/guides";
+import { imgSrc } from "../lib/image";
 
 export default function Guides() {
   const navigate = useNavigate();
@@ -106,8 +107,10 @@ export default function Guides() {
             >
               <div className="relative h-56 overflow-hidden">
                 <img 
-                  src={guide.image} 
+                  src={imgSrc(guide.image, 600)} 
                   alt={guide.title} 
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                   referrerPolicy="no-referrer" 
                 />

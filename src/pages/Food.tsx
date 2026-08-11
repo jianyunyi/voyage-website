@@ -8,6 +8,7 @@ import SubmissionModal from "../components/SubmissionModal";
 const provinces = ["全部", "北京", "上海", "广东", "四川", "浙江", "江苏", "陕西", "湖南", "福建", "山东", "云南", "海南", "重庆", "湖北", "广西", "新疆", "西藏"];
 
 import { foodRecommendations } from "../data/food";
+import { imgSrc } from "../lib/image";
 
 export default function Food() {
   const [activeProvince, setActiveProvince] = useState("全部");
@@ -115,7 +116,7 @@ export default function Food() {
                 onClick={() => setSelectedFood(food)}
               >
                 <div className="relative h-48">
-                  <img src={food.image} alt={food.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  <img src={imgSrc(food.image, 600)} loading="lazy" decoding="async" alt={food.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1 shadow-sm">
                     <Star className="w-4 h-4 text-orange-500 fill-orange-500" />
                     <span className="font-bold text-gray-900 dark:text-stone-100">{food.rating}</span>
@@ -182,7 +183,7 @@ export default function Food() {
               className="bg-white dark:bg-stone-900 rounded-2xl overflow-hidden shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col"
             >
               <div className="relative h-64 flex-shrink-0">
-                <img src={selectedFood.image} alt={selectedFood.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                <img src={imgSrc(selectedFood.image, 900)} alt={selectedFood.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                 <button
                   onClick={() => setSelectedFood(null)}
                   className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-sm transition-colors"

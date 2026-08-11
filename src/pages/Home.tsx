@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Map, ArrowRight, Star, Compass, ArrowLeftRight, Globe, Navigation, ChevronLeft, ChevronRight, MapPin, Flame, ThumbsUp, Utensils, Route } from "lucide-react";
 import { travelGuides } from "../data/guides";
+import { imgSrc, preloadImages } from "../lib/image";
 import { foodRecommendations } from "../data/food";
 import carousData from "../public/carousData.json"
 
@@ -78,6 +79,12 @@ export default function Home() {
     return () => clearInterval(timer);
   }, []);
 
+  // 预渲染：预加载下一张轮播图（切换零等待）
+  useEffect(() => {
+    const next = carouselItems[(currentSlide + 1) % carouselItems.length];
+    if (next) preloadImages([imgSrc(next.image, 1280)]);
+  }, [currentSlide]);
+
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % carouselItems.length);
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + carouselItems.length) % carouselItems.length);
 
@@ -97,7 +104,8 @@ export default function Home() {
             className="absolute inset-0 z-0"
           >
             <img
-              src={carouselItems[currentSlide].image}
+              src={imgSrc(carouselItems[currentSlide].image, 1280)}
+              fetchPriority="high"
               alt={carouselItems[currentSlide].title}
               className="w-full h-full object-cover opacity-70"
               referrerPolicy="no-referrer"
@@ -191,7 +199,7 @@ export default function Home() {
                   className="group bg-white dark:bg-stone-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-100 dark:border-stone-800"
                 >
                   <div className="relative h-44 overflow-hidden">
-                    <img src={g.image} alt={g.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img src={imgSrc(g.image, 600)} alt={g.title} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     <span className="absolute top-3 left-3 bg-black/50 backdrop-blur-md text-white text-xs px-2 py-1 rounded-md flex items-center gap-1">
                       <ThumbsUp className="w-3 h-3 text-orange-400" /> {(g.likes / 1000).toFixed(1)}k
                     </span>
@@ -225,7 +233,7 @@ export default function Home() {
                   className="group bg-white dark:bg-stone-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-100 dark:border-stone-800"
                 >
                   <div className="relative h-44 overflow-hidden">
-                    <img src={f.image} alt={f.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img src={imgSrc(f.image, 600)} alt={f.name} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     <span className="absolute top-3 left-3 bg-black/50 backdrop-blur-md text-white text-xs px-2 py-1 rounded-md flex items-center gap-1">
                       <Star className="w-3 h-3 text-amber-400 fill-amber-400" /> {f.rating}
                     </span>
@@ -260,7 +268,7 @@ export default function Home() {
                   className="group bg-white dark:bg-stone-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-100 dark:border-stone-800"
                 >
                   <div className="relative h-44 overflow-hidden">
-                    <img src={r.image} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img src={imgSrc(r.image, 600)} alt={r.title} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     <span className="absolute top-3 left-3 bg-black/50 backdrop-blur-md text-white text-xs px-2 py-1 rounded-md">{r.tag}</span>
                   </div>
                   <div className="p-5">

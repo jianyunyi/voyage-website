@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { uploadAvatarRemote } from "../lib/api";
 import { useToast } from "../context/ToastContext";
 import EmptyState from "../components/EmptyState";
+import { imgSrc } from "../lib/image";
 import { Camera } from "lucide-react";
 import { exportIcs, exportPdf } from "../lib/export";
 import { fetchMySubmissions, fetchMyItineraries, fetchAlertsRemote, checkAlertsRemote, type Submission, type SavedItinerary, type PriceAlert } from "../lib/api";
@@ -421,7 +422,7 @@ export default function Profile() {
                   >
                     {item.image && (
                       <div className="h-40 w-full overflow-hidden relative">
-                        <img src={item.image} alt={item.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        <img src={imgSrc(item.image, 600)} loading="lazy" decoding="async" alt={item.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                         <div className="absolute top-2 left-2 flex items-center gap-1 text-xs font-medium text-white bg-black/50 backdrop-blur-sm px-2 py-1 rounded">
                           {getIcon(item.type)}
                           {getTypeLabel(item.type)}
