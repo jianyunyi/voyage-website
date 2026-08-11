@@ -72,7 +72,7 @@ const SLIDES: Slide[] = [
 const SLIDE_MS = 6000;
 
 export default function Login() {
-  const { login, register } = useAuth();
+  const { login, register, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -85,8 +85,15 @@ export default function Login() {
   // 高清图加载完成标记（渐进式 blur-up）
   const [loaded, setLoaded] = useState<boolean[]>(() => SLIDES.map(() => false));
 
-  const from = (location.state as { from?: string } | null)?.from || "/profile";
+  const from = (location.state as { from?: string } | null)?.from || "/";
   const active = SLIDES[slide];
+
+  // 已登录访问登录页 → 自动跳首页
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   // 挂载时预加载全部高清图
   useEffect(() => {
@@ -134,7 +141,7 @@ export default function Login() {
     try {
       if (mode === "login") { await login(nickname.trim(), password); }
       else { await register(nickname.trim(), password); }
-      navigate(from, { replace: true });
+      navigate("/", { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "操作失败");
     } finally {

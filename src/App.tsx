@@ -23,7 +23,7 @@ const Login = lazy(() => import("./pages/Login"));
 function Protected({ children }: { children: ReactNode }) {
   const { isAuthenticated, loading } = useAuth();
   if (loading) return <div style={{ padding: 16 }}>Loading...</div>;
-  if (!isAuthenticated) return <Navigate to="/login" state={{ from: window.location.pathname }} replace />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
@@ -34,17 +34,16 @@ export default function App() {
         <BrowserRouter>
         <Suspense fallback={<div style={{ padding: 16 }}>Loading...</div>}>
           <Routes>
-            <Route path="/" element={<Layout />}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<Protected><Layout /></Protected>}>
               <Route index element={<Home />} />
               <Route path="guides" element={<Guides />} />
               <Route path="food" element={<Food />} />
               <Route path="planner" element={<MapPlanner />} />
               <Route path="compare" element={<Compare />} />
-
               <Route path="hotel/:id" element={<HotelDetail />} />
               <Route path="itinerary" element={<Itinerary />} />
-              <Route path="login" element={<Login />} />
-              <Route path="profile" element={<Protected><Profile /></Protected>} />
+              <Route path="profile" element={<Profile />} />
             </Route>
           </Routes>
         </Suspense>
