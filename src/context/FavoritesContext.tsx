@@ -41,6 +41,8 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // 启动时从 KV 同步（合并去重：本地 + 远端，本地独有项回推远端）
   useEffect(() => {
+    // 未登录/无 token：不发请求（避免 401 控制台噪音）
+    if (!accessToken) return;
     let cancelled = false;
     (async () => {
       try {
@@ -68,6 +70,7 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, [accessToken]);
 
   const syncFavorites = useCallback(async () => {
+    if (!accessToken) return;
     setSyncStatus("syncing");
     try {
       const remote = await fetchFavorites(accessToken);

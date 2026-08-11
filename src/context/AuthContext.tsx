@@ -53,6 +53,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setAccessToken(null);
               setUser(null);
             });
+        } else {
+          // 无 refresh token：access token 已失效，清空（避免无效 token 触发 401 噪音）
+          localStorage.removeItem(LS_ACCESS);
+          localStorage.removeItem(LS_USER);
+          setAccessToken(null);
+          setUser(null);
         }
       });
     }
