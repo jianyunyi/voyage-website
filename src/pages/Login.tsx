@@ -20,42 +20,42 @@ interface Slide {
 
 const SLIDES: Slide[] = [
   {
-    image: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&q=80&w=1920",
+    image: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&q=70&w=1280",
     city: "京都", country: "日本", tagline: "樱花与古寺的千年对话",
     accent: "#ec4899", accentSoft: "#fce7f3", glow: "rgba(236,72,153,0.35)",
   },
   {
-    image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=1920",
+    image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=70&w=1280",
     city: "巴黎", country: "法国", tagline: "在铁塔灯火下漫游塞纳河",
     accent: "#8b5cf6", accentSoft: "#ede9fe", glow: "rgba(139,92,246,0.35)",
   },
   {
-    image: "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&q=80&w=1920",
+    image: "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&q=70&w=1280",
     city: "圣托里尼", country: "希腊", tagline: "爱琴海悬崖上的纯白梦境",
     accent: "#0ea5e9", accentSoft: "#e0f2fe", glow: "rgba(14,165,233,0.35)",
   },
   {
-    image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&q=80&w=1920",
+    image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&q=70&w=1280",
     city: "巴厘岛", country: "印尼", tagline: "椰林与神庙的热带呼吸",
     accent: "#10b981", accentSoft: "#d1fae5", glow: "rgba(16,185,129,0.35)",
   },
   {
-    image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&q=80&w=1920",
+    image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&q=70&w=1280",
     city: "采尔马特", country: "瑞士", tagline: "马特洪峰下的雪线童话",
     accent: "#22c55e", accentSoft: "#dcfce7", glow: "rgba(34,197,94,0.35)",
   },
   {
-    image: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&q=80&w=1920",
+    image: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&q=70&w=1280",
     city: "冰岛", country: "极光", tagline: "把夜空染成流动的极光",
     accent: "#7c3aed", accentSoft: "#ede9fe", glow: "rgba(124,58,237,0.4)",
   },
   {
-    image: "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&q=80&w=1920",
+    image: "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&q=70&w=1280",
     city: "悉尼", country: "澳大利亚", tagline: "海港帆影与歌剧院白",
     accent: "#2563eb", accentSoft: "#dbeafe", glow: "rgba(37,99,235,0.35)",
   },
   {
-    image: "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&q=80&w=1920",
+    image: "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&q=70&w=1280",
     city: "纽约", country: "美国", tagline: "永不熄灯的城市天际线",
     accent: "#f59e0b", accentSoft: "#fef3c7", glow: "rgba(245,158,11,0.35)",
   },
@@ -77,6 +77,15 @@ export default function Login() {
 
   const from = (location.state as { from?: string } | null)?.from || "/profile";
   const active = SLIDES[slide];
+
+  // 挂载时预加载全部图片（消除切换延迟）
+  useEffect(() => {
+    SLIDES.forEach(s => {
+      const img = new Image();
+      img.decoding = "async";
+      img.src = s.image;
+    });
+  }, []);
 
   // 轮播：自动播放 + 主题色注入
   useEffect(() => {
@@ -128,7 +137,15 @@ export default function Login() {
             key={s.city}
             className={`absolute inset-0 transition-opacity duration-[1200ms] ease-out ${i === slide ? "opacity-100" : "opacity-0"}`}
           >
-            <img src={s.image} alt={s.city} className="w-full h-full object-cover scale-105" style={{ transform: i === slide ? "scale(1.05)" : "scale(1)", transition: "transform 7s ease-out" }} />
+            <img
+              src={s.image}
+              alt={s.city}
+              loading={i === slide || i === (slide + 1) % SLIDES.length ? "eager" : "lazy"}
+              fetchPriority={i === slide ? "high" : "auto"}
+              decoding="async"
+              className="w-full h-full object-cover scale-105"
+              style={{ transform: i === slide ? "scale(1.05)" : "scale(1)", transition: "transform 7s ease-out" }}
+            />
           </div>
         ))}
 
