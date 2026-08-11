@@ -146,12 +146,13 @@ export default function Profile() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="min-h-screen bg-white dark:bg-stone-950">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div className="flex items-center justify-between mb-10">
         <div className="flex items-center gap-4">
           <button
             onClick={() => fileRef.current?.click()}
-            className="relative w-14 h-14 rounded-full bg-orange-600 text-white flex items-center justify-center text-xl font-bold overflow-hidden group"
+            className="relative w-16 h-16 rounded-full bg-orange-600 text-white flex items-center justify-center text-xl font-bold overflow-hidden group shadow-md shadow-orange-600/20"
             title="点击上传头像"
           >
             {user?.avatar ? (
@@ -189,6 +190,26 @@ export default function Profile() {
           <LogOut className="w-4 h-4" />
           退出登录
         </button>
+      </div>
+
+      {/* 数据统计 */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        {[
+          { label: "我的收藏", value: favorites.length, icon: Heart, color: "text-rose-500 bg-rose-50 dark:bg-rose-950/40" },
+          { label: "我的行程", value: itineraries.length, icon: MapPin, color: "text-orange-500 bg-orange-50 dark:bg-orange-950/40" },
+          { label: "我的投稿", value: submissions.length, icon: FileText, color: "text-teal-500 bg-teal-50 dark:bg-teal-950/40" },
+          { label: "降价提醒", value: alerts.length, icon: Bell, color: "text-violet-500 bg-violet-50 dark:bg-violet-950/40" },
+        ].map(s => (
+          <div key={s.label} className="bg-gray-50 dark:bg-stone-900 rounded-2xl p-4 flex items-center gap-3 border border-gray-100 dark:border-stone-800">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${s.color}`}>
+              <s.icon className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-stone-100 num">{s.value}</div>
+              <div className="text-xs text-gray-500 dark:text-stone-400">{s.label}</div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* 降价提醒 */}
@@ -441,6 +462,7 @@ export default function Profile() {
               </AnimatePresence>
             </div>
           )}
+        </div>
         </div>
       </div>
     </div>
