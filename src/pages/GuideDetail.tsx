@@ -1,7 +1,7 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { ArrowLeft, MapPin, Calendar, Wallet, ThumbsUp, Check, Share2, Heart, MessageSquare, Star } from "lucide-react";
-import { findGuide } from "../data/guides";
+import { findGuide, travelGuides } from "../data/guides";
 import { useFavorites } from "../context/FavoritesContext";
 import { useAuth } from "../context/AuthContext";
 import { toggleLikeRemote, fetchLikesRemote } from "../lib/api";
@@ -42,6 +42,16 @@ export default function GuideDetail() {
   }
 
   const fav = isFavorite(guide.id);
+
+  // 相关攻略推荐：同目的地优先 → 共享标签 → 排除当前，取 3
+  const relatedGuides = travelGuides
+    .filter(g => g.id !== guide.id)
+    .sort((a, b) => {
+      const aScore = (a.destination === guide.destination ? 2 : 0) + a.tags.filter(t => guide.tags.includes(t)).length;
+      const bScore = (b.destination === guide.destination ? 2 : 0) + b.tags.filter(t => guide.tags.includes(t)).length;
+      return bScore - aScore;
+    })
+    .slice(0, 3);
 
   return (
     <div className="min-h-screen bg-white dark:bg-stone-950 pb-20">
@@ -153,10 +163,31 @@ export default function GuideDetail() {
           </div>
         </div>
 
-        {/* 其他攻略 */}
-        <div className="mt-10">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">更多攻略</h2>
-          <Link to="/guides" className="text-orange-600 text-sm hover:underline">← 返回攻略列表</Link>
+        {/* 相关攻略推荐 */}
+        <div className="mt-12">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-stone-100">相关攻略</h2>
+            <Link to="/guides" className="text-orange-600 text-sm hover:underline">← 返回攻略列表</Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {relatedGuides.map(rg => (
+              <Link
+                key={rg.id}
+                to={`/guide/${rg.id}`}
+                className="group bg-white dark:bg-stone-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-100 dark:border-stone-800"
+              >
+                <div className="relative h-36 overflow-hidden">
+                  <img src={rg.image} alt={rg.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                </div>
+                <div className="p-4">
+                  <h3 className="font-bold text-sm text-gray-900 dark:text-stone-100 line-clamp-2 mb-2 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">{rg.title}</h3>
+                  <p className="text-xs text-gray-500 dark:text-stone-400 flex items-center gap-2">
+                    <MapPin className="w-3 h-3" /> {rg.destination} · {rg.days}天 · 👍{(rg.likes / 1000).toFixed(1)}k
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </div>
