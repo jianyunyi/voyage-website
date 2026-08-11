@@ -1,17 +1,40 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, MapPin, Calendar, Wallet, ThumbsUp, Check, Share2, Heart } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ArrowLeft, MapPin, Calendar, Wallet, ThumbsUp, Check, Share2, Heart, MessageSquare, Star } from "lucide-react";
 import { findGuide } from "../data/guides";
 import { useFavorites } from "../context/FavoritesContext";
+import { useAuth } from "../context/AuthContext";
+import { toggleLikeRemote, fetchLikesRemote } from "../lib/api";
 
 export default function GuideDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const guide = id ? findGuide(id) : undefined;
   const { isFavorite, toggleFavorite } = useFavorites();
+  const { accessToken } = useAuth();
+  const [likeState, setLikeState] = useState<{ count: number; liked: boolean }>({ count: 0, liked: false });
+
+  // 加载点赞状态
+  useEffect(() => {
+    if (!guide || !accessToken) return;
+    fetchLikesRemote([guide.id], accessToken).then(res => {
+      const s = res[guide.id];
+      if (s) setLikeState(s);
+    }).catch(() => undefined);
+  }, [guide?.id, accessToken]);
+
+  const handleLike = async () => {
+    if (!guide || !accessToken) return;
+    try {
+      setLikeState(await toggleLikeRemote(guide.id, accessToken));
+    } catch {
+      // 忽略
+    }
+  };
 
   if (!guide) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#fff7ed]">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-stone-950">
         <p className="text-gray-500 mb-4">攻略不存在</p>
         <button onClick={() => navigate("/guides")} className="text-orange-600 underline">返回攻略列表</button>
       </div>
@@ -21,7 +44,7 @@ export default function GuideDetail() {
   const fav = isFavorite(guide.id);
 
   return (
-    <div className="min-h-screen bg-[#fff7ed] pb-20">
+    <div className="min-h-screen bg-white dark:bg-stone-950 pb-20">
       {/* Hero */}
       <div className="relative h-[42vh] md:h-[52vh] bg-gray-900">
         <img src={guide.image} alt={guide.title} className="w-full h-full object-cover opacity-85" />
@@ -45,7 +68,8 @@ export default function GuideDetail() {
           <div className="flex items-center gap-4 mt-3 text-white/80 text-sm flex-wrap">
             <span className="flex items-center gap-1"><Calendar className="w-4 h-4 text-orange-400" /> {guide.days} 天</span>
             <span className="flex items-center gap-1"><Wallet className="w-4 h-4 text-orange-400" /> 人均 ¥{guide.budget.toLocaleString()}</span>
-            <span className="flex items-center gap-1"><ThumbsUp className="w-4 h-4 text-orange-400" /> {guide.likes.toLocaleString()}</span>
+            <span className="flex items-center gap-1"><ThumbsUp className="w-4 h-4 text-orange-400" /> {(likeState.count || guide.likes).toLocaleString()}</span>
+            <span className="flex items-center gap-1"><MessageSquare className="w-4 h-4 text-orange-400" /> {guide.comments.length} 条评论</span>
             <span className="text-white/60">by {guide.author}</span>
           </div>
         </div>
@@ -53,7 +77,16 @@ export default function GuideDetail() {
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 mt-8">
         {/* 操作栏 */}
-        <div className="flex items-center gap-3 mb-8">
+        <div className="flex items-center gap-3 mb-8 flex-wrap">
+          <button
+            onClick={handleLike}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              likeState.liked ? "bg-orange-600 text-white" : "bg-white text-gray-600 border border-gray-200 hover:border-orange-300 dark:bg-stone-900 dark:text-stone-300 dark:border-stone-700"
+            }`}
+          >
+            <ThumbsUp className={`w-4 h-4 ${likeState.liked ? "fill-white" : ""}`} />
+            {likeState.count.toLocaleString()} 赞
+          </button>
           <button
             onClick={() => toggleFavorite({ id: guide.id, type: "guide", title: guide.title, subtitle: guide.destination, image: guide.image, rating: guide.likes, addedAt: Date.now() })}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
@@ -71,7 +104,7 @@ export default function GuideDetail() {
         {/* 正文 */}
         <article className="space-y-6">
           {guide.content.map((para, i) => (
-            <p key={i} className="text-gray-700 leading-relaxed text-[15px] md:text-base">{para}</p>
+            <p key={i} className="text-gray-700 dark:text-stone-300 leading-relaxed text-[15px] md:text-base">{para}</p>
           ))}
         </article>
 
@@ -85,6 +118,36 @@ export default function GuideDetail() {
                   <Check className="w-3 h-3 text-orange-600" />
                 </span>
                 {h}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 评论区 */}
+        <div className="mt-10 bg-gray-50 dark:bg-stone-900 rounded-2xl p-6 border border-gray-100 dark:border-stone-800">
+          <div className="flex items-center gap-2 mb-6">
+            <MessageSquare className="w-5 h-5 text-orange-600" />
+            <h2 className="text-lg font-bold text-gray-900 dark:text-stone-100">评论区</h2>
+            <span className="text-sm text-gray-400">({guide.comments.length})</span>
+          </div>
+          <div className="space-y-5">
+            {guide.comments.map(cm => (
+              <div key={cm.id} className="flex gap-3">
+                <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-stone-800 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                  {cm.user.charAt(0)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="font-medium text-gray-900 dark:text-stone-100 text-sm">{cm.user}</span>
+                    <span className="flex items-center gap-0.5 text-amber-500">
+                      {Array.from({ length: cm.rating }).map((_, i) => (
+                        <Star key={i} className="w-3 h-3 fill-amber-500" />
+                      ))}
+                    </span>
+                    <span className="text-xs text-gray-400 ml-auto">{cm.date}</span>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-stone-300 leading-relaxed">{cm.content}</p>
+                </div>
               </div>
             ))}
           </div>

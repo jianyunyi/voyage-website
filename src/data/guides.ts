@@ -14,6 +14,7 @@ export interface TravelGuide {
   tags: string[];
   content: string[];
   highlights: string[];
+  comments: Array<{ id: number; user: string; date: string; content: string; rating: number }>;
 }
 
 export const travelGuides: TravelGuide[] = [
@@ -29,6 +30,7 @@ export const travelGuides: TravelGuide[] = [
       "最后一天可以逛逛太古里和 IFS，买点伴手礼。成都的火锅、串串、担担面、钟水饺都值得一试，人均预算控制在700元/天就能吃得非常好。",
     ],
     highlights: ["大熊猫基地看滚滚", "宽窄巷子喝盖碗茶", "都江堰千年水利", "奎星楼街串串香"],
+    comments: [{"id": 1, "user": "熊猫控小美", "date": "2026-05-18", "rating": 5, "content": "按这个攻略走了全程，大熊猫基地一定要早去！第3天都江堰的农家菜绝了。"}, {"id": 2, "user": "旅行青蛙", "date": "2026-05-02", "rating": 5, "content": "宽窄巷子晚上比白天更有味道，奎星楼街的串串排队40分钟也值。"}, {"id": 3, "user": "阿汤", "date": "2026-04-25", "rating": 4, "content": "预算估算很准，700/天真的能吃很好，鹤鸣茶社的盖碗茶太安逸了。"}],
   },
   {
     id: "g2", title: "重庆3D魔幻城市3日打卡路线，不走回头路",
@@ -41,6 +43,7 @@ export const travelGuides: TravelGuide[] = [
       "重庆小面、火锅、酸辣粉、江湖菜都是必吃。这里没有鸳鸯锅的将就，微辣就是外地人的底线。",
     ],
     highlights: ["洪崖洞夜景", "李子坝轻轨穿楼", "长江索道跨江", "南山一棵树全景"],
+    comments: [{"id": 1, "user": "魔幻山城", "date": "2026-05-15", "rating": 5, "content": "洪崖洞夜景名不虚传，导航真的会失灵，建议直接问本地人！"}, {"id": 2, "user": "小笼包", "date": "2026-04-30", "rating": 4, "content": "李子坝轻轨穿楼机位已找到，长江索道排队要早去。"}],
   },
   {
     id: "g3", title: "西安4日历史文化之旅：兵马俑、大雁塔、回民街",
@@ -53,6 +56,7 @@ export const travelGuides: TravelGuide[] = [
       "回民街的肉夹馍、凉皮、羊肉泡馍、甑糕都要尝。biangbiang面记得点宽的。",
     ],
     highlights: ["兵马俑震撼军阵", "古城墙骑行", "大唐不夜城夜景", "回民街美食"],
+    comments: [{"id": 1, "user": "兵马俑迷", "date": "2026-05-20", "rating": 5, "content": "城墙骑行14公里很爽，大唐不夜城的灯光秀一定别错过！"}, {"id": 2, "user": "历史课代表", "date": "2026-04-28", "rating": 5, "content": "biangbiang面记得点宽的！回民街的甑糕也很好吃。"}],
   },
   {
     id: "g4", title: "广州吃货3日游，从早茶到夜宵的终极指南",
@@ -65,6 +69,7 @@ export const travelGuides: TravelGuide[] = [
       "建议住在北京路或上下九附近，美食密度极高，一天五顿不是梦。",
     ],
     highlights: ["老字号早茶", "沙面岛欧陆风情", "珠江夜游", "宝业路大排档"],
+    comments: [{"id": 1, "user": "早茶爱好者", "date": "2026-05-12", "rating": 5, "content": "一天五顿不是梦！虾饺和凤爪必点，晚上十点的大排档才是真广州。"}, {"id": 2, "user": "老广", "date": "2026-05-01", "rating": 4, "content": "沙面岛拍照很好看，珠江夜游建议选晚上8点那班。"}],
   },
   {
     id: "g5", title: "云南大理丽江7日浪漫双城记",
@@ -77,6 +82,7 @@ export const travelGuides: TravelGuide[] = [
       "云南菜酸辣开胃，过桥米线、汽锅鸡、烤乳扇、鲜花饼都要尝。丽江晚上找家民谣酒吧，听一曲《丽江小倩》。",
     ],
     highlights: ["环洱海骑行", "喜洲白族民居", "玉龙雪山蓝月谷", "丽江古城夜生活"],
+    comments: [{"id": 1, "user": "洱海的风", "date": "2026-05-22", "rating": 5, "content": "环洱海骑行一周是最正确的决定，喜洲的扎染值得停留。"}, {"id": 2, "user": "雪山之约", "date": "2026-05-10", "rating": 5, "content": "蓝月谷的水真的像Tiffany蓝！丽江晚上民谣酒吧氛围拉满。"}, {"id": 3, "user": "慢生活", "date": "2026-04-20", "rating": 4, "content": "7天刚好把节奏放慢，大理比丽江更安静，都很好。"}],
   },
   {
     id: "g6", title: "三亚5日度假指南：阳光、沙滩与海鲜",
@@ -89,6 +95,7 @@ export const travelGuides: TravelGuide[] = [
       "海鲜市场买海鲜找加工店代加工，和乐蟹、基围虾、石斑鱼都新鲜。椰子鸡和清补凉是消暑神器。",
     ],
     highlights: ["亚龙湾白沙滩", "蜈支洲岛潜水", "南山海上观音", "第一市场海鲜"],
+    comments: [{"id": 1, "user": "海岛控", "date": "2026-05-16", "rating": 5, "content": "亚龙湾的沙滩质量真的顶，蜈支洲岛潜水一定要体验！"}, {"id": 2, "user": "椰子鸡", "date": "2026-05-05", "rating": 5, "content": "第一市场买海鲜找加工，和乐蟹超新鲜，清补凉每天两碗。"}],
   },
 ];
 
