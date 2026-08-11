@@ -1,0 +1,167 @@
+import { Link, Outlet, useLocation } from "react-router-dom";
+import { Map, Compass, ArrowLeftRight, Menu, X, Globe, BookOpen, User, Utensils } from "lucide-react";
+import { useState } from "react";
+import { cn } from "../lib/utils";
+
+export default function Layout() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
+
+  const navItems = [
+    { name: "探索", path: "/", icon: Globe },
+    { name: "旅行攻略", path: "/guides", icon: BookOpen },
+    { name: "地道美食", path: "/food", icon: Utensils },
+    { name: "路线规划", path: "/planner", icon: Map },
+    { name: "全网比价", path: "/compare", icon: ArrowLeftRight },
+  ];
+
+  return (
+    <div className="min-h-screen flex flex-col font-sans">
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <Link to="/" className="flex items-center gap-2">
+                <Compass className="h-8 w-8 text-orange-600" />
+                <span className="font-serif font-bold text-xl tracking-tight text-gray-900">
+                  Voyage<span className="text-orange-600">X</span>
+                </span>
+              </Link>
+            </div>
+
+            {/* Desktop Nav */}
+            <nav className="hidden md:flex space-x-8">
+              {navItems.map((item) => {
+                const isActive = location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(item.path));
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={cn(
+                      "inline-flex items-center gap-2 px-1 pt-1 border-b-2 text-sm font-medium transition-colors",
+                      isActive
+                        ? "border-orange-600 text-orange-600"
+                        : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-900"
+                    )}
+                  >
+                    <item.icon className={cn("w-4 h-4", isActive ? "text-orange-600" : "text-gray-400")} />
+                    {item.name}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* Desktop Profile & Mobile menu button */}
+            <div className="flex items-center gap-4">
+              <Link 
+                to="/profile" 
+                className={cn(
+                  "hidden md:flex items-center justify-center p-2 rounded-full transition-colors",
+                  location.pathname === "/profile" 
+                    ? "bg-orange-100 text-orange-600" 
+                    : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                )}
+                title="个人中心"
+              >
+                <User className="w-5 h-5" />
+              </Link>
+
+              <div className="flex items-center md:hidden">
+                <button
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orange-500"
+                >
+                  {isMenuOpen ? <X className="block h-6 w-6" /> : <Menu className="block h-6 w-6" />}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Nav */}
+        {isMenuOpen && (
+          <div className="md:hidden bg-white border-b border-gray-200">
+            <div className="pt-2 pb-3 space-y-1">
+              {navItems.map((item) => {
+                const isActive = location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(item.path));
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setIsMenuOpen(false)}
+                    className={cn(
+                      "block pl-3 pr-4 py-2 border-l-4 text-base font-medium",
+                      isActive
+                        ? "bg-orange-50 border-orange-600 text-orange-700"
+                        : "border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <item.icon className="h-5 w-5" />
+                      {item.name}
+                    </div>
+                  </Link>
+                );
+              })}
+              <Link
+                to="/profile"
+                onClick={() => setIsMenuOpen(false)}
+                className={cn(
+                  "block pl-3 pr-4 py-2 border-l-4 text-base font-medium",
+                  location.pathname === "/profile"
+                    ? "bg-orange-50 border-orange-600 text-orange-700"
+                    : "border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  个人中心
+                </div>
+              </Link>
+            </div>
+          </div>
+        )}
+      </header>
+
+      <main className="flex-grow">
+        <Outlet />
+      </main>
+
+      <footer className="bg-gray-900 text-white py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="col-span-1 md:col-span-2">
+            <Link to="/" className="flex items-center gap-2 mb-4">
+              <Compass className="h-6 w-6 text-orange-500" />
+              <span className="font-serif font-bold text-xl tracking-tight">
+                Voyage<span className="text-orange-500">X</span>
+              </span>
+            </Link>
+            <p className="text-gray-400 text-sm max-w-md">
+              您的全能旅行伴侣。从灵感发现到路线规划，再到全网比价，我们为您提供一站式旅行服务。
+            </p>
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-gray-300 tracking-wider uppercase mb-4">产品服务</h3>
+            <ul className="space-y-2 text-sm text-gray-400">
+              <li><Link to="/guides" className="hover:text-white transition-colors">旅行攻略</Link></li>
+              <li><Link to="/food" className="hover:text-white transition-colors">地道美食</Link></li>
+              <li><Link to="/planner" className="hover:text-white transition-colors">路线规划</Link></li>
+              <li><Link to="/compare" className="hover:text-white transition-colors">全网比价</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-gray-300 tracking-wider uppercase mb-4">关于我们</h3>
+            <ul className="space-y-2 text-sm text-gray-400">
+              <li><a href="#" className="hover:text-white transition-colors">关于 VoyageX</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">联系我们</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">隐私政策</a></li>
+            </ul>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-8 border-t border-gray-800 text-sm text-gray-500 text-center">
+          &copy; {new Date().getFullYear()} VoyageX Travel. All rights reserved.
+        </div>
+      </footer>
+    </div>
+  );
+}
