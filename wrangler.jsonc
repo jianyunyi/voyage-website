@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "voyagex",
+  "main": "src/worker/index.ts",
   "compatibility_date": "2026-04-08",
   "observability": {
     "enabled": true

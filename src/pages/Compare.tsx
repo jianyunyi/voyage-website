@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plane, Train, Car, Building, ArrowRight, Check, Info, Search, MapPin, Calendar, Users, Loader2, Star } from "lucide-react";
 import { motion } from "framer-motion";
+import { fetchCompare, type CompareItem } from "../lib/api";
 
 const categories = [
   { id: "transport", name: "交通工具", icon: Plane },
@@ -9,24 +10,7 @@ const categories = [
   { id: "car", name: "租车服务", icon: Car },
 ];
 
-const mockData = {
-  transport: [
-    { id: "t1", platform: "携程旅行", price: "¥850", type: "飞机", time: "10:00 - 13:00", features: ["退改无忧", "含20kg托运"], url: "https://flights.ctrip.com/" },
-    { id: "t2", platform: "飞猪旅行", price: "¥820", type: "飞机", time: "10:00 - 13:00", features: ["含20kg托运"], url: "https://fliggy.com/" },
-    { id: "t3", platform: "去哪儿", price: "¥835", type: "飞机", time: "10:00 - 13:00", features: ["退改无忧", "含20kg托运"], url: "https://flight.qunar.com/" },
-    { id: "t4", platform: "12306", price: "¥680", type: "高铁", time: "08:00 - 16:30", features: ["官方直营", "退改便捷"], url: "https://www.12306.cn/" },
-  ],
-  hotel: [
-    { id: "hotel-1", platform: "携程旅行", price: "¥450/晚", name: "市中心豪华酒店", features: ["含双早", "免费取消"] },
-    { id: "hotel-2", platform: "Booking.com", price: "¥480/晚", name: "市中心豪华酒店", features: ["含双早", "延迟退房"] },
-    { id: "hotel-3", platform: "Agoda", price: "¥430/晚", name: "市中心豪华酒店", features: ["不可取消"] },
-  ],
-  car: [
-    { id: "c1", platform: "神州租车", price: "¥150/天", name: "经济型轿车", features: ["免押金", "上门送取"], url: "https://www.zuche.com/" },
-    { id: "c2", platform: "一嗨租车", price: "¥140/天", name: "经济型轿车", features: ["免押金"], url: "https://www.1hai.cn/" },
-    { id: "c3", platform: "携程租车", price: "¥145/天", name: "经济型轿车", features: ["免押金", "全险"], url: "https://car.ctrip.com/" },
-  ]
-};
+
 
 export default function Compare() {
   const [activeCategory, setActiveCategory] = useState("hotel");
@@ -40,13 +24,28 @@ export default function Compare() {
     origin: "北京",
   });
 
-  const handleSearch = (e: FormEvent) => {
+  const [results, setResults] = useState<CompareItem[]>([]);
+  const [error, setError] = useState<string>("");
+
+  const handleSearch = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    setError("");
+    try {
+      const items = await fetchCompare({
+        category: activeCategory as "transport" | "hotel" | "car",
+        destination: searchParams.destination,
+        origin: searchParams.origin,
+        checkIn: searchParams.checkIn,
+        checkOut: searchParams.checkOut,
+      });
+      setResults(items);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "比价服务暂时不可用");
+      setResults([]);
+    } finally {
       setIsLoading(false);
-    }, 800);
+    }
   };
 
   const handleBook = (item: any) => {
@@ -186,16 +185,23 @@ export default function Compare() {
         </div>
 
         {/* Results */}
-        {isLoading ? (
+        {error && (
+          <div className="flex flex-col items-center justify-center py-20">
+            <p className="text-red-500 mb-2">{error}</p>
+            <button onClick={handleSearch} className="text-sm text-gray-500 underline">重试</button>
+          </div>
+        )}
+        {isLoading && (
           <div className="flex flex-col items-center justify-center py-20">
             <Loader2 className="w-10 h-10 text-orange-500 animate-spin mb-4" />
             <p className="text-gray-500">正在全网比价中，请稍候...</p>
           </div>
-        ) : (
+        )}
+        {!isLoading && !error && results.length > 0 && (
           <div className="space-y-4">
-            {mockData[activeCategory as keyof typeof mockData].map((item, index) => (
+            {results.map((item, index) => (
               <motion.div 
-                key={index}
+                key={item.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
@@ -214,7 +220,7 @@ export default function Compare() {
                       )}
                     </div>
                     <div className="text-gray-600 mb-3">
-                      {activeCategory === "hotel" && searchParams.destination ? `[${searchParams.destination}] ${item.name}` : ('time' in item ? `${item.type} | ${item.time}` : item.name)}
+                      {item.type ? `${item.type} | ${item.time || ""}` : item.name}
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {item.features.map((feature, i) => (
@@ -240,6 +246,11 @@ export default function Compare() {
                 </div>
               </motion.div>
             ))}
+          </div>
+        )}
+        {!isLoading && !error && results.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-20">
+            <p className="text-gray-400">点击搜索开始比价</p>
           </div>
         )}
         
