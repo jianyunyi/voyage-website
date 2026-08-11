@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { Map, Compass, ArrowLeftRight, Menu, X, Globe, BookOpen, User, Utensils, Sparkles, Sun, Moon } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "../lib/utils";
 import { useAuth } from "../context/AuthContext";
 
@@ -8,6 +8,21 @@ export default function Layout() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const { user } = useAuth();
+
+  // 动态页面标题（SEO/体验）
+  useEffect(() => {
+    const titles: Record<string, string> = {
+      "/": "探索 · VoyageX",
+      "/guides": "旅行攻略 · VoyageX",
+      "/food": "地道美食 · VoyageX",
+      "/planner": "路线规划 · VoyageX",
+      "/compare": "全网比价 · VoyageX",
+      "/itinerary": "AI 行程 · VoyageX",
+      "/profile": "个人中心 · VoyageX",
+    };
+    const key = Object.keys(titles).find(k => location.pathname === k || location.pathname.startsWith(k + "/"));
+    document.title = key ? titles[key] : "VoyageX · AI 智能旅行规划助手";
+  }, [location.pathname]);
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains("dark"));
 
   const toggleTheme = () => {

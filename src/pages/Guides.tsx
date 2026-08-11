@@ -54,14 +54,14 @@ export default function Guides() {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen pb-20">
+    <div className="bg-gray-50 dark:bg-stone-950 min-h-screen pb-20">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 py-12">
+      <div className="bg-white dark:bg-stone-900 border-b border-gray-200 dark:border-stone-700 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-4">
             <div>
-              <h1 className="text-4xl font-serif font-bold text-gray-900 mb-4">精选旅行攻略</h1>
-              <p className="text-lg text-gray-600 max-w-3xl">发现真实旅行者的足迹，获取详细的行程安排、预算规划和避坑指南。</p>
+              <h1 className="text-4xl font-serif font-bold text-gray-900 dark:text-stone-100 mb-4">精选旅行攻略</h1>
+              <p className="text-lg text-gray-600 dark:text-stone-300 max-w-3xl">发现真实旅行者的足迹，获取详细的行程安排、预算规划和避坑指南。</p>
             </div>
             <button 
               onClick={() => setIsSubmissionModalOpen(true)}
@@ -75,17 +75,17 @@ export default function Guides() {
           <div className="mt-8 flex flex-col sm:flex-row gap-4">
             <div className="relative flex-grow max-w-md">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-gray-400" />
+                <Search className="h-5 w-5 text-gray-400 dark:text-stone-500" />
               </div>
               <input
                 type="text"
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-stone-600 rounded-xl leading-5 bg-white dark:bg-stone-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
                 placeholder="搜索目的地、景点或攻略标题..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <button className="flex items-center justify-center gap-2 px-6 py-3 border border-gray-300 rounded-xl bg-white text-gray-700 hover:bg-gray-50 transition-colors font-medium">
+            <button className="flex items-center justify-center gap-2 px-6 py-3 border border-gray-300 dark:border-stone-600 rounded-xl bg-white dark:bg-stone-900 text-gray-700 dark:text-stone-200 hover:bg-gray-50 dark:bg-stone-950 transition-colors font-medium">
               <Filter className="w-5 h-5" />
               筛选
             </button>
@@ -101,7 +101,7 @@ export default function Guides() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: index * 0.1 }}
-              className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-100 group cursor-pointer flex flex-col"
+              className="bg-white dark:bg-stone-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-100 dark:border-stone-800 group cursor-pointer flex flex-col"
               onClick={() => navigate(`/guide/${guide.id}`)}
             >
               <div className="relative h-56 overflow-hidden">
@@ -121,27 +121,27 @@ export default function Guides() {
               </div>
               
               <div className="p-6 flex flex-col flex-grow">
-                <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-orange-600 transition-colors">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-stone-100 mb-3 line-clamp-2 group-hover:text-orange-600 transition-colors">
                   {highlight(guide.title)}
                 </h3>
                 
-                <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
+                <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-stone-400 mb-4">
                   <span className="flex items-center gap-1"><MapPin className="w-4 h-4" /> {highlight(guide.destination)}</span>
                   <span className="flex items-center gap-1"><Calendar className="w-4 h-4" /> {guide.days}天</span>
                   <span className="flex items-center gap-1">¥{guide.budget}</span>
                 </div>
                 
-                <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
+                <div className="mt-auto pt-4 border-t border-gray-100 dark:border-stone-800 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 text-xs font-bold">
                       {guide.author.charAt(0)}
                     </div>
-                    <span className="text-sm text-gray-600">{guide.author}</span>
+                    <span className="text-sm text-gray-600 dark:text-stone-300">{guide.author}</span>
                   </div>
                   <button
                     onClick={() => handleLike(guide.id)}
                     className={`flex items-center gap-1 text-sm transition-colors ${
-                      likesMap[guide.id]?.liked ? "text-orange-600" : "text-gray-400 hover:text-orange-500"
+                      likesMap[guide.id]?.liked ? "text-orange-600" : "text-gray-400 dark:text-stone-500 hover:text-orange-500"
                     }`}
                   >
                     <ThumbsUp className={`w-4 h-4 ${likesMap[guide.id]?.liked ? "fill-orange-600" : ""}`} />
@@ -155,7 +155,7 @@ export default function Guides() {
         
         {filteredGuides.length === 0 && (
           <div className="text-center py-20">
-            <p className="text-gray-500 text-lg">没有找到匹配的攻略，换个关键词试试吧</p>
+            <p className="text-gray-500 dark:text-stone-400 text-lg">没有找到匹配的攻略，换个关键词试试吧</p>
           </div>
         )}
       </div>

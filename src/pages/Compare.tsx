@@ -133,11 +133,11 @@ export default function Compare() {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen py-12">
+    <div className="bg-gray-50 dark:bg-stone-950 min-h-screen py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-serif font-bold text-gray-900 mb-4">全网综合比价</h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <h1 className="text-4xl font-serif font-bold text-gray-900 dark:text-stone-100 mb-4">全网综合比价</h1>
+          <p className="text-lg text-gray-600 dark:text-stone-300 max-w-2xl mx-auto">
             一键对比各大平台价格，帮您找到最划算的预订方案。数据实时更新，确保价格准确。
           </p>
         </div>
@@ -147,13 +147,13 @@ export default function Compare() {
           <button
             onClick={handleShare}
             className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-full font-medium transition-all ${
-              shared ? "bg-emerald-100 text-emerald-700" : "bg-white text-orange-600 border border-orange-200 hover:bg-orange-50"
+              shared ? "bg-emerald-100 text-emerald-700" : "bg-white dark:bg-stone-900 text-orange-600 border border-orange-200 hover:bg-orange-50"
             }`}
           >
             {shared ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
             {shared ? "已复制" : "分享比价"}
           </button>
-          <div className="bg-white p-1 rounded-2xl shadow-sm inline-flex">
+          <div className="bg-white dark:bg-stone-900 p-1 rounded-2xl shadow-sm inline-flex">
             {categories.map((cat) => {
               const isActive = activeCategory === cat.id;
               return (
@@ -163,7 +163,7 @@ export default function Compare() {
                   className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition-all ${
                     isActive 
                       ? "bg-gray-900 text-white shadow-md" 
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                      : "text-gray-600 dark:text-stone-300 hover:text-gray-900 dark:text-stone-100 hover:bg-gray-100"
                   }`}
                 >
                   <cat.icon className="w-4 h-4" />
@@ -175,60 +175,60 @@ export default function Compare() {
         </div>
 
         {/* Search Form */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm mb-8 border border-gray-100">
+        <div className="bg-white dark:bg-stone-900 rounded-2xl p-6 shadow-sm mb-8 border border-gray-100 dark:border-stone-800">
           {activeCategory === "hotel" ? (
             <form onSubmit={handleSearch} className="flex flex-col lg:flex-row gap-4 items-end">
               <div className="flex-1 w-full">
-                <label className="block text-xs font-medium text-gray-500 mb-1">目的地</label>
+                <label className="block text-xs font-medium text-gray-500 dark:text-stone-400 mb-1">目的地</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <MapPin className="h-4 w-4 text-gray-400" />
+                    <MapPin className="h-4 w-4 text-gray-400 dark:text-stone-500" />
                   </div>
                   <input 
                     type="text" 
                     required 
                     value={searchParams.destination} 
                     onChange={e => setSearchParams({...searchParams, destination: e.target.value})} 
-                    className="block w-full pl-9 pr-3 py-3 border border-gray-300 rounded-xl text-sm focus:ring-orange-500 focus:border-orange-500" 
+                    className="block w-full pl-9 pr-3 py-3 border border-gray-300 dark:border-stone-600 rounded-xl text-sm focus:ring-orange-500 focus:border-orange-500" 
                     placeholder="城市/区域/酒店名" 
                   />
                 </div>
               </div>
               <div className="flex-1 w-full">
-                <label className="block text-xs font-medium text-gray-500 mb-1">入住日期</label>
+                <label className="block text-xs font-medium text-gray-500 dark:text-stone-400 mb-1">入住日期</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Calendar className="h-4 w-4 text-gray-400" />
+                    <Calendar className="h-4 w-4 text-gray-400 dark:text-stone-500" />
                   </div>
                   <input 
                     type="date" 
                     required 
                     value={searchParams.checkIn} 
                     onChange={e => setSearchParams({...searchParams, checkIn: e.target.value})} 
-                    className="block w-full pl-9 pr-3 py-3 border border-gray-300 rounded-xl text-sm focus:ring-orange-500 focus:border-orange-500" 
+                    className="block w-full pl-9 pr-3 py-3 border border-gray-300 dark:border-stone-600 rounded-xl text-sm focus:ring-orange-500 focus:border-orange-500" 
                   />
                 </div>
               </div>
               <div className="flex-1 w-full">
-                <label className="block text-xs font-medium text-gray-500 mb-1">退房日期</label>
+                <label className="block text-xs font-medium text-gray-500 dark:text-stone-400 mb-1">退房日期</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Calendar className="h-4 w-4 text-gray-400" />
+                    <Calendar className="h-4 w-4 text-gray-400 dark:text-stone-500" />
                   </div>
                   <input 
                     type="date" 
                     required 
                     value={searchParams.checkOut} 
                     onChange={e => setSearchParams({...searchParams, checkOut: e.target.value})} 
-                    className="block w-full pl-9 pr-3 py-3 border border-gray-300 rounded-xl text-sm focus:ring-orange-500 focus:border-orange-500" 
+                    className="block w-full pl-9 pr-3 py-3 border border-gray-300 dark:border-stone-600 rounded-xl text-sm focus:ring-orange-500 focus:border-orange-500" 
                   />
                 </div>
               </div>
               <div className="w-full lg:w-32">
-                <label className="block text-xs font-medium text-gray-500 mb-1">成人</label>
+                <label className="block text-xs font-medium text-gray-500 dark:text-stone-400 mb-1">成人</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Users className="h-4 w-4 text-gray-400" />
+                    <Users className="h-4 w-4 text-gray-400 dark:text-stone-500" />
                   </div>
                   <input 
                     type="number" 
@@ -236,7 +236,7 @@ export default function Compare() {
                     required 
                     value={searchParams.adults} 
                     onChange={e => setSearchParams({...searchParams, adults: parseInt(e.target.value)})} 
-                    className="block w-full pl-9 pr-3 py-3 border border-gray-300 rounded-xl text-sm focus:ring-orange-500 focus:border-orange-500" 
+                    className="block w-full pl-9 pr-3 py-3 border border-gray-300 dark:border-stone-600 rounded-xl text-sm focus:ring-orange-500 focus:border-orange-500" 
                   />
                 </div>
               </div>
@@ -253,14 +253,14 @@ export default function Compare() {
             <div className="flex flex-col md:flex-row items-center justify-between py-2">
               <div className="flex items-center gap-4 mb-4 md:mb-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-500">北京</span>
-                  <ArrowRight className="w-4 h-4 text-gray-400" />
-                  <span className="font-bold text-gray-900">成都</span>
+                  <span className="text-gray-500 dark:text-stone-400">北京</span>
+                  <ArrowRight className="w-4 h-4 text-gray-400 dark:text-stone-500" />
+                  <span className="font-bold text-gray-900 dark:text-stone-100">成都</span>
                 </div>
                 <div className="h-4 w-px bg-gray-300"></div>
-                <span className="text-gray-600">10月1日 - 10月7日</span>
+                <span className="text-gray-600 dark:text-stone-300">10月1日 - 10月7日</span>
                 <div className="h-4 w-px bg-gray-300"></div>
-                <span className="text-gray-600">2成人</span>
+                <span className="text-gray-600 dark:text-stone-300">2成人</span>
               </div>
               <button onClick={() => setActiveCategory("hotel")} className="text-orange-600 font-medium hover:text-orange-700 text-sm">
                 切换到酒店搜索
@@ -273,13 +273,13 @@ export default function Compare() {
         {error && (
           <div className="flex flex-col items-center justify-center py-20">
             <p className="text-red-500 mb-2">{error}</p>
-            <button onClick={handleSearch} className="text-sm text-gray-500 underline">重试</button>
+            <button onClick={handleSearch} className="text-sm text-gray-500 dark:text-stone-400 underline">重试</button>
           </div>
         )}
         {isLoading && (
           <div className="flex flex-col items-center justify-center py-20">
             <Loader2 className="w-10 h-10 text-orange-500 animate-spin mb-4" />
-            <p className="text-gray-500">正在全网比价中，请稍候...</p>
+            <p className="text-gray-500 dark:text-stone-400">正在全网比价中，请稍候...</p>
           </div>
         )}
         {!isLoading && !error && results.length > 0 && (
@@ -290,21 +290,21 @@ export default function Compare() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
-                className={`bg-white rounded-2xl p-6 shadow-sm border transition-colors ${
-                  index === 0 ? "border-orange-300 ring-1 ring-orange-100" : "border-gray-100 hover:border-gray-300"
+                className={`bg-white dark:bg-stone-900 rounded-2xl p-6 shadow-sm border transition-colors ${
+                  index === 0 ? "border-orange-300 ring-1 ring-orange-100" : "border-gray-100 dark:border-stone-800 hover:border-gray-300 dark:border-stone-600"
                 }`}
               >
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                   <div className="flex-grow">
                     <div className="flex items-center gap-3 mb-2">
-                      <span className="font-bold text-lg text-gray-900">{item.platform}</span>
+                      <span className="font-bold text-lg text-gray-900 dark:text-stone-100">{item.platform}</span>
                       {index === 0 && (
                         <span className="bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-md font-medium flex items-center gap-1">
                           <Star className="w-3 h-3" /> 全网最低
                         </span>
                       )}
                     </div>
-                    <div className="text-gray-600 mb-3">
+                    <div className="text-gray-600 dark:text-stone-300 mb-3">
                       {item.type ? `${item.type} | ${item.time || ""}` : item.name}
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -325,7 +325,7 @@ export default function Compare() {
                         className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors flex items-center gap-1.5 ${
                           subscribedIds.includes(item.id)
                             ? "bg-emerald-50 text-emerald-700"
-                            : "bg-white border border-orange-200 text-orange-600 hover:bg-orange-50"
+                            : "bg-white dark:bg-stone-900 border border-orange-200 text-orange-600 hover:bg-orange-50"
                         }`}
                       >
                         <Bell className={`w-4 h-4 ${subscribedIds.includes(item.id) ? "fill-emerald-600" : ""}`} />
@@ -336,7 +336,7 @@ export default function Compare() {
                         className={`px-8 py-3 rounded-xl font-medium transition-colors ${
                         index === 0 
                           ? "bg-orange-600 hover:bg-orange-700 text-white shadow-md" 
-                          : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                          : "bg-gray-100 hover:bg-gray-200 text-gray-900 dark:text-stone-100"
                       }`}>
                         去预订
                       </button>
@@ -349,11 +349,11 @@ export default function Compare() {
         )}
         {!isLoading && !error && results.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20">
-            <p className="text-gray-400">点击搜索开始比价</p>
+            <p className="text-gray-400 dark:text-stone-500">点击搜索开始比价</p>
           </div>
         )}
         
-        <div className="mt-8 text-center text-sm text-gray-500 flex items-center justify-center gap-1">
+        <div className="mt-8 text-center text-sm text-gray-500 dark:text-stone-400 flex items-center justify-center gap-1">
           <Info className="w-4 h-4" />
           价格每15分钟更新一次，最终价格以各平台实际显示为准。
         </div>

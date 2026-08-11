@@ -209,9 +209,9 @@ export default function MapPlanner() {
   return (
     <div className="flex flex-col md:flex-row h-[calc(100vh-4rem)]">
       {/* Left Panel - Controls */}
-      <div className="w-full md:w-96 bg-white border-r border-gray-200 flex flex-col shadow-lg z-10">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">路线规划</h2>
+      <div className="w-full md:w-96 bg-white dark:bg-stone-900 border-r border-gray-200 dark:border-stone-700 flex flex-col shadow-lg z-10">
+        <div className="p-6 border-b border-gray-200 dark:border-stone-700">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-stone-100 mb-6">路线规划</h2>
 
           {/* POI 聚合 */}
           <div className="mb-6 p-4 rounded-xl bg-orange-50/60 border border-orange-100">
@@ -227,7 +227,7 @@ export default function MapPlanner() {
                   className={`text-xs px-3 py-1 rounded-full font-medium transition-colors ${
                     poiType === t
                       ? "bg-orange-600 text-white"
-                      : "bg-white text-gray-600 border border-gray-200 hover:border-orange-300"
+                      : "bg-white dark:bg-stone-900 text-gray-600 dark:text-stone-300 border border-gray-200 dark:border-stone-700 hover:border-orange-300"
                   }`}
                 >
                   {t}
@@ -235,7 +235,7 @@ export default function MapPlanner() {
               ))}
             </div>
             {poiLoading ? (
-              <p className="text-xs text-gray-400">搜索中...</p>
+              <p className="text-xs text-gray-400 dark:text-stone-500">搜索中...</p>
             ) : poiList.length > 0 ? (
               <div className="space-y-1.5 max-h-40 overflow-y-auto">
                 {poiList.map((poi, i) => (
@@ -248,13 +248,13 @@ export default function MapPlanner() {
                     </span>
                     <div>
                       <div className="font-medium text-gray-800">{poi.name}</div>
-                      <div className="text-gray-400">{poi.address || poi.district || ""}</div>
+                      <div className="text-gray-400 dark:text-stone-500">{poi.address || poi.district || ""}</div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-gray-400">点击上方分类查看周边 POI</p>
+              <p className="text-xs text-gray-400 dark:text-stone-500">点击上方分类查看周边 POI</p>
             )}
           </div>
           
@@ -267,9 +267,9 @@ export default function MapPlanner() {
                 <MapPin className="w-5 h-5 text-blue-600" />
               </div>
               <div className="flex-grow">
-                <label className="block text-xs font-medium text-gray-500 mb-1">出发地</label>
+                <label className="block text-xs font-medium text-gray-500 dark:text-stone-400 mb-1">出发地</label>
                 <select 
-                  className="w-full border-gray-300 rounded-lg shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm p-2 border"
+                  className="w-full border-gray-300 dark:border-stone-600 rounded-lg shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm p-2 border"
                   value={origin}
                   onChange={(e) => { setOrigin(e.target.value); setShowRoutes(false); }}
                 >
@@ -286,9 +286,9 @@ export default function MapPlanner() {
                 <MapPin className="w-5 h-5 text-orange-600" />
               </div>
               <div className="flex-grow">
-                <label className="block text-xs font-medium text-gray-500 mb-1">目的地</label>
+                <label className="block text-xs font-medium text-gray-500 dark:text-stone-400 mb-1">目的地</label>
                 <select 
-                  className="w-full border-gray-300 rounded-lg shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm p-2 border"
+                  className="w-full border-gray-300 dark:border-stone-600 rounded-lg shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm p-2 border"
                   value={destination}
                   onChange={(e) => { setDestination(e.target.value); setShowRoutes(false); }}
                 >
@@ -311,20 +311,20 @@ export default function MapPlanner() {
         </div>
 
         {/* Routes Results */}
-        <div className="flex-grow overflow-y-auto bg-gray-50 p-4">
+        <div className="flex-grow overflow-y-auto bg-gray-50 dark:bg-stone-950 p-4">
           {showRoutes ? (
             <div className="space-y-4">
-              <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">推荐路线方案</h3>
+              <h3 className="text-sm font-medium text-gray-500 dark:text-stone-400 uppercase tracking-wider mb-2">推荐路线方案</h3>
               {routes.map((route, index) => (
-                <div key={route.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:border-orange-300 transition-colors cursor-pointer group">
+                <div key={route.id} className="bg-white dark:bg-stone-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-stone-700 hover:border-orange-300 transition-colors cursor-pointer group">
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-lg text-gray-900">{route.type}</span>
+                      <span className="font-bold text-lg text-gray-900 dark:text-stone-100">{route.type}</span>
                       {route.tag && (
                         <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                           index === 0 ? "bg-cyan-100 text-cyan-700" : 
                           index === 1 ? "bg-orange-100 text-orange-700" : 
-                          "bg-gray-100 text-gray-700"
+                          "bg-gray-100 text-gray-700 dark:text-stone-200"
                         }`}>
                           {route.tag}
                         </span>
@@ -333,9 +333,9 @@ export default function MapPlanner() {
                     <span className="text-xl font-bold text-orange-600">{route.price}</span>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 mb-4">
+                  <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 dark:text-stone-300 mb-4">
                     <div className="flex items-center gap-1">
-                      <Clock className="w-4 h-4 text-gray-400" />
+                      <Clock className="w-4 h-4 text-gray-400 dark:text-stone-500" />
                       {route.duration}
                     </div>
                     <div className="flex items-center gap-1">
@@ -343,13 +343,13 @@ export default function MapPlanner() {
                       性价比 {route.score}/10
                     </div>
                     {route.distance && (
-                      <div className="flex items-center gap-1 col-span-2 mt-1 text-xs text-gray-500">
+                      <div className="flex items-center gap-1 col-span-2 mt-1 text-xs text-gray-500 dark:text-stone-400">
                         总里程: {route.distance}
                       </div>
                     )}
                   </div>
                   
-                  <div className="flex items-center justify-between text-sm font-medium text-gray-900 group-hover:text-orange-600 transition-colors border-t border-gray-100 pt-3">
+                  <div className="flex items-center justify-between text-sm font-medium text-gray-900 dark:text-stone-100 group-hover:text-orange-600 transition-colors border-t border-gray-100 dark:border-stone-800 pt-3">
                     查看详情
                     <ChevronRight className="w-4 h-4" />
                   </div>
@@ -357,7 +357,7 @@ export default function MapPlanner() {
               ))}
             </div>
           ) : (
-            <div className="h-full flex flex-col items-center justify-center text-gray-400 space-y-4">
+            <div className="h-full flex flex-col items-center justify-center text-gray-400 dark:text-stone-500 space-y-4">
               <Navigation className="w-12 h-12 text-gray-300" />
               <p className="text-center">请选择出发地和目的地<br/>以查看路线方案</p>
             </div>

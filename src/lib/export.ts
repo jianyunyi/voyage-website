@@ -7,6 +7,16 @@ function icsEscape(text: string): string {
   return text.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
 }
 
+/** HTML 实体转义（防 XSS——PDF 导出模板中的用户内容必须转义） */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 /** 生成 ICS 日历文件内容（每天行程 → 全天事件） */
 export function buildIcs(itinerary: SavedItinerary): string {
   const lines = [
@@ -57,7 +67,7 @@ export function exportIcs(itinerary: SavedItinerary): void {
 export function exportPdf(itinerary: SavedItinerary): void {
   const win = window.open("", "_blank", "width=800,height=900");
   if (!win) return;
-  win.document.write(`<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>${itinerary.title}</title>
+  win.document.write(`<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>${escapeHtml(itinerary.title)}</title>
 <style>
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; max-width: 720px; margin: 40px auto; padding: 0 24px; color: #1f2937; }
   h1 { font-size: 26px; margin-bottom: 4px; }
@@ -71,17 +81,17 @@ export function exportPdf(itinerary: SavedItinerary): void {
   @media print { .no-print { display: none; } }
 </style></head><body>
   <button class="no-print" onclick="window.print()" style="padding:8px 20px;background:#ea580c;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-bottom:16px;">打印 / 另存为 PDF</button>
-  <h1>${itinerary.title}</h1>
-  <div class="meta">${itinerary.destination || ""} · ${itinerary.days} 天 · ${itinerary.budget || ""}</div>
+  <h1>${escapeHtml(itinerary.title)}</h1>
+  <div class="meta">${escapeHtml(itinerary.destination || "")} · ${itinerary.days} 天 · ${escapeHtml(itinerary.budget || "")}</div>
   ${itinerary.dayData.map(d => `
   <div class="day">
-    <h2>第 ${d.day} 天 · ${d.date}</h2>
+    <h2>第 ${d.day} 天 · ${escapeHtml(d.date)}</h2>
     ${d.steps.map(s => `
     <div class="step">
-      <div class="time">${s.time}</div>
+      <div class="time">${escapeHtml(s.time)}</div>
       <div>
-        <div class="title">${s.title}</div>
-        ${s.description ? `<div class="desc">${s.description}</div>` : ""}
+        <div class="title">${escapeHtml(s.title)}</div>
+        ${s.description ? `<div class="desc">${escapeHtml(s.description)}</div>` : ""}
       </div>
     </div>`).join("")}
   </div>`).join("")}

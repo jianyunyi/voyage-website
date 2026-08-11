@@ -24,14 +24,14 @@ export default function Food() {
     .sort((a, b) => b.rating - a.rating);
 
   return (
-    <div className="bg-gray-50 min-h-screen pb-20">
+    <div className="bg-gray-50 dark:bg-stone-950 min-h-screen pb-20">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 py-12">
+      <div className="bg-white dark:bg-stone-900 border-b border-gray-200 dark:border-stone-700 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-4">
             <div>
-              <h1 className="text-4xl font-serif font-bold text-gray-900 mb-4">探索地道美食</h1>
-              <p className="text-lg text-gray-600 max-w-3xl">发现全国各地最地道的美食，基于真实用户评价星级排序，绝不踩雷。</p>
+              <h1 className="text-4xl font-serif font-bold text-gray-900 dark:text-stone-100 mb-4">探索地道美食</h1>
+              <p className="text-lg text-gray-600 dark:text-stone-300 max-w-3xl">发现全国各地最地道的美食，基于真实用户评价星级排序，绝不踩雷。</p>
             </div>
             <button 
               onClick={() => setIsSubmissionModalOpen(true)}
@@ -45,11 +45,11 @@ export default function Food() {
           <div className="mt-8 flex flex-col sm:flex-row gap-4">
             <div className="relative flex-grow max-w-md">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-gray-400" />
+                <Search className="h-5 w-5 text-gray-400 dark:text-stone-500" />
               </div>
               <input
                 type="text"
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-stone-600 rounded-xl leading-5 bg-white dark:bg-stone-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
                 placeholder="搜索餐厅、菜系..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -57,10 +57,10 @@ export default function Food() {
             </div>
             <div className="relative w-full sm:w-48">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Filter className="h-5 w-5 text-gray-400" />
+                <Filter className="h-5 w-5 text-gray-400 dark:text-stone-500" />
               </div>
               <select
-                className="block w-full pl-10 pr-8 py-3 border border-gray-300 rounded-xl leading-5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 sm:text-sm appearance-none cursor-pointer"
+                className="block w-full pl-10 pr-8 py-3 border border-gray-300 dark:border-stone-600 rounded-xl leading-5 bg-white dark:bg-stone-900 text-gray-700 dark:text-stone-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 sm:text-sm appearance-none cursor-pointer"
                 value={minRating}
                 onChange={(e) => setMinRating(Number(e.target.value))}
               >
@@ -69,7 +69,7 @@ export default function Food() {
                 <option value={4.5}>4.5 星以上</option>
                 <option value={4.8}>4.8 星以上</option>
               </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500 dark:text-stone-400">
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                 </svg>
@@ -87,7 +87,7 @@ export default function Food() {
               key={province}
               onClick={() => setActiveProvince(province)}
               className={`flex-shrink-0 px-6 py-2 rounded-full text-sm font-medium transition-colors ${
-                activeProvince === province ? "bg-gray-900 text-white" : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+                activeProvince === province ? "bg-gray-900 text-white" : "bg-white dark:bg-stone-900 text-gray-600 dark:text-stone-300 hover:bg-gray-100 border border-gray-200 dark:border-stone-700"
               }`}
             >
               {province}
@@ -97,8 +97,8 @@ export default function Food() {
 
         {/* Food List */}
         <div className="mb-8 flex justify-between items-end">
-          <h2 className="text-2xl font-bold text-gray-900">高分美食推荐</h2>
-          <span className="text-sm text-gray-500">按星级评分排序</span>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-stone-100">高分美食推荐</h2>
+          <span className="text-sm text-gray-500 dark:text-stone-400">按星级评分排序</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -111,14 +111,14 @@ export default function Food() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: index * 0.1 }}
-                className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-100 relative group cursor-pointer"
+                className="bg-white dark:bg-stone-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-100 dark:border-stone-800 relative group cursor-pointer"
                 onClick={() => setSelectedFood(food)}
               >
                 <div className="relative h-48">
                   <img src={food.image} alt={food.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1 shadow-sm">
                     <Star className="w-4 h-4 text-orange-500 fill-orange-500" />
-                    <span className="font-bold text-gray-900">{food.rating}</span>
+                    <span className="font-bold text-gray-900 dark:text-stone-100">{food.rating}</span>
                   </div>
                   <button
                     onClick={(e) => {
@@ -135,20 +135,20 @@ export default function Food() {
                     }}
                     className="absolute top-4 left-4 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:scale-110 transition-transform"
                   >
-                    <Heart className={`w-5 h-5 transition-colors ${isFav ? 'text-orange-600 fill-orange-600' : 'text-gray-400'}`} />
+                    <Heart className={`w-5 h-5 transition-colors ${isFav ? 'text-orange-600 fill-orange-600' : 'text-gray-400 dark:text-stone-500'}`} />
                   </button>
                 </div>
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-xl font-bold text-gray-900 line-clamp-1">{food.name}</h3>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-stone-100 line-clamp-1">{food.name}</h3>
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
+                  <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-stone-400 mb-4">
                     <span className="flex items-center gap-1"><MapPin className="w-4 h-4" /> {food.city}</span>
                     <span>{food.type}</span>
                     <span>{food.price}</span>
                   </div>
-                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-                    <span className="text-sm text-gray-500">{food.reviews.toLocaleString()} 条评价</span>
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100 dark:border-stone-800">
+                    <span className="text-sm text-gray-500 dark:text-stone-400">{food.reviews.toLocaleString()} 条评价</span>
                     <button className="text-orange-600 font-medium text-sm hover:text-orange-700">查看详情</button>
                   </div>
                 </div>
@@ -159,7 +159,7 @@ export default function Food() {
         
         {filteredFood.length === 0 && (
           <div className="text-center py-20">
-            <p className="text-gray-500 text-lg">没有找到匹配的美食推荐</p>
+            <p className="text-gray-500 dark:text-stone-400 text-lg">没有找到匹配的美食推荐</p>
           </div>
         )}
       </div>
@@ -179,7 +179,7 @@ export default function Food() {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl overflow-hidden shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col"
+              className="bg-white dark:bg-stone-900 rounded-2xl overflow-hidden shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col"
             >
               <div className="relative h-64 flex-shrink-0">
                 <img src={selectedFood.image} alt={selectedFood.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -200,11 +200,11 @@ export default function Food() {
               </div>
 
               <div className="p-6 overflow-y-auto flex-grow">
-                <div className="flex items-start gap-3 mb-6 bg-gray-50 p-4 rounded-xl">
+                <div className="flex items-start gap-3 mb-6 bg-gray-50 dark:bg-stone-950 p-4 rounded-xl">
                   <MapPin className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <div className="font-medium text-gray-900 mb-1">{selectedFood.address}</div>
-                    <div className="text-sm text-gray-500">{selectedFood.province} · {selectedFood.city}</div>
+                    <div className="font-medium text-gray-900 dark:text-stone-100 mb-1">{selectedFood.address}</div>
+                    <div className="text-sm text-gray-500 dark:text-stone-400">{selectedFood.province} · {selectedFood.city}</div>
                   </div>
                   <button className="ml-auto flex items-center gap-1 text-sm text-orange-600 font-medium hover:text-orange-700 bg-orange-100 px-3 py-1.5 rounded-lg">
                     <Navigation className="w-4 h-4" /> 导航
@@ -212,28 +212,28 @@ export default function Food() {
                 </div>
 
                 <div className="mb-8">
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">餐厅简介</h3>
-                  <p className="text-gray-600 leading-relaxed">{selectedFood.description}</p>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-stone-100 mb-2">餐厅简介</h3>
+                  <p className="text-gray-600 dark:text-stone-300 leading-relaxed">{selectedFood.description}</p>
                 </div>
 
                 <div>
                   <div className="flex items-center gap-2 mb-4">
-                    <MessageSquare className="w-5 h-5 text-gray-900" />
-                    <h3 className="text-lg font-bold text-gray-900">精选评价 ({selectedFood.reviews.toLocaleString()})</h3>
+                    <MessageSquare className="w-5 h-5 text-gray-900 dark:text-stone-100" />
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-stone-100">精选评价 ({selectedFood.reviews.toLocaleString()})</h3>
                   </div>
                   <div className="space-y-4">
                     {selectedFood.reviewsList.map((review: any) => (
-                      <div key={review.id} className="border-b border-gray-100 last:border-0 pb-4 last:pb-0">
+                      <div key={review.id} className="border-b border-gray-100 dark:border-stone-800 last:border-0 pb-4 last:pb-0">
                         <div className="flex justify-between items-center mb-2">
-                          <span className="font-medium text-gray-900">{review.user}</span>
-                          <span className="text-sm text-gray-400">{review.date}</span>
+                          <span className="font-medium text-gray-900 dark:text-stone-100">{review.user}</span>
+                          <span className="text-sm text-gray-400 dark:text-stone-500">{review.date}</span>
                         </div>
                         <div className="flex items-center gap-1 mb-2">
                           {[...Array(5)].map((_, i) => (
                             <Star key={i} className={`w-3 h-3 ${i < review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200'}`} />
                           ))}
                         </div>
-                        <p className="text-gray-600 text-sm">{review.content}</p>
+                        <p className="text-gray-600 dark:text-stone-300 text-sm">{review.content}</p>
                       </div>
                     ))}
                   </div>

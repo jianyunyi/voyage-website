@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, lazy, type ReactNode } from "react";
 import { FavoritesProvider } from "./context/FavoritesContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 const Layout = lazy(() => import("./components/Layout"));
 const Home = lazy(() => import("./pages/Home"));
@@ -19,6 +20,7 @@ const HotelDetail = lazy(() => import("./pages/HotelDetail"));
 const Itinerary = lazy(() => import("./pages/Itinerary"));
 const Login = lazy(() => import("./pages/Login"));
 const GuideDetail = lazy(() => import("./pages/GuideDetail"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 // 路由守卫：未登录访问受保护页 → 跳 /login
 function Protected({ children }: { children: ReactNode }) {
@@ -34,6 +36,7 @@ export default function App() {
       <FavoritesProvider>
         <BrowserRouter>
         <Suspense fallback={<div style={{ padding: 16 }}>Loading...</div>}>
+          <ErrorBoundary>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<Protected><Layout /></Protected>}>
@@ -47,7 +50,9 @@ export default function App() {
               <Route path="itinerary" element={<Itinerary />} />
               <Route path="profile" element={<Profile />} />
             </Route>
+            <Route path="*" element={<NotFound />} />
           </Routes>
+          </ErrorBoundary>
         </Suspense>
       </BrowserRouter>
       </FavoritesProvider>
