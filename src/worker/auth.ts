@@ -278,3 +278,21 @@ async function handleMe(request: Request, env: AuthEnv): Promise<Response> {
 function publicUser(user: User) {
   return { id: user.id, nickname: user.nickname, createdAt: user.createdAt };
 }
+
+// ============================================================
+// 鉴权辅助（供 favorites/submissions 等模块复用）
+// ============================================================
+
+/** 从 Authorization: Bearer <accessToken> 解析 userId；无效返回 null */
+export async function resolveUser(request: Request, env: { AUTH_KV: KVNamespace; JWT_SECRET: string }): Promise<User | null> {
+  const auth = request.headers.get("Authorization") || "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+  if (!token) return null;
+
+  const payload = await verifyJwt(token, env.JWT_SECRET);
+  if (!payload || payload.type !== "access") return null;
+
+  const raw = await env.AUTH_KV.get(kUser(payload.sub));
+  if (!raw) return null;
+  return JSON.parse(raw) as User;
+}

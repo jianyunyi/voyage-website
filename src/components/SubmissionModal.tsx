@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { X, Upload, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { createSubmissionRemote } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
 
 interface SubmissionModalProps {
   isOpen: boolean;
@@ -9,24 +11,33 @@ interface SubmissionModalProps {
 }
 
 export default function SubmissionModal({ isOpen, onClose, type }: SubmissionModalProps) {
+  const { accessToken } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
+
+    // 从表单收集数据（字段无 name，用 FormData 顺序取）
+    const form = e.currentTarget as HTMLFormElement;
+    const fd = new FormData(form);
+    const title = String(fd.get("title") || fd.get("name") || "未命名投稿").trim();
+    const content = String(fd.get("content") || fd.get("description") || fd.get("address") || "").trim();
+    const destination = String(fd.get("destination") || fd.get("city") || "").trim();
+
+    try {
+      await createSubmissionRemote({ type, title, destination: destination || undefined, content }, accessToken);
       setIsSubmitting(false);
       setIsSuccess(true);
-      
-      // Close modal after showing success message
       setTimeout(() => {
         setIsSuccess(false);
         onClose();
       }, 2000);
-    }, 1500);
+    } catch (err) {
+      setIsSubmitting(false);
+      alert(err instanceof Error ? err.message : "投稿失败，请重试");
+    }
   };
 
   return (
@@ -91,12 +102,12 @@ export default function SubmissionModal({ isOpen, onClose, type }: SubmissionMod
                     <>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">攻略标题</label>
-                        <input required type="text" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all" placeholder="例如：成都5日深度游全攻略" />
+                        <input required type="text" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all" name="title" placeholder="例如：成都5日深度游全攻略" />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">目的地</label>
-                          <input required type="text" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all" placeholder="例如：成都" />
+                          <input required type="text" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all" name="destination" placeholder="例如：成都" />
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">游玩天数</label>
@@ -109,14 +120,14 @@ export default function SubmissionModal({ isOpen, onClose, type }: SubmissionMod
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">攻略正文</label>
-                        <textarea required rows={6} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all resize-none" placeholder="分享您的行程安排、交通指南、避坑建议等..."></textarea>
+                        <textarea required rows={6} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all resize-none" name="content" placeholder="分享您的行程安排、交通指南、避坑建议等..."></textarea>
                       </div>
                     </>
                   ) : (
                     <>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">餐厅/美食名称</label>
-                        <input required type="text" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all" placeholder="例如：宽窄巷子老火锅" />
+                        <input required type="text" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all" name="title" placeholder="例如：宽窄巷子老火锅" />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -125,7 +136,7 @@ export default function SubmissionModal({ isOpen, onClose, type }: SubmissionMod
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">城市</label>
-                          <input required type="text" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all" placeholder="例如：成都" />
+                          <input required type="text" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all" name="city" placeholder="例如：成都" />
                         </div>
                       </div>
                       <div>

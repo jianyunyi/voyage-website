@@ -26,26 +26,35 @@ export interface FavoriteItem {
 
 interface Env {
   FAVORITES_KV: KVNamespace;
+  AUTH_KV: KVNamespace;
+  JWT_SECRET: string;
 }
 
-const FAVORITES_KEY = "favorites";
+const keyFor = (userId: string) => `favorites:${userId}`;
 
-async function readAll(env: Env): Promise<FavoriteItem[]> {
-  const raw = await env.FAVORITES_KV.get(FAVORITES_KEY, "json");
+async function readAll(env: Env, userId: string): Promise<FavoriteItem[]> {
+  const raw = await env.FAVORITES_KV.get(keyFor(userId), "json");
   return Array.isArray(raw) ? raw : [];
 }
 
-async function writeAll(env: Env, items: FavoriteItem[]): Promise<void> {
-  await env.FAVORITES_KV.put(FAVORITES_KEY, JSON.stringify(items));
+async function writeAll(env: Env, userId: string, items: FavoriteItem[]): Promise<void> {
+  await env.FAVORITES_KV.put(keyFor(userId), JSON.stringify(items));
 }
 
 export async function handleFavorites(request: Request, url: URL, env: Env): Promise<Response> {
   const method = request.method;
   const pathParts = url.pathname.split("/").filter(Boolean); // ["api","user","favorites","<id>"]
 
+  // 鉴权：需要有效 access token
+  const { resolveUser } = await import("./auth");
+  const user = await resolveUser(request, env);
+  if (!user) {
+    return json({ error: { code: "UNAUTHORIZED", message: "请先登录" } }, 401);
+  }
+
   // ---- GET /api/user/favorites ----
   if (method === "GET" && pathParts.length === 3) {
-    const items = await readAll(env);
+    const items = await readAll(env, user.id);
     return json({ favorites: items, count: items.length }, 200);
   }
 
@@ -56,10 +65,10 @@ export async function handleFavorites(request: Request, url: URL, env: Env): Pro
       if (!body.id || !body.type || !body.title) {
         return json({ error: { code: "INVALID_FAVORITE", message: "id/type/title are required" } }, 400);
       }
-      const items = await readAll(env);
+      const items = await readAll(env, user.id);
       if (!items.some(f => f.id === body.id)) {
         items.push({ ...body, addedAt: Date.now() } as FavoriteItem);
-        await writeAll(env, items);
+        await writeAll(env, user.id, items);
       }
       return json({ favorites: items, count: items.length }, 200);
     } catch (e) {
@@ -70,9 +79,9 @@ export async function handleFavorites(request: Request, url: URL, env: Env): Pro
   // ---- DELETE /api/user/favorites/:id ----
   if (method === "DELETE" && pathParts.length === 4) {
     const id = decodeURIComponent(pathParts[3]);
-    const items = await readAll(env);
+    const items = await readAll(env, user.id);
     const filtered = items.filter(f => f.id !== id);
-    await writeAll(env, filtered);
+    await writeAll(env, user.id, filtered);
     return json({ favorites: filtered, count: filtered.length }, 200);
   }
 

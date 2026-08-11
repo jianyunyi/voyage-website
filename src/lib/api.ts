@@ -58,19 +58,21 @@ export interface FavoriteItem {
   addedAt?: number;
 }
 
-/** 获取全部收藏 */
-export async function fetchFavorites(): Promise<FavoriteItem[]> {
-  const res = await fetch("/api/user/favorites");
+/** 获取全部收藏（需登录） */
+export async function fetchFavorites(accessToken?: string | null): Promise<FavoriteItem[]> {
+  const res = await fetch("/api/user/favorites", {
+    headers: accessToken ? { Authorization: "Bearer " + accessToken } : undefined,
+  });
   if (!res.ok) throw new Error(`获取收藏失败 (${res.status})`);
   const data = await res.json() as { favorites: FavoriteItem[] };
   return data.favorites;
 }
 
-/** 新增收藏 */
-export async function addFavoriteRemote(item: FavoriteItem): Promise<FavoriteItem[]> {
+/** 新增收藏（需登录） */
+export async function addFavoriteRemote(item: FavoriteItem, accessToken?: string | null): Promise<FavoriteItem[]> {
   const res = await fetch("/api/user/favorites", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(accessToken ? { Authorization: "Bearer " + accessToken } : {}) },
     body: JSON.stringify(item),
   });
   if (!res.ok) throw new Error(`添加收藏失败 (${res.status})`);
@@ -78,10 +80,11 @@ export async function addFavoriteRemote(item: FavoriteItem): Promise<FavoriteIte
   return data.favorites;
 }
 
-/** 删除收藏 */
-export async function removeFavoriteRemote(id: string): Promise<FavoriteItem[]> {
+/** 删除收藏（需登录） */
+export async function removeFavoriteRemote(id: string, accessToken?: string | null): Promise<FavoriteItem[]> {
   const res = await fetch(`/api/user/favorites/${encodeURIComponent(id)}`, {
     method: "DELETE",
+    headers: accessToken ? { Authorization: "Bearer " + accessToken } : undefined,
   });
   if (!res.ok) throw new Error(`删除收藏失败 (${res.status})`);
   const data = await res.json() as { favorites: FavoriteItem[] };
@@ -266,4 +269,42 @@ export async function fetchMe(accessToken: string): Promise<AuthUser> {
   const data = await res.json() as { user: AuthUser; error?: { message?: string } };
   if (!res.ok) throw new Error(data.error?.message || "获取用户失败");
   return data.user;
+}
+
+
+// ============================================================
+// Submissions API（用户投稿）
+// ============================================================
+
+export interface Submission {
+  id: string;
+  type: "guide" | "food";
+  title: string;
+  destination?: string;
+  content: string;
+  extra?: Record<string, unknown>;
+  status: "pending" | "approved";
+  createdAt: number;
+}
+
+/** 创建投稿（需登录） */
+export async function createSubmissionRemote(payload: { type: "guide" | "food"; title: string; destination?: string; content: string; extra?: Record<string, unknown> }, accessToken?: string | null): Promise<Submission> {
+  const res = await fetch("/api/submissions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(accessToken ? { Authorization: "Bearer " + accessToken } : {}) },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json() as { submission: Submission; error?: { message?: string } };
+  if (!res.ok) throw new Error(data.error?.message || "投稿失败");
+  return data.submission;
+}
+
+/** 我的投稿（需登录） */
+export async function fetchMySubmissions(accessToken?: string | null): Promise<Submission[]> {
+  const res = await fetch("/api/submissions", {
+    headers: accessToken ? { Authorization: "Bearer " + accessToken } : undefined,
+  });
+  if (!res.ok) throw new Error(`获取投稿失败 (${res.status})`);
+  const data = await res.json() as { submissions: Submission[] };
+  return data.submissions;
 }

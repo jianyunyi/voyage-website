@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { fetchFavorites, addFavoriteRemote, removeFavoriteRemote, type FavoriteItem } from '../lib/api';
+import { useAuth } from './AuthContext';
 
 export type FavoriteType = 'guide' | 'food' | 'hotel' | 'route';
 
@@ -18,6 +19,7 @@ interface FavoritesContextType {
 const FavoritesContext = createContext<FavoritesContextType | undefined>(undefined);
 
 export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { accessToken } = useAuth();
   const [favorites, setFavorites] = useState<FavoriteItem[]>(() => {
     const saved = localStorage.getItem('voyagex_favorites');
     return saved ? JSON.parse(saved) : [];
@@ -35,7 +37,7 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     (async () => {
       try {
         setSyncStatus("syncing");
-        const remote = await fetchFavorites();
+        const remote = await fetchFavorites(accessToken);
         if (cancelled) return;
         if (remote.length > 0) {
           setFavorites(remote);
@@ -46,12 +48,12 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [accessToken]);
 
   const syncFavorites = useCallback(async () => {
     setSyncStatus("syncing");
     try {
-      const remote = await fetchFavorites();
+      const remote = await fetchFavorites(accessToken);
       setFavorites(remote);
       setSyncStatus("synced");
     } catch {
@@ -73,7 +75,7 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setFavorites(prev => {
       const next = prev.filter(f => f.id !== id);
       // 异步同步到 KV
-      removeFavoriteRemote(id).catch(() => setSyncStatus("error"));
+      removeFavoriteRemote(id, accessToken).catch(() => setSyncStatus("error"));
       return next;
     });
   };

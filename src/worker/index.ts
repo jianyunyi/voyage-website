@@ -95,7 +95,20 @@ export default {
 
     if (path === "/api/user/favorites" || path.startsWith("/api/user/favorites/")) {
       const { handleFavorites } = await import("./favorites");
-      return handleFavorites(request, url, env);
+      return handleFavorites(request, url, {
+        FAVORITES_KV: env.FAVORITES_KV,
+        AUTH_KV: env.AUTH_KV,
+        JWT_SECRET: env.JWT_SECRET || "dev-secret-change-me",
+      });
+    }
+
+    if (path === "/api/submissions") {
+      const { handleSubmissions } = await import("./submissions");
+      return handleSubmissions(request, {
+        FAVORITES_KV: env.FAVORITES_KV,
+        AUTH_KV: env.AUTH_KV,
+        JWT_SECRET: env.JWT_SECRET || "dev-secret-change-me",
+      });
     }
 
     // ---- Static Assets / SPA Fallback ----

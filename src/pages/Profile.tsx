@@ -1,16 +1,29 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFavorites } from "../context/FavoritesContext";
 import { useAuth } from "../context/AuthContext";
-import { Heart, Trash2, Map, BookOpen, Coffee, Building, User, Filter, ArrowUpDown, LogOut, Sparkles } from "lucide-react";
+import { fetchMySubmissions, type Submission } from "../lib/api";
+import { Heart, Trash2, Map, BookOpen, Coffee, Building, User, Filter, ArrowUpDown, LogOut, Sparkles, FileText, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Profile() {
   const navigate = useNavigate();
   const { favorites, removeFavorite } = useFavorites();
-  const { user, logout } = useAuth();
+  const { user, logout, accessToken } = useAuth();
   const [filterType, setFilterType] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('time_desc');
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [subsLoading, setSubsLoading] = useState(false);
+
+  // 加载我的投稿
+  useEffect(() => {
+    if (!accessToken) return;
+    setSubsLoading(true);
+    fetchMySubmissions(accessToken)
+      .then(setSubmissions)
+      .catch(() => undefined)
+      .finally(() => setSubsLoading(false));
+  }, [accessToken]);
 
   const getIcon = (type: string) => {
     switch(type) {
@@ -86,6 +99,44 @@ export default function Profile() {
           <LogOut className="w-4 h-4" />
           退出登录
         </button>
+      </div>
+
+      {/* 我的投稿 */}
+      <div className="mb-8">
+        <div className="flex items-center gap-2 mb-4">
+          <FileText className="w-5 h-5 text-orange-600" />
+          <h2 className="text-xl font-bold text-gray-900">我的投稿</h2>
+          <span className="text-sm text-gray-500">({submissions.length})</span>
+        </div>
+        {subsLoading ? (
+          <p className="text-sm text-gray-400">加载中...</p>
+        ) : submissions.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-8 text-center">
+            <FileText className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+            <p className="text-sm text-gray-500">还没有投稿，去 攻略/美食 页分享你的旅行经验吧</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {submissions.map(s => (
+              <div key={s.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="font-medium text-gray-900">{s.title}</div>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                    s.status === "approved" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                  }`}>
+                    {s.status === "approved" ? "已发布" : "审核中"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <span>{s.type === "guide" ? "攻略" : "美食"}</span>
+                  {s.destination && <span>· {s.destination}</span>}
+                  <span className="flex items-center gap-0.5"><Clock className="w-3 h-3" /> {new Date(s.createdAt).toLocaleDateString("zh-CN")}</span>
+                </div>
+                <p className="text-sm text-gray-500 mt-2 line-clamp-2">{s.content}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
