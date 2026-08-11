@@ -224,7 +224,7 @@ export default function MapPlanner() {
                       <span className="font-bold text-lg text-gray-900">{route.type}</span>
                       {route.tag && (
                         <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                          index === 0 ? "bg-blue-100 text-blue-700" : 
+                          index === 0 ? "bg-cyan-100 text-cyan-700" : 
                           index === 1 ? "bg-orange-100 text-orange-700" : 
                           "bg-gray-100 text-gray-700"
                         }`}>

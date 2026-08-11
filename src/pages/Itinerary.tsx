@@ -24,7 +24,7 @@ const typeIcon = (type: string) => {
   switch (type) {
     case "food": return <Coffee className="w-4 h-4 text-orange-500" />;
     case "hotel": return <Building className="w-4 h-4 text-blue-500" />;
-    case "transport": return <Plane className="w-4 h-4 text-purple-500" />;
+    case "transport": return <Plane className="w-4 h-4 text-cyan-600" />;
     default: return <MapPin className="w-4 h-4 text-emerald-500" />;
   }
 };

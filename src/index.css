@@ -7,8 +7,8 @@
 }
 
 body {
-  background-color: #faf9f7;
-  color: #1a1a1a;
+  background-color: #fff7ed;
+  color: #0f172a;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -66,3 +66,28 @@ html {
 
 /* Leaflet map styles */
 @import "leaflet/dist/leaflet.css";
+
+/* ---------- 交互反馈（数据库推荐）---------- */
+
+/* 可点元素统一 pointer（Tailwind v4 button 默认 default） */
+button:not(:disabled),
+[role="button"],
+select:not(:disabled),
+label[for] {
+  cursor: pointer;
+}
+
+/* 尊重系统减少动效偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Secondary teal（地图/路线语义色，数据库推荐 #0891B2） */
+:root {
+  --color-secondary: #0891b2;
+}
