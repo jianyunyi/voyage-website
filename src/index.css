@@ -64,8 +64,7 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Leaflet map styles */
-@import "leaflet/dist/leaflet.css";
+/* Leaflet removed (MapPlanner uses AMap) */
 
 /* ---------- 交互反馈（数据库推荐）---------- */
 

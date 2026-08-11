@@ -1,79 +1,13 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Search, Filter, MapPin, Calendar, ThumbsUp, PlusCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import SubmissionModal from "../components/SubmissionModal";
 
-// Mock data for travel guides
-const travelGuides = [
-  {
-    id: "g1",
-    title: "成都5日深度游：从大熊猫到宽窄巷子，吃喝玩乐全攻略",
-    author: "旅行达人小王",
-    destination: "成都",
-    days: 5,
-    budget: 3500,
-    likes: 1250,
-    image: "https://images.unsplash.com/photo-1557425955-df376b5903c8?auto=format&fit=crop&q=80&w=1000",
-    tags: ["深度游", "美食", "文化"]
-  },
-  {
-    id: "g2",
-    title: "重庆3D魔幻城市3日打卡路线，不走回头路",
-    author: "山城探索者",
-    destination: "重庆",
-    days: 3,
-    budget: 2000,
-    likes: 3420,
-    image: "https://images.unsplash.com/photo-1555899434-94d1368aa7af?auto=format&fit=crop&q=80&w=1000",
-    tags: ["打卡", "摄影", "周末游"]
-  },
-  {
-    id: "g3",
-    title: "西安4日历史文化之旅：兵马俑、大雁塔、回民街",
-    author: "历史爱好者",
-    destination: "西安",
-    days: 4,
-    budget: 2800,
-    likes: 890,
-    image: "https://images.unsplash.com/photo-1599008633840-052c7f756385?auto=format&fit=crop&q=80&w=1000",
-    tags: ["历史", "古迹", "亲子游"]
-  },
-  {
-    id: "g4",
-    title: "广州吃货3日游，从早茶到夜宵的终极指南",
-    author: "老广食客",
-    destination: "广州",
-    days: 3,
-    budget: 2500,
-    likes: 2100,
-    image: "https://images.unsplash.com/photo-1583248369069-9d91f1640fe6?auto=format&fit=crop&q=80&w=1000",
-    tags: ["美食", "休闲", "周末游"]
-  },
-  {
-    id: "g5",
-    title: "云南大理丽江7日浪漫双城记",
-    author: "流浪的云",
-    destination: "云南",
-    days: 7,
-    budget: 5000,
-    likes: 4500,
-    image: "https://images.unsplash.com/photo-1518098268026-4e89f1a2cd8e?auto=format&fit=crop&q=80&w=1000",
-    tags: ["浪漫", "风景", "长线游"]
-  },
-  {
-    id: "g6",
-    title: "三亚5日度假指南：阳光、沙滩与海鲜",
-    author: "海岛控",
-    destination: "三亚",
-    days: 5,
-    budget: 6000,
-    likes: 1800,
-    image: "https://images.unsplash.com/photo-1540202404-b711c040d6b5?auto=format&fit=crop&q=80&w=1000",
-    tags: ["海岛", "度假", "亲子游"]
-  }
-];
+import { travelGuides } from "../data/guides";
 
 export default function Guides() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false);
 
@@ -131,6 +65,7 @@ export default function Guides() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: index * 0.1 }}
               className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-100 group cursor-pointer flex flex-col"
+              onClick={() => navigate(`/guide/${guide.id}`)}
             >
               <div className="relative h-56 overflow-hidden">
                 <img 

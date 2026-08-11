@@ -18,6 +18,7 @@ const Profile = lazy(() => import("./pages/Profile"));
 const HotelDetail = lazy(() => import("./pages/HotelDetail"));
 const Itinerary = lazy(() => import("./pages/Itinerary"));
 const Login = lazy(() => import("./pages/Login"));
+const GuideDetail = lazy(() => import("./pages/GuideDetail"));
 
 // 路由守卫：未登录访问受保护页 → 跳 /login
 function Protected({ children }: { children: ReactNode }) {
@@ -42,6 +43,7 @@ export default function App() {
               <Route path="planner" element={<MapPlanner />} />
               <Route path="compare" element={<Compare />} />
               <Route path="hotel/:id" element={<HotelDetail />} />
+              <Route path="guide/:id" element={<GuideDetail />} />
               <Route path="itinerary" element={<Itinerary />} />
               <Route path="profile" element={<Profile />} />
             </Route>
