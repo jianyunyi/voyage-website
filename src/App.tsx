@@ -15,6 +15,7 @@ const MapPlanner = lazy(() => import("./pages/MapPlanner"));
 const Compare = lazy(() => import("./pages/Compare"));
 const Profile = lazy(() => import("./pages/Profile"));
 const HotelDetail = lazy(() => import("./pages/HotelDetail"));
+const Itinerary = lazy(() => import("./pages/Itinerary"));
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
               <Route path="compare" element={<Compare />} />
               <Route path="profile" element={<Profile />} />
               <Route path="hotel/:id" element={<HotelDetail />} />
+              <Route path="itinerary" element={<Itinerary />} />
             </Route>
           </Routes>
         </Suspense>

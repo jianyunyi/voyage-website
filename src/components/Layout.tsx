@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { Map, Compass, ArrowLeftRight, Menu, X, Globe, BookOpen, User, Utensils } from "lucide-react";
+import { Map, Compass, ArrowLeftRight, Menu, X, Globe, BookOpen, User, Utensils, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { cn } from "../lib/utils";
 
@@ -13,6 +13,7 @@ export default function Layout() {
     { name: "地道美食", path: "/food", icon: Utensils },
     { name: "路线规划", path: "/planner", icon: Map },
     { name: "全网比价", path: "/compare", icon: ArrowLeftRight },
+    { name: "AI 行程", path: "/itinerary", icon: Sparkles },
   ];
 
   return (
