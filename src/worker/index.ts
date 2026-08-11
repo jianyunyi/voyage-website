@@ -16,6 +16,7 @@ import { rateLimit, rateLimitSweep } from "./rate-limit";
 interface Env {
   ASSETS: { fetch: (req: Request) => Promise<Response> };
   FAVORITES_KV: KVNamespace;
+  DEEPSEEK_API_KEY?: string; // 从 .dev.vars（本地）/ secrets（生产）注入
 }
 
 const CORS_HEADERS = {
@@ -79,7 +80,7 @@ export default {
     }
 
     if (path === "/api/itinerary") {
-      return handleItinerary(request, requestId);
+      return handleItinerary(request, requestId, env);
     }
 
     if (path === "/api/user/favorites" || path.startsWith("/api/user/favorites/")) {
@@ -156,7 +157,7 @@ async function handleRoute(request: Request, url: URL, requestId: string): Promi
 // ============================================================
 // /api/itinerary — 行程生成
 // ============================================================
-async function handleItinerary(request: Request, requestId: string): Promise<Response> {
+async function handleItinerary(request: Request, requestId: string, env: Env): Promise<Response> {
   if (request.method !== "POST") {
     return json({ error: { code: "METHOD_NOT_ALLOWED", message: "POST required" } }, 405, { ...CORS_HEADERS, "X-Request-Id": requestId });
   }
@@ -164,7 +165,7 @@ async function handleItinerary(request: Request, requestId: string): Promise<Res
   try {
     const body = await request.json() as import("./itinerary").ItineraryRequest;
     const { generateItinerary } = await import("./itinerary");
-    const itinerary = await generateItinerary(body);
+    const itinerary = await generateItinerary(body, env);
     return json(itinerary, 200, { ...CORS_HEADERS, "X-Request-Id": requestId });
   } catch (e) {
     return json({ error: { code: "INVALID_ITINERARY", message: "invalid request body" } }, 400, { ...CORS_HEADERS, "X-Request-Id": requestId });
