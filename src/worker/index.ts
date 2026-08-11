@@ -40,8 +40,9 @@ export default {
   },
 };
 
-function json(data: unknown, extraHeaders: Record<string, string> = {}): Response {
+function json(data: unknown, extraHeaders: Record<string, string> = {}, status = 200): Response {
   return new Response(JSON.stringify(data), {
+    status,
     headers: { "Content-Type": "application/json; charset=utf-8", ...extraHeaders },
   });
 }
@@ -54,7 +55,7 @@ async function handleCompare(request: Request, url: URL, corsHeaders: Record<str
   const checkOut = url.searchParams.get("checkOut") || "";
 
   if (!["transport", "hotel", "car"].includes(category)) {
-    return json({ error: { code: "INVALID_CATEGORY", message: "category must be transport|hotel|car" } }, corsHeaders, );
+    return json({ error: { code: "INVALID_CATEGORY", message: "category must be transport|hotel|car" } }, corsHeaders, 400);
   }
 
   // 调用聚合器（当前为 mock，结构已就绪供真实 API 接入）
