@@ -6,10 +6,11 @@ import { uploadAvatarRemote } from "../lib/api";
 import { useToast } from "../context/ToastContext";
 import EmptyState from "../components/EmptyState";
 import { imgSrc } from "../lib/image";
+import { deleteItineraryRemote, deleteSubmissionRemote, deleteAlertRemote, updateNicknameRemote } from "../lib/api";
 import { Camera } from "lucide-react";
 import { exportIcs, exportPdf } from "../lib/export";
 import { fetchMySubmissions, fetchMyItineraries, fetchAlertsRemote, checkAlertsRemote, type Submission, type SavedItinerary, type PriceAlert } from "../lib/api";
-import { Heart, Trash2, Map, BookOpen, Coffee, Building, Filter, ArrowUpDown, LogOut, Sparkles, FileText, Clock, MapPin, Bell, TrendingDown, Download, CalendarDays } from "lucide-react";
+import { Heart, Trash2, Map, BookOpen, Coffee, Building, Filter, ArrowUpDown, LogOut, Sparkles, FileText, Clock, MapPin, Bell, TrendingDown, Download, CalendarDays, Check, Pencil } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Profile() {
@@ -17,6 +18,56 @@ export default function Profile() {
   const { favorites, removeFavorite } = useFavorites();
   const { user, logout, accessToken, updateUser } = useAuth();
   const toast = useToast();
+
+  // ---- 自助管理 handlers ----
+  const [editingNickname, setEditingNickname] = useState(false);
+  const [nicknameDraft, setNicknameDraft] = useState(user?.nickname || "");
+
+  const handleDeleteItinerary = async (id: string) => {
+    try {
+      const next = await deleteItineraryRemote(id, accessToken);
+      setItineraries(next);
+      toast.success("行程已删除");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "删除失败");
+    }
+  };
+
+  const handleDeleteSubmission = async (id: string) => {
+    try {
+      const next = await deleteSubmissionRemote(id, accessToken);
+      setSubmissions(next);
+      toast.success("投稿已撤回");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "撤回失败");
+    }
+  };
+
+  const handleDeleteAlert = async (id: string) => {
+    try {
+      const next = await deleteAlertRemote(id, accessToken);
+      setAlerts(next);
+      toast.success("已取消订阅");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "取消失败");
+    }
+  };
+
+  const handleSaveNickname = async () => {
+    const name = nicknameDraft.trim();
+    if (name.length < 2 || name.length > 20) {
+      toast.error("昵称需 2-20 个字符");
+      return;
+    }
+    try {
+      const updated = await updateNicknameRemote(name, accessToken);
+      updateUser(updated);
+      setEditingNickname(false);
+      toast.success("昵称已更新");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "修改失败");
+    }
+  };
   const fileRef = useRef<HTMLInputElement>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
 
@@ -181,7 +232,33 @@ export default function Profile() {
             onChange={handleAvatarChange}
           />
           <div>
-            <h1 className="text-2xl font-serif font-bold text-gray-900 dark:text-stone-100 mb-0.5">{user?.nickname || "旅行者"}</h1>
+            <div className="flex items-center gap-2 mb-0.5">
+              {editingNickname ? (
+                <input
+                  value={nicknameDraft}
+                  onChange={(e) => setNicknameDraft(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleSaveNickname(); if (e.key === "Escape") setEditingNickname(false); }}
+                  maxLength={20}
+                  aria-label="新昵称"
+                  className="text-xl font-serif font-bold text-gray-900 dark:text-stone-100 bg-gray-50 dark:bg-stone-800 border border-gray-200 dark:border-stone-700 rounded-lg px-2 py-0.5 w-40 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              ) : (
+                <h1 className="text-2xl font-serif font-bold text-gray-900 dark:text-stone-100">{user?.nickname || "旅行者"}</h1>
+              )}
+              {editingNickname ? (
+                <button onClick={handleSaveNickname} aria-label="保存昵称" className="p-1.5 rounded-lg bg-orange-600 text-white hover:bg-orange-700 transition-colors">
+                  <Check className="w-4 h-4" />
+                </button>
+              ) : (
+                <button
+                  onClick={() => { setNicknameDraft(user?.nickname || ""); setEditingNickname(true); }}
+                  aria-label="编辑昵称"
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-orange-600 hover:bg-orange-50 transition-colors"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+              )}
+            </div>
             <p className="text-sm text-gray-500 dark:text-stone-400 flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5 text-orange-500" />
               VoyageX 会员 · 收藏 {favorites.length} 项
@@ -255,6 +332,13 @@ export default function Profile() {
                   <span className="text-orange-600 font-bold num">¥{a.currentPrice}</span>
                   {a.dropped && <span className="text-emerald-600 text-xs">已降价，建议入手</span>}
                 </div>
+                <button
+                  onClick={() => handleDeleteAlert(a.id)}
+                  aria-label="取消订阅"
+                  className="mt-2 flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg text-gray-500 dark:text-stone-400 hover:bg-gray-50 dark:hover:bg-stone-800 transition-colors"
+                >
+                  <Bell className="w-3.5 h-3.5" /> 取消订阅
+                </button>
               </div>
             ))}
           </div>
@@ -305,6 +389,13 @@ export default function Profile() {
                   >
                     <Download className="w-3.5 h-3.5" /> 导出 PDF
                   </button>
+                  <button
+                    onClick={() => handleDeleteItinerary(it.id)}
+                    aria-label="删除行程"
+                    className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> 删除
+                  </button>
                 </div>
               </div>
             ))}
@@ -332,8 +423,17 @@ export default function Profile() {
                   <span className={`text-xs px-2 py-0.5 rounded-full ${
                     s.status === "approved" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
                   }`}>
-                    {s.status === "approved" ? "已发布" : "审核中"}
+                    {s.status === "approved" ? "已发布" : s.status === "rejected" ? "已驳回" : "审核中"}
                   </span>
+                  {s.status !== "approved" && (
+                    <button
+                      onClick={() => handleDeleteSubmission(s.id)}
+                      aria-label="撤回投稿"
+                      className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> 撤回
+                    </button>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-stone-500">
                   <span>{s.type === "guide" ? "攻略" : "美食"}</span>

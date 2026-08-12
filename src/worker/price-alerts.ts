@@ -102,6 +102,21 @@ export async function handlePriceAlerts(request: Request, url: URL, env: AlertEn
     }
   }
 
+  // ---- DELETE /api/price-alerts/:itemId（取消订阅）----
+  if (method === "DELETE") {
+    const id = url.pathname.split("/").filter(Boolean).pop();
+    if (!id) return json({ error: { code: "INVALID_ID", message: "item id required" } }, 400);
+
+    const raw = await env.FAVORITES_KV.get(keyFor(user.id), "json");
+    const list: PriceAlert[] = Array.isArray(raw) ? raw as PriceAlert[] : [];
+    const next = list.filter(a => a.itemId !== id && a.id !== id);
+    if (next.length === list.length) {
+      return json({ error: { code: "NOT_FOUND", message: "订阅不存在" } }, 404);
+    }
+    await env.FAVORITES_KV.put(keyFor(user.id), JSON.stringify(next));
+    return json({ alerts: next, count: next.length }, 200);
+  }
+
   // ---- GET /api/price-alerts（我的订阅）----
   if (method === "GET") {
     const raw = await env.FAVORITES_KV.get(keyFor(user.id), "json");

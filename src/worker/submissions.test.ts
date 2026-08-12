@@ -29,7 +29,7 @@ async function regToken(e: ReturnType<typeof env>, nickname: string) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ nickname, password: "pass123" }),
   });
-  const resp = await handleAuth(req, new URL("http://localhost/api/auth/register"), e);
+  const resp = await handleAuth(req, new URL('http://localhost/api/auth/register'), e);
   const data = await resp.json() as any;
   return data.accessToken as string;
 }
@@ -50,14 +50,14 @@ async function statusOf(resp: Response) {
 describe("submissions 用户投稿", () => {
   it("无 token → 401", async () => {
     const req = new Request("http://localhost/api/submissions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "guide", title: "x", content: "y" }) });
-    const { status } = await statusOf(await handleSubmissions(req, env()));
+    const { status } = await statusOf(await handleSubmissions(req, new URL('http://localhost/api/submissions'), env()));
     expect(status).toBe(401);
   });
 
   it("投稿创建（201 + pending）", async () => {
     const e = env();
     const atA = await regToken(e, "投稿甲");
-    const created = await statusOf(await handleSubmissions(authed("POST", "/api/submissions", atA, { type: "guide", title: "成都5日", destination: "成都", content: "详细内容" }), e));
+    const created = await statusOf(await handleSubmissions(authed("POST", "/api/submissions", atA, { type: "guide", title: "成都5日", destination: "成都", content: "详细内容" }), new URL('http://localhost/api/submissions'), e));
     expect(created.status).toBe(201);
     expect(created.data.submission.status).toBe("pending");
     expect(created.data.submission.id).toMatch(/^sub_/);
@@ -66,9 +66,9 @@ describe("submissions 用户投稿", () => {
   it("缺字段 → 400；非法类型 → 400", async () => {
     const e = env();
     const atA = await regToken(e, "投稿校验");
-    const bad1 = await statusOf(await handleSubmissions(authed("POST", "/api/submissions", atA, { type: "guide", content: "y" }), e));
+    const bad1 = await statusOf(await handleSubmissions(authed("POST", "/api/submissions", atA, { type: "guide", content: "y" }), new URL('http://localhost/api/submissions'), e));
     expect(bad1.status).toBe(400);
-    const bad2 = await statusOf(await handleSubmissions(authed("POST", "/api/submissions", atA, { type: "hack", title: "x", content: "y" }), e));
+    const bad2 = await statusOf(await handleSubmissions(authed("POST", "/api/submissions", atA, { type: "hack", title: "x", content: "y" }), new URL('http://localhost/api/submissions'), e));
     expect(bad2.status).toBe(400);
   });
 
@@ -76,11 +76,11 @@ describe("submissions 用户投稿", () => {
     const e = env();
     const atA = await regToken(e, "投稿列表");
     const atB = await regToken(e, "投稿隔离");
-    await handleSubmissions(authed("POST", "/api/submissions", atA, { type: "food", title: "宽窄巷子火锅", content: "好吃" }), e);
-    const list = await statusOf(await handleSubmissions(authed("GET", "/api/submissions", atA), e));
+    await handleSubmissions(authed("POST", "/api/submissions", atA, { type: "food", title: "宽窄巷子火锅", content: "好吃" }), new URL('http://localhost/api/submissions'), e);
+    const list = await statusOf(await handleSubmissions(authed("GET", "/api/submissions", atA), new URL('http://localhost/api/submissions'), e));
     expect(list.data.count).toBe(1);
     expect(list.data.submissions[0].title).toBe("宽窄巷子火锅");
-    const b = await statusOf(await handleSubmissions(authed("GET", "/api/submissions", atB), e));
+    const b = await statusOf(await handleSubmissions(authed("GET", "/api/submissions", atB), new URL('http://localhost/api/submissions'), e));
     expect(b.data.count).toBe(0);
   });
 });

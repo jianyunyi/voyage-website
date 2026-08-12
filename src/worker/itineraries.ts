@@ -40,7 +40,7 @@ function json(data: unknown, status = 200): Response {
   });
 }
 
-export async function handleItineraries(request: Request, env: ItineraryEnv): Promise<Response> {
+export async function handleItineraries(request: Request, url: URL, env: ItineraryEnv): Promise<Response> {
   const { resolveUser } = await import("./auth");
   const user = await resolveUser(request, env);
   if (!user) {
@@ -85,6 +85,21 @@ export async function handleItineraries(request: Request, env: ItineraryEnv): Pr
     const raw = await env.FAVORITES_KV.get(keyFor(user.id), "json");
     const list: SavedItinerary[] = Array.isArray(raw) ? raw as SavedItinerary[] : [];
     return json({ itineraries: list, count: list.length }, 200);
+  }
+
+  // ---- DELETE /api/itineraries/:id（删除行程）----
+  if (method === "DELETE") {
+    const id = url.pathname.split("/").filter(Boolean).pop();
+    if (!id) return json({ error: { code: "INVALID_ID", message: "itinerary id required" } }, 400);
+
+    const raw = await env.FAVORITES_KV.get(keyFor(user.id), "json");
+    const list: SavedItinerary[] = Array.isArray(raw) ? raw as SavedItinerary[] : [];
+    const next = list.filter(it => it.id !== id);
+    if (next.length === list.length) {
+      return json({ error: { code: "NOT_FOUND", message: "行程不存在" } }, 404);
+    }
+    await env.FAVORITES_KV.put(keyFor(user.id), JSON.stringify(next));
+    return json({ itineraries: next, count: next.length }, 200);
   }
 
   return json({ error: { code: "NOT_FOUND", message: "endpoint not found" } }, 404);

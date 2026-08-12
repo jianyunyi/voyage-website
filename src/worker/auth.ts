@@ -125,6 +125,7 @@ export async function handleAuth(request: Request, url: URL, env: AuthEnv): Prom
       case "refresh": return await handleRefresh(request, env);
       case "logout": return await handleLogout(request, env);
       case "me": return await handleMe(request, env);
+      case "password": return await handlePassword(request, env);
       case "avatar": return await handleAvatar(request, env);
       default:
         return json({ error: { code: "NOT_FOUND", message: "auth endpoint not found" } }, 404);
@@ -259,7 +260,7 @@ async function handleLogout(request: Request, env: AuthEnv): Promise<Response> {
   return json({ success: true }, 200);
 }
 
-// ---- GET /api/auth/me ----
+// ---- GET /api/auth/me | PATCH /api/auth/me（改昵称）----
 
 async function handleMe(request: Request, env: AuthEnv): Promise<Response> {
   const auth = request.headers.get("Authorization") || "";
@@ -274,7 +275,78 @@ async function handleMe(request: Request, env: AuthEnv): Promise<Response> {
   const raw = await env.AUTH_KV.get(kUser(payload.sub));
   if (!raw) return json({ error: { code: "UNAUTHORIZED", message: "用户不存在" } }, 401);
   const user = JSON.parse(raw) as User;
+
+  // PATCH：修改昵称
+  if (request.method === "PATCH") {
+    try {
+      const body = await request.json() as { nickname?: string };
+      const nickname = body.nickname?.trim() || "";
+      if (nickname.length < 2 || nickname.length > 20) {
+        return json({ error: { code: "INVALID_NICKNAME", message: "昵称需 2-20 个字符" } }, 400);
+      }
+      // 唯一性（换昵称时）
+      const existingId = await env.AUTH_KV.get(kByName(nickname));
+      if (existingId && existingId !== user.id) {
+        return json({ error: { code: "NICKNAME_TAKEN", message: "该昵称已被注册" } }, 409);
+      }
+      const oldNickname = user.nickname;
+      user.nickname = nickname;
+      await env.AUTH_KV.put(kUser(user.id), JSON.stringify(user));
+      if (oldNickname !== nickname) {
+        await env.AUTH_KV.delete(kByName(oldNickname));
+        await env.AUTH_KV.put(kByName(nickname), user.id);
+      }
+      return json({ user: publicUser(user) }, 200);
+    } catch {
+      return json({ error: { code: "INVALID_JSON", message: "invalid JSON body" } }, 400);
+    }
+  }
+
+  // GET：返回用户
   return json({ user: publicUser(user) }, 200);
+}
+
+// ---- POST /api/auth/password（修改密码，需验证旧密码）----
+
+async function handlePassword(request: Request, env: AuthEnv): Promise<Response> {
+  if (request.method !== "POST") return json({ error: { code: "METHOD_NOT_ALLOWED", message: "POST only" } }, 405);
+
+  const auth = request.headers.get("Authorization") || "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+  if (!token) return json({ error: { code: "UNAUTHORIZED", message: "未登录" } }, 401);
+
+  const payload = await verifyJwt(token, env.JWT_SECRET);
+  if (!payload || payload.type !== "access") {
+    return json({ error: { code: "UNAUTHORIZED", message: "登录已过期" } }, 401);
+  }
+
+  try {
+    const body = await request.json() as { oldPassword?: string; newPassword?: string };
+    if (!body.oldPassword || !body.newPassword) {
+      return json({ error: { code: "INVALID_BODY", message: "oldPassword/newPassword are required" } }, 400);
+    }
+    if (body.newPassword.length < 6) {
+      return json({ error: { code: "INVALID_PASSWORD", message: "新密码至少 6 位" } }, 400);
+    }
+
+    const raw = await env.AUTH_KV.get(kUser(payload.sub));
+    if (!raw) return json({ error: { code: "UNAUTHORIZED", message: "用户不存在" } }, 401);
+    const user = JSON.parse(raw) as User;
+
+    // 验证旧密码（与登录同模式：hash + 常量时间比较）
+    const hash = await hashPassword(body.oldPassword, user.salt);
+    if (!safeEqual(hash, user.passwordHash)) {
+      return json({ error: { code: "WRONG_PASSWORD", message: "旧密码不正确" } }, 401);
+    }
+
+    const newSalt = randomSalt();
+    user.passwordHash = await hashPassword(body.newPassword, newSalt);
+    user.salt = newSalt;
+    await env.AUTH_KV.put(kUser(user.id), JSON.stringify(user));
+    return json({ success: true }, 200);
+  } catch {
+    return json({ error: { code: "INVALID_JSON", message: "invalid JSON body" } }, 400);
+  }
 }
 
 // ---- POST /api/auth/avatar（上传头像 base64）----

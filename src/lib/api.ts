@@ -462,3 +462,64 @@ export async function reportErrorRemote(payload: { message: string; stack?: stri
     // 上报失败不阻塞
   }
 }
+
+
+// ============================================================
+// 用户资料 + 自助管理
+// ============================================================
+
+/** 修改昵称 */
+export async function updateNicknameRemote(nickname: string, token: string | null): Promise<AuthUser> {
+  const res = await fetch("/api/auth/me", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify({ nickname }),
+  });
+  const data = (await res.json()) as { user?: AuthUser; error?: { message?: string } };
+  if (!res.ok || !data.user) throw new Error(data.error?.message || "修改昵称失败");
+  return data.user;
+}
+
+/** 修改密码 */
+export async function changePasswordRemote(oldPassword: string, newPassword: string, token: string | null): Promise<void> {
+  const res = await fetch("/api/auth/password", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify({ oldPassword, newPassword }),
+  });
+  const data = (await res.json()) as { error?: { message?: string } };
+  if (!res.ok) throw new Error(data.error?.message || "修改密码失败");
+}
+
+/** 删除行程 */
+export async function deleteItineraryRemote(id: string, token: string | null): Promise<SavedItinerary[]> {
+  const res = await fetch(`/api/itineraries/${id}`, {
+    method: "DELETE",
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+  });
+  const data = (await res.json()) as { itineraries?: SavedItinerary[]; error?: { message?: string } };
+  if (!res.ok || !data.itineraries) throw new Error(data.error?.message || "删除行程失败");
+  return data.itineraries;
+}
+
+/** 撤回投稿 */
+export async function deleteSubmissionRemote(id: string, token: string | null): Promise<Submission[]> {
+  const res = await fetch(`/api/submissions/${id}`, {
+    method: "DELETE",
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+  });
+  const data = (await res.json()) as { submissions?: Submission[]; error?: { message?: string } };
+  if (!res.ok || !data.submissions) throw new Error(data.error?.message || "撤回投稿失败");
+  return data.submissions;
+}
+
+/** 取消降价订阅 */
+export async function deleteAlertRemote(id: string, token: string | null): Promise<PriceAlert[]> {
+  const res = await fetch(`/api/price-alerts/${id}`, {
+    method: "DELETE",
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+  });
+  const data = (await res.json()) as { alerts?: PriceAlert[]; error?: { message?: string } };
+  if (!res.ok || !data.alerts) throw new Error(data.error?.message || "取消订阅失败");
+  return data.alerts;
+}

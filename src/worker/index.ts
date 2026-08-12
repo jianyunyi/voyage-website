@@ -19,6 +19,7 @@ interface Env {
   AUTH_KV: KVNamespace;
   DEEPSEEK_API_KEY?: string; // 从 .dev.vars（本地）/ secrets（生产）注入
   JWT_SECRET?: string;        // 从 .dev.vars（本地）/ secrets（生产）注入
+  ADMIN_IDS?: string;         // 管理员用户 ID（逗号分隔），用于投稿审核
 }
 
 const CORS_HEADERS = {
@@ -102,9 +103,9 @@ export default {
       });
     }
 
-    if (path === "/api/submissions") {
+    if (path === "/api/submissions" || path.startsWith("/api/submissions/")) {
       const { handleSubmissions } = await import("./submissions");
-      return handleSubmissions(request, {
+      return handleSubmissions(request, url, {
         FAVORITES_KV: env.FAVORITES_KV,
         AUTH_KV: env.AUTH_KV,
         JWT_SECRET: env.JWT_SECRET || "dev-secret-change-me",
@@ -129,7 +130,7 @@ export default {
       });
     }
 
-    if (path === "/api/price-alerts" || path === "/api/price-alerts/check") {
+    if (path === "/api/price-alerts" || path === "/api/price-alerts/check" || path.startsWith("/api/price-alerts/")) {
       const { handlePriceAlerts } = await import("./price-alerts");
       return handlePriceAlerts(request, url, {
         FAVORITES_KV: env.FAVORITES_KV,
@@ -138,9 +139,9 @@ export default {
       });
     }
 
-    if (path === "/api/itineraries") {
+    if (path === "/api/itineraries" || path.startsWith("/api/itineraries/")) {
       const { handleItineraries } = await import("./itineraries");
-      return handleItineraries(request, {
+      return handleItineraries(request, url, {
         FAVORITES_KV: env.FAVORITES_KV,
         AUTH_KV: env.AUTH_KV,
         JWT_SECRET: env.JWT_SECRET || "dev-secret-change-me",

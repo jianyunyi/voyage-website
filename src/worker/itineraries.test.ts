@@ -29,7 +29,7 @@ async function regToken(e: ReturnType<typeof env>, nickname: string) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ nickname, password: "pass123" }),
   });
-  const resp = await handleAuth(req, new URL("http://localhost/api/auth/register"), e);
+  const resp = await handleAuth(req, new URL('http://localhost/api/auth/register'), e);
   const data = await resp.json() as any;
   return data.accessToken as string;
 }
@@ -52,14 +52,14 @@ const day = { day: 1, date: "2026-10-01", steps: [{ time: "09:00", type: "sights
 describe("itineraries 行程保存", () => {
   it("无 token → 401", async () => {
     const req = new Request("http://localhost/api/itineraries", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: "x", dayData: [day] }) });
-    const { status } = await statusOf(await handleItineraries(req, env()));
+    const { status } = await statusOf(await handleItineraries(req, new URL('http://localhost/api/itineraries'), env()));
     expect(status).toBe(401);
   });
 
   it("保存行程（201 + id）", async () => {
     const e = env();
     const atA = await regToken(e, "行程甲");
-    const created = await statusOf(await handleItineraries(authed("POST", "/api/itineraries", atA, { title: "成都 3日", destination: "成都", days: 3, dayData: [day] }), e));
+    const created = await statusOf(await handleItineraries(authed("POST", "/api/itineraries", atA, { title: "成都 3日", destination: "成都", days: 3, dayData: [day] }), new URL('http://localhost/api/itineraries'), e));
     expect(created.status).toBe(201);
     expect(created.data.itinerary.id).toMatch(/^itn_/);
     expect(created.data.itinerary.title).toBe("成都 3日");
@@ -68,7 +68,7 @@ describe("itineraries 行程保存", () => {
   it("缺 title/dayData → 400", async () => {
     const e = env();
     const atA = await regToken(e, "行程校验");
-    const bad = await statusOf(await handleItineraries(authed("POST", "/api/itineraries", atA, { title: "x" }), e));
+    const bad = await statusOf(await handleItineraries(authed("POST", "/api/itineraries", atA, { title: "x" }), new URL('http://localhost/api/itineraries'), e));
     expect(bad.status).toBe(400);
   });
 
@@ -76,10 +76,10 @@ describe("itineraries 行程保存", () => {
     const e = env();
     const atA = await regToken(e, "行程列表");
     const atB = await regToken(e, "行程隔离");
-    await handleItineraries(authed("POST", "/api/itineraries", atA, { title: "重庆2日", dayData: [day] }), e);
-    const list = await statusOf(await handleItineraries(authed("GET", "/api/itineraries", atA), e));
+    await handleItineraries(authed("POST", "/api/itineraries", atA, { title: "重庆2日", dayData: [day] }), new URL('http://localhost/api/itineraries'), e);
+    const list = await statusOf(await handleItineraries(authed("GET", "/api/itineraries", atA), new URL('http://localhost/api/itineraries'), e));
     expect(list.data.count).toBe(1);
-    const b = await statusOf(await handleItineraries(authed("GET", "/api/itineraries", atB), e));
+    const b = await statusOf(await handleItineraries(authed("GET", "/api/itineraries", atB), new URL('http://localhost/api/itineraries'), e));
     expect(b.data.count).toBe(0);
   });
 });

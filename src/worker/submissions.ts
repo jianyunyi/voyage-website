@@ -14,6 +14,7 @@ interface SubmissionEnv {
   FAVORITES_KV: KVNamespace;  // 复用 KV（键前缀 submissions:）
   AUTH_KV: KVNamespace;
   JWT_SECRET: string;
+  ADMIN_IDS?: string;
 }
 
 export interface Submission {
@@ -23,7 +24,7 @@ export interface Submission {
   destination?: string;
   content: string;
   extra?: Record<string, unknown>;
-  status: "pending" | "approved";
+  status: "pending" | "approved" | "rejected";
   createdAt: number;
 }
 
@@ -36,7 +37,7 @@ function json(data: unknown, status = 200): Response {
   });
 }
 
-export async function handleSubmissions(request: Request, env: SubmissionEnv): Promise<Response> {
+export async function handleSubmissions(request: Request, url: URL, env: SubmissionEnv): Promise<Response> {
   // 鉴权
   const { resolveUser } = await import("./auth");
   const user = await resolveUser(request, env);
@@ -45,6 +46,44 @@ export async function handleSubmissions(request: Request, env: SubmissionEnv): P
   }
 
   const method = request.method;
+  const pathSeg = url.pathname.split("/").filter(Boolean).pop() || "";
+
+  // ---- DELETE /api/submissions/:id（撤回投稿，仅作者）----
+  if (method === "DELETE") {
+    const id = url.pathname.split("/").filter(Boolean).pop();
+    if (!id) return json({ error: { code: "INVALID_ID", message: "submission id required" } }, 400);
+
+    const raw = await env.FAVORITES_KV.get(keyFor(user.id), "json");
+    const list: Submission[] = Array.isArray(raw) ? raw as Submission[] : [];
+    const next = list.filter(s => s.id !== id);
+    if (next.length === list.length) {
+      return json({ error: { code: "NOT_FOUND", message: "投稿不存在" } }, 404);
+    }
+    await env.FAVORITES_KV.put(keyFor(user.id), JSON.stringify(next));
+    return json({ submissions: next, count: next.length }, 200);
+  }
+
+  // ---- POST /api/submissions/:id/approve|reject（审核，仅管理员）----
+  if (method === "POST" && (pathSeg === "approve" || pathSeg === "reject")) {
+    const id = url.pathname.split("/").filter(Boolean).slice(-2)[0];
+    if (!id) return json({ error: { code: "INVALID_ID", message: "submission id required" } }, 400);
+
+    // 管理员校验：ADMIN_IDS 逗号分隔（未配置时无管理员）
+    const admins = (env.ADMIN_IDS || "").split(",").map(s => s.trim()).filter(Boolean);
+    if (admins.length === 0 || !admins.includes(user.id)) {
+      return json({ error: { code: "FORBIDDEN", message: "仅管理员可审核" } }, 403);
+    }
+
+    const raw = await env.FAVORITES_KV.get(keyFor(user.id), "json");
+    const list: Submission[] = Array.isArray(raw) ? raw as Submission[] : [];
+    const target = list.find(s => s.id === id);
+    if (!target) return json({ error: { code: "NOT_FOUND", message: "投稿不存在" } }, 404);
+
+    const next = list.map(s => s.id === id ? { ...s, status: pathSeg } : s);
+    await env.FAVORITES_KV.put(keyFor(user.id), JSON.stringify(next));
+    const updated = next.find(s => s.id === id);
+    return json({ submission: updated, status: updated?.status }, 200);
+  }
 
   // ---- POST /api/submissions（创建投稿）----
   if (method === "POST") {
