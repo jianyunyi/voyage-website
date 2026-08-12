@@ -317,6 +317,15 @@ export default function MapPlanner() {
     }
   }, [origin, destination, originPoint, destPoint]);
 
+  // 系统选项/自定义选点变化 → 自动计算最佳路线并在地图标记（无需手动点搜索）
+  useEffect(() => {
+    if (!mapInstance || !drivingRef.current) return;
+    if (origin && destination && origin !== destination) {
+      handleSearch();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [origin, destination, originPoint, destPoint, mapInstance]);
+
   const routes = [
     { 
       id: "r1", 
@@ -408,7 +417,7 @@ export default function MapPlanner() {
                 <select 
                   className="w-full border-gray-300 dark:border-stone-600 rounded-lg shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm p-2 border"
                   value={origin}
-                  onChange={(e) => { setOrigin(e.target.value); setShowRoutes(false); }}
+                  onChange={(e) => { setOrigin(e.target.value); }}
                 >
                   <option value="">选择出发地</option>
                   {cities.map(city => (
@@ -444,7 +453,7 @@ export default function MapPlanner() {
                 <select 
                   className="w-full border-gray-300 dark:border-stone-600 rounded-lg shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm p-2 border"
                   value={destination}
-                  onChange={(e) => { setDestination(e.target.value); setShowRoutes(false); }}
+                  onChange={(e) => { setDestination(e.target.value); }}
                 >
                   <option value="">选择目的地</option>
                   {cities.map(city => (
