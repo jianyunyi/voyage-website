@@ -5,14 +5,14 @@ import { fetchRoutes, type RouteOption } from "../lib/api";
 
 // Mock data for cities
 const cities = [
-  { id: "c1", name: "北京", keyword: "北京市" },
-  { id: "c2", name: "上海", keyword: "上海市" },
-  { id: "c3", name: "广州", keyword: "广州市" },
-  { id: "c4", name: "成都", keyword: "成都市" },
-  { id: "c5", name: "西安", keyword: "西安市" },
-  { id: "c6", name: "重庆", keyword: "重庆市" },
-  { id: "c7", name: "厦门", keyword: "厦门市" },
-  { id: "c8", name: "泉州", keyword: "泉州市" },
+  { id: "c1", name: "北京", keyword: "北京市", lng: 116.4074, lat: 39.9042 },
+  { id: "c2", name: "上海", keyword: "上海市", lng: 121.4737, lat: 31.2304 },
+  { id: "c3", name: "广州", keyword: "广州市", lng: 113.2644, lat: 23.1291 },
+  { id: "c4", name: "成都", keyword: "成都市", lng: 104.0665, lat: 30.5728 },
+  { id: "c5", name: "西安", keyword: "西安市", lng: 108.9398, lat: 34.3416 },
+  { id: "c6", name: "重庆", keyword: "重庆市", lng: 106.5516, lat: 29.5630 },
+  { id: "c7", name: "厦门", keyword: "厦门市", lng: 118.0894, lat: 24.4798 },
+  { id: "c8", name: "泉州", keyword: "泉州市", lng: 118.6004, lat: 24.9010 },
 ];
 
 export default function MapPlanner() {
@@ -26,6 +26,8 @@ export default function MapPlanner() {
   const [AMapObj, setAMapObj] = useState<any>(null);
   const drivingRef = useRef<any>(null);
   const poiMarkersRef = useRef<any[]>([]);
+  const startEndMarkersRef = useRef<any[]>([]);
+  const [mapLoading, setMapLoading] = useState(true);
   const [poiType, setPoiType] = useState<"景点" | "美食" | "酒店">("景点");
   const [poiList, setPoiList] = useState<any[]>([]);
   const [poiLoading, setPoiLoading] = useState(false);
@@ -53,6 +55,7 @@ export default function MapPlanner() {
     })
       .then((AMap) => {
         setAMapObj(AMap);
+        setMapLoading(false);
         if (mapRef.current) {
           const map = new AMap.Map(mapRef.current, {
             zoom: 5,
@@ -146,6 +149,8 @@ export default function MapPlanner() {
         destPoint ? [destPoint.lng, destPoint.lat] : [{ keyword: destCity?.keyword, city: destCity?.name }],
         (status: string, result: any) => {
           if (status === 'complete') {
+            // ---- 自定义起终点标注（绿=起点，红=终点，不依赖高德默认）----
+            drawStartEndMarkers();
             if (result.routes && result.routes.length > 0) {
               const route = result.routes[0];
               // 将时间（秒）转换为小时和分钟
@@ -169,6 +174,42 @@ export default function MapPlanner() {
         }
       );
     }
+  };
+
+  // 自定义起终点标注：绿"起" / 红"终"（避免高德默认标注歧义）
+  const drawStartEndMarkers = () => {
+    if (!mapInstance || !AMapObj) return;
+    // 清除旧标注
+    startEndMarkersRef.current.forEach(m => m.setMap(null));
+    startEndMarkersRef.current = [];
+
+    const originCoord = originPoint ? [originPoint.lng, originPoint.lat] : (originCity ? (() => {
+      const c = cities.find(x => x.id === origin);
+      return c ? [c.lng, c.lat] : null;
+    })() : null);
+    const destCoord = destPoint ? [destPoint.lng, destPoint.lat] : (destCity ? (() => {
+      const c = cities.find(x => x.id === destination);
+      return c ? [c.lng, c.lat] : null;
+    })() : null);
+
+    const mk = (coord: number[] | null, label: string, color: string) => {
+      if (!coord) return null;
+      const m = new AMapObj.Marker({
+        position: coord,
+        content: `<div style="width:28px;height:28px;border-radius:50%;background:${color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.35);border:2px solid #fff">${label}</div>`,
+        offset: new AMapObj.Pixel(-14, -14),
+        zIndex: 120,
+      });
+      m.setMap(mapInstance);
+      return m;
+    };
+
+    const sm = mk(originCoord, "起", "#16A34A");
+    const em = mk(destCoord, "终", "#DC2626");
+    if (sm || em) {
+      mapInstance.setFitView([sm, em].filter(Boolean), false, [60, 60, 60, 60]);
+    }
+    startEndMarkersRef.current = [sm, em].filter(Boolean);
   };
 
   // 路线方案：驾车由高德实时计算，高铁/飞机由后端聚合 API 提供
@@ -474,7 +515,13 @@ export default function MapPlanner() {
       </div>
 
       {/* Right Panel - Map */}
-      <div className="flex-grow h-[50vh] md:h-auto relative z-0">
+      <div className="flex-grow h-[50vh] md:h-auto relative z-0 bg-gray-100 dark:bg-stone-900">
+        {mapLoading && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-gray-100 dark:bg-stone-900">
+            <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+            <p className="text-sm text-gray-500 dark:text-stone-400">地图加载中…</p>
+          </div>
+        )}
         <div ref={mapRef} className="w-full h-full"></div>
       </div>
     </div>
