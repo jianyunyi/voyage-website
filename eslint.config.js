@@ -17,6 +17,9 @@ export default tseslint.config(
       "react-hooks/set-state-in-effect": "off",
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-explicit-any": "off",
+      // hook setter（useState 解构）在 useEffect 闭包中先于声明引用——运行期合法
+      "no-use-before-define": "off",
+      "@typescript-eslint/no-use-before-define": "off",
       "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
       "no-undef": "off",
     },
