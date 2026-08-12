@@ -8,7 +8,7 @@
 
 export interface RouteOption {
   id: string;
-  type: "driving" | "train" | "flight";
+  type: "driving" | "train" | "flight" | "combined";
   label: string;
   timeSec: number;
   timeLabel: string;
@@ -19,6 +19,9 @@ export interface RouteOption {
   tolls?: string;
   tag?: string;
   score: number;
+  isBest?: boolean;
+  bestReason?: string;
+  legs?: string[];
   source: "amap" | "estimate";
 }
 
@@ -26,6 +29,13 @@ interface CityInfo {
   id: string;
   name: string;
   keyword: string;
+}
+
+/** 用户搜索定位的起点/终点（经纬度） */
+export interface PlacePoint {
+  name: string;
+  lng: number;
+  lat: number;
 }
 
 // 城市坐标（近似，用于距离估算）
@@ -62,81 +72,152 @@ function haversineKm(a: [number, number], b: [number, number]): number {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-export async function getRoutes(originId: string, destId: string): Promise<RouteOption[]> {
-  const origin = CITIES[originId];
-  const dest = CITIES[destId];
-  if (!origin || !dest || originId === destId) {
+export interface RouteQuery {
+  origin: string;
+  dest: string;
+  originPoint?: PlacePoint;
+  destPoint?: PlacePoint;
+}
+
+/** 计算组合/动态评分后的多方案路线 */
+export async function getRoutes(query: RouteQuery): Promise<RouteOption[]> {
+  // 解析起点/终点：优先用户定位坐标，否则城市 ID 中心
+  const originPoint = query.originPoint || pointFromCity(query.origin);
+  const destPoint = query.destPoint || pointFromCity(query.dest);
+  if (!originPoint || !destPoint || (query.origin === query.dest && !query.originPoint)) {
     return [];
   }
 
-  const distanceKm = haversineKm(CITY_COORDS[originId], CITY_COORDS[destId]);
+  const distanceKm = haversineKm([originPoint.lng, originPoint.lat], [destPoint.lng, destPoint.lat]);
+  if (distanceKm < 2) return [];
+
   const roadFactor = 1.3; // 公路距离 ≈ 直线 × 1.3
+  const destName = destPoint.name || query.dest;
 
-  // 驾车（前端高德实时，此处给估算占位）
-  const drivingHours = (distanceKm * roadFactor) / 90; // 均速 90km/h
-  const drivingSec = drivingHours * 3600;
-
-  // 高铁：均速 ~250km/h，价格 ~0.45 元/km
-  const trainHours = distanceKm / 250;
-  const trainSec = trainHours * 3600;
-  const trainPrice = Math.round(distanceKm * 0.45 / 10) * 10;
-
-  // 飞机：均速 ~700km/h，加 2 小时机场周转
-  const flightHours = distanceKm / 700 + 2;
-  const flightSec = flightHours * 3600;
-  const flightPrice = Math.round(distanceKm * 0.8 / 10) * 10;
+  // ---- 各干线基础测算 ----
+  const drivingSec = (distanceKm * roadFactor / 90) * 3600;         // 驾车均速 90km/h
+  const trainSec = (distanceKm / 250) * 3600;                       // 高铁均速 250km/h
+  const trainPrice = Math.round(distanceKm * 0.45 / 10) * 10;       // ~0.45 元/km
+  const flightSec = (distanceKm / 700 + 2) * 3600;                  // 飞机 + 2h 机场周转
+  const flightPrice = Math.round(distanceKm * 0.8 / 10) * 10;       // ~0.8 元/km
+  const tolls = distanceKm * roadFactor > 500 ? Math.round(distanceKm * roadFactor * 0.4) : 0;
 
   const fmtDur = (sec: number) => {
     const h = Math.floor(sec / 3600);
     const m = Math.round((sec % 3600) / 60);
     return h > 0 ? `${h}小时${m}分钟` : `${m}分钟`;
   };
+  const fmtPrice = (v: number) => v > 0 ? `¥${v}` : undefined;
 
-  const options: RouteOption[] = [
-    {
-      id: "driving",
-      type: "driving",
-      label: "驾车",
-      timeSec: drivingSec,
-      timeLabel: fmtDur(drivingSec),
-      distanceMeters: Math.round(distanceKm * roadFactor * 1000),
-      distanceLabel: `${(distanceKm * roadFactor).toFixed(1)}公里`,
-      tolls: distanceKm * roadFactor > 500 ? `约¥${Math.round(distanceKm * roadFactor * 0.4)}` : "免费",
-      tag: "最自由",
-      score: 8.5,
-      source: "amap",
-    },
-    {
-      id: "train",
-      type: "train",
-      label: "高铁",
-      timeSec: trainSec,
-      timeLabel: fmtDur(trainSec),
-      distanceMeters: Math.round(distanceKm * 1000),
-      distanceLabel: `${distanceKm.toFixed(1)}公里`,
-      price: `¥${trainPrice}`,
-      priceValue: trainPrice,
-      tag: "性价比最高",
-      score: 8.8,
-      source: "estimate",
-    },
-    {
-      id: "flight",
-      type: "flight",
-      label: "飞机",
-      timeSec: flightSec,
-      timeLabel: fmtDur(flightSec),
-      distanceMeters: Math.round(distanceKm * 1000),
-      distanceLabel: `${distanceKm.toFixed(1)}公里`,
-      price: `¥${flightPrice}`,
-      priceValue: flightPrice,
-      tag: "最快捷",
-      score: 9.2,
-      source: "estimate",
-    },
-  ];
+  // 市内接驳估算（起终点各 ~30 分钟）
+  const feederSec = 2 * 30 * 60;
+
+  // ---- 方案组（含组合）----
+  const options: RouteOption[] = [];
+
+  // 1. 驾车（最自由，含过路费）
+  options.push({
+    id: "driving",
+    type: "driving",
+    label: "驾车",
+    timeSec: drivingSec,
+    timeLabel: fmtDur(drivingSec),
+    distanceMeters: Math.round(distanceKm * roadFactor * 1000),
+    distanceLabel: `${(distanceKm * roadFactor).toFixed(1)}公里`,
+    tolls: tolls > 0 ? `约¥${tolls}` : "免费",
+    tag: "最自由",
+    score: 0, // 占位，统一评分
+    source: "amap",
+  });
+
+  // 2. 高铁直达（含两端地铁接驳）
+  options.push({
+    id: "train",
+    type: "train",
+    label: "高铁",
+    timeSec: trainSec + feederSec,
+    timeLabel: fmtDur(trainSec + feederSec),
+    distanceMeters: Math.round(distanceKm * 1000),
+    distanceLabel: `${distanceKm.toFixed(1)}公里`,
+    price: fmtPrice(trainPrice),
+    priceValue: trainPrice,
+    tag: "性价比最高",
+    legs: ["地铁/公交 30分钟", `高铁 ${fmtDur(trainSec)}`, "地铁/公交 30分钟"],
+    score: 0,
+    source: "estimate",
+  });
+
+  // 3. 飞机（含机场快线接驳）
+  options.push({
+    id: "flight",
+    type: "flight",
+    label: "飞机",
+    timeSec: flightSec + feederSec,
+    timeLabel: fmtDur(flightSec + feederSec),
+    distanceMeters: Math.round(distanceKm * 1000),
+    distanceLabel: `${distanceKm.toFixed(1)}公里`,
+    price: fmtPrice(flightPrice),
+    priceValue: flightPrice,
+    tag: "最快捷",
+    legs: ["机场快线 30分钟", `航班 ${fmtDur(flightSec - 2 * 3600)}`, "机场快线 30分钟"],
+    score: 0,
+    source: "estimate",
+  });
+
+  // 4. 智能组合（干线选择 + 两端接驳；长距离优先飞机干线，短距离高铁）
+  const useFlightTrunk = distanceKm > 900;
+  const combinedSec = (useFlightTrunk ? flightSec : trainSec) + feederSec;
+  const combinedPrice = useFlightTrunk ? flightPrice : trainPrice;
+  options.push({
+    id: "combined",
+    type: "combined",
+    label: "智能组合",
+    timeSec: combinedSec,
+    timeLabel: fmtDur(combinedSec),
+    distanceMeters: Math.round(distanceKm * 1000),
+    distanceLabel: `${distanceKm.toFixed(1)}公里`,
+    price: fmtPrice(combinedPrice),
+    priceValue: combinedPrice,
+    tag: useFlightTrunk ? "长途最优" : "短途最优",
+    legs: useFlightTrunk
+      ? ["地铁 20分钟", `航班 ${fmtDur(flightSec - 2 * 3600)}`, `机场快线→${destName}`]
+      : ["地铁 20分钟", `高铁 ${fmtDur(trainSec)}`, `地铁→${destName}`],
+    score: 0,
+    source: "estimate",
+  });
+
+  // ---- 动态评分：时间 50% + 价格 30% + 便捷 20%（分越低越好）----
+  const maxTime = Math.max(...options.map(o => o.timeSec));
+  const maxPrice = Math.max(...options.map(o => o.priceValue || 0));
+  const comfort: Record<string, number> = { driving: 7, train: 8.5, flight: 7.5, combined: 9 };
+  for (const o of options) {
+    const timeNorm = o.timeSec / maxTime;
+    const priceNorm = maxPrice > 0 ? (o.priceValue || 0) / maxPrice : 0;
+    const comfortScore = comfort[o.type] || 8;
+    o.score = Math.round((timeNorm * 0.5 + priceNorm * 0.3 + (10 - comfortScore) / 10 * 0.2) * 100) / 100;
+  }
+
+  // ---- 最佳标记 ----
+  const best = options.reduce((a, b) => (b.score < a.score ? b : a));
+  best.isBest = true;
+  const bestType: Record<string, string> = {
+    driving: "时间与费用均衡，自驾灵活",
+    train: "综合性价比最高，准点率高",
+    flight: "长途最快，时间成本最低",
+    combined: "智能组合，接驳最省心",
+  };
+  best.bestReason = `${best.label}综合评分最优：${bestType[best.type] || "推荐方案"}`;
 
   // 模拟聚合延迟
   await new Promise(r => setTimeout(r, 200 + Math.random() * 300));
   return options;
 }
+
+/** 城市 ID → 坐标点 */
+function pointFromCity(id: string): PlacePoint | null {
+  const city = CITIES[id];
+  const coord = CITY_COORDS[id];
+  if (!city || !coord) return null;
+  return { name: city.name, lng: coord[0], lat: coord[1] };
+}
+

@@ -142,8 +142,8 @@ export default function MapPlanner() {
       drivingRef.current.clear();
       
       drivingRef.current.search(
-        [{ keyword: originCity?.keyword, city: originCity?.name }],
-        [{ keyword: destCity?.keyword, city: destCity?.name }],
+        originPoint ? [originPoint.lng, originPoint.lat] : [{ keyword: originCity?.keyword, city: originCity?.name }],
+        destPoint ? [destPoint.lng, destPoint.lat] : [{ keyword: destCity?.keyword, city: destCity?.name }],
         (status: string, result: any) => {
           if (status === 'complete') {
             if (result.routes && result.routes.length > 0) {
@@ -174,16 +174,52 @@ export default function MapPlanner() {
   // 路线方案：驾车由高德实时计算，高铁/飞机由后端聚合 API 提供
   const [apiRoutes, setApiRoutes] = useState<RouteOption[]>([]);
 
+  // ---- 搜索定位（精确起点/终点）----
+  const [originPoint, setOriginPoint] = useState<{ name: string; lng: number; lat: number } | null>(null);
+  const [destPoint, setDestPoint] = useState<{ name: string; lng: number; lat: number } | null>(null);
+  const [originQuery, setOriginQuery] = useState("");
+  const [destQuery, setDestQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<{ list: { name: string; location: { lng: number; lat: number } }[]; target: "origin" | "dest" } | null>(null);
+
+  // 搜索地点（PlaceSearch）——"具体地点定位"
+  const searchPlace = (keyword: string, target: "origin" | "dest") => {
+    if (!keyword.trim() || !AMapObj) return;
+    const ps = new AMapObj.PlaceSearch({ city: "全国", pageSize: 6, pageIndex: 1 });
+    ps.search(keyword, (status: string, result: any) => {
+      if (status === "complete" && result.poiList?.pois) {
+        setSearchResults({
+          list: result.poiList.pois.map((poi: any) => ({
+            name: poi.name,
+            location: { lng: poi.location.lng, lat: poi.location.lat },
+          })),
+          target,
+        });
+      }
+    });
+  };
+
+  const pickPlace = (name: string, location: { lng: number; lat: number }, target: "origin" | "dest") => {
+    if (target === "origin") {
+      setOrigin("custom");
+      setOriginPoint({ name, lng: location.lng, lat: location.lat });
+    } else {
+      setDestination("custom");
+      setDestPoint({ name, lng: location.lng, lat: location.lat });
+    }
+    setSearchResults(null);
+    setShowRoutes(false);
+  };
+
   // 选择变化时获取高铁/飞机方案
   useEffect(() => {
     if (origin && destination && origin !== destination) {
-      fetchRoutes(origin, destination)
+      fetchRoutes(origin, destination, originPoint || undefined, destPoint || undefined)
         .then(r => setApiRoutes(r.filter(r => r.type !== "driving")))
         .catch(() => setApiRoutes([]));
     } else {
       setApiRoutes([]);
     }
-  }, [origin, destination]);
+  }, [origin, destination, originPoint, destPoint]);
 
   const routes = [
     { 
@@ -193,7 +229,9 @@ export default function MapPlanner() {
       price: routeInfo ? `过路费 ${routeInfo.tolls}` : "计算中...", 
       distance: routeInfo ? routeInfo.distance : "",
       score: 8.5, 
-      tag: "最自由" 
+      tag: "最自由",
+      isBest: false,
+      legs: undefined as string[] | undefined,
     },
     ...apiRoutes.map(r => ({
       id: r.id,
@@ -203,6 +241,9 @@ export default function MapPlanner() {
       distance: r.distanceLabel || "",
       score: r.score,
       tag: r.tag || "",
+      isBest: !!r.isBest,
+      bestReason: r.bestReason,
+      legs: r.legs,
     })),
   ];
 
@@ -277,7 +318,24 @@ export default function MapPlanner() {
                   {cities.map(city => (
                     <option key={city.id} value={city.id}>{city.name}</option>
                   ))}
+                  <option value="custom" disabled>{originPoint ? `📍 ${originPoint.name}` : "或搜索具体地点"}</option>
                 </select>
+                <input
+                  type="text"
+                  value={originQuery}
+                  onChange={(e) => { setOriginQuery(e.target.value); searchPlace(e.target.value, "origin"); }}
+                  onBlur={() => setTimeout(() => setSearchResults(null), 200)}
+                  placeholder="搜索具体地点，如：成都东站 / 天府广场…"
+                  className="mt-2 w-full border border-gray-300 dark:border-stone-600 rounded-lg px-3 py-1.5 text-xs focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
+                />
+                {originQuery && originPoint && (
+                  <button
+                    onClick={() => { setOriginPoint(null); setOrigin(""); setOriginQuery(""); }}
+                    className="mt-1 text-xs text-red-500 hover:text-red-600"
+                  >
+                    清除自定义定位
+                  </button>
+                )}
               </div>
             </div>
 
@@ -296,10 +354,42 @@ export default function MapPlanner() {
                   {cities.map(city => (
                     <option key={city.id} value={city.id} disabled={city.id === origin}>{city.name}</option>
                   ))}
+                  <option value="custom" disabled>{destPoint ? `📍 ${destPoint.name}` : "或搜索具体地点"}</option>
                 </select>
+                <input
+                  type="text"
+                  value={destQuery}
+                  onChange={(e) => { setDestQuery(e.target.value); searchPlace(e.target.value, "dest"); }}
+                  onBlur={() => setTimeout(() => setSearchResults(null), 200)}
+                  placeholder="搜索具体地点，如：重庆北站 / 解放碑…"
+                  className="mt-2 w-full border border-gray-300 dark:border-stone-600 rounded-lg px-3 py-1.5 text-xs focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
+                />
+                {destQuery && destPoint && (
+                  <button
+                    onClick={() => { setDestPoint(null); setDestination(""); setDestQuery(""); }}
+                    className="mt-1 text-xs text-red-500 hover:text-red-600"
+                  >
+                    清除自定义定位
+                  </button>
+                )}
               </div>
             </div>
           </div>
+
+          {searchResults && searchResults.list.length > 0 && (
+            <div className="mt-3 bg-white dark:bg-stone-900 border border-gray-200 dark:border-stone-700 rounded-xl shadow-lg overflow-hidden">
+              {searchResults.list.map((p) => (
+                <button
+                  key={p.name}
+                  onClick={() => pickPlace(p.name, p.location, searchResults.target)}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-stone-300 hover:bg-orange-50 dark:hover:bg-stone-800 transition-colors flex items-center gap-2"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-orange-500" />
+                  {p.name}
+                </button>
+              ))}
+            </div>
+          )}
 
           <button 
             onClick={handleSearch}
@@ -318,8 +408,13 @@ export default function MapPlanner() {
               {routes.map((route, index) => (
                 <div key={route.id} className="bg-white dark:bg-stone-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-stone-700 hover:border-orange-300 transition-colors cursor-pointer group">
                   <div className="flex justify-between items-start mb-3">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-bold text-lg text-gray-900 dark:text-stone-100">{route.type}</span>
+                      {route.isBest && (
+                        <span className="text-xs px-2 py-1 rounded-full font-medium bg-emerald-100 text-emerald-700">
+                          ⭐ 最佳
+                        </span>
+                      )}
                       {route.tag && (
                         <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                           index === 0 ? "bg-cyan-100 text-cyan-700" : 
@@ -349,6 +444,19 @@ export default function MapPlanner() {
                     )}
                   </div>
                   
+                  {route.legs && route.legs.length > 0 && (
+                    <div className="flex items-center gap-1.5 flex-wrap mb-3 text-xs text-gray-500 dark:text-stone-400">
+                      {route.legs.map((leg, i) => (
+                        <span key={i} className="flex items-center gap-1.5">
+                          {i > 0 && <span className="text-gray-300 dark:text-stone-600">→</span>}
+                          <span className="px-2 py-0.5 bg-gray-50 dark:bg-stone-800 rounded-full border border-gray-100 dark:border-stone-700">{leg}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {route.bestReason && (
+                    <p className="text-xs text-emerald-600 mb-3">{route.bestReason}</p>
+                  )}
                   <div className="flex items-center justify-between text-sm font-medium text-gray-900 dark:text-stone-100 group-hover:text-orange-600 transition-colors border-t border-gray-100 dark:border-stone-800 pt-3">
                     查看详情
                     <ChevronRight className="w-4 h-4" />

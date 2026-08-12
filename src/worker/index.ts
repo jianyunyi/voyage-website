@@ -195,19 +195,36 @@ async function handleCompare(url: URL, requestId: string): Promise<Response> {
 async function handleRoute(url: URL, requestId: string): Promise<Response> {
   const originId = url.searchParams.get("originId") || "";
   const destId = url.searchParams.get("destId") || "";
+  // 用户搜索定位坐标（format: "lng,lat"）
+  const originLngLat = url.searchParams.get("originLngLat") || "";
+  const destLngLat = url.searchParams.get("destLngLat") || "";
 
-  if (!originId || !destId || originId === destId) {
-    return json({ error: { code: "INVALID_ROUTE", message: "originId and destId are required and must differ" } }, 400, { ...CORS_HEADERS, "X-Request-Id": requestId });
+  const parsePoint = (s: string, name: string) => {
+    const parts = s.split(",").map(Number);
+    if (parts.length === 2 && isFinite(parts[0]) && isFinite(parts[1])) {
+      return { name, lng: parts[0], lat: parts[1] };
+    }
+    return undefined;
+  };
+  const originPoint = parsePoint(originLngLat, url.searchParams.get("originName") || originId);
+  const destPoint = parsePoint(destLngLat, url.searchParams.get("destName") || destId);
+
+  // 必须提供城市 ID 或坐标
+  if (!originId && !originPoint) {
+    return json({ error: { code: "INVALID_ROUTE", message: "originId or originLngLat is required" } }, 400, { ...CORS_HEADERS, "X-Request-Id": requestId });
+  }
+  if (!destId && !destPoint) {
+    return json({ error: { code: "INVALID_ROUTE", message: "destId or destLngLat is required" } }, 400, { ...CORS_HEADERS, "X-Request-Id": requestId });
   }
 
-  const cacheKey = `route:${originId}:${destId}`;
+  const cacheKey = `route:${originId || originLngLat}:${destId || destLngLat}`;
   const cached = cacheGet<{ routes: unknown[] }>(cacheKey);
   if (cached) {
     return json({ ...cached, cached: true }, 200, { ...CORS_HEADERS, "X-Request-Id": requestId });
   }
 
   const { getRoutes } = await import("./routes");
-  const routes = await getRoutes(originId, destId);
+  const routes = await getRoutes({ origin: originId || "custom", dest: destId || "custom", originPoint, destPoint });
 
   cacheSet(cacheKey, { routes }, 120_000);
 

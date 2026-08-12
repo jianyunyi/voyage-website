@@ -141,7 +141,7 @@ export async function fetchHotelDetail(id: string): Promise<HotelDetail> {
 
 export interface RouteOption {
   id: string;
-  type: "driving" | "train" | "flight";
+  type: "driving" | "train" | "flight" | "combined";
   label: string;
   timeSec: number;
   timeLabel: string;
@@ -152,12 +152,37 @@ export interface RouteOption {
   tolls?: string;
   tag?: string;
   score: number;
+  isBest?: boolean;
+  bestReason?: string;
+  legs?: string[];
   source: "amap" | "estimate";
 }
 
-export async function fetchRoutes(originId: string, destId: string): Promise<RouteOption[]> {
-  const qs = new URLSearchParams({ originId, destId });
-  const res = await fetch(`/api/route?${qs.toString()}`);
+export interface RoutePoint {
+  name: string;
+  lng: number;
+  lat: number;
+}
+
+/** 查询路线：支持城市 ID 或用户定位坐标 */
+export async function fetchRoutes(
+  originId: string,
+  destId: string,
+  originPoint?: RoutePoint,
+  destPoint?: RoutePoint,
+): Promise<RouteOption[]> {
+  const params = new URLSearchParams();
+  if (originId) params.set("originId", originId);
+  if (destId) params.set("destId", destId);
+  if (originPoint) {
+    params.set("originLngLat", `${originPoint.lng},${originPoint.lat}`);
+    params.set("originName", originPoint.name);
+  }
+  if (destPoint) {
+    params.set("destLngLat", `${destPoint.lng},${destPoint.lat}`);
+    params.set("destName", destPoint.name);
+  }
+  const res = await fetch(`/api/route?${params.toString()}`);
   if (!res.ok) throw new Error(`获取路线失败 (${res.status})`);
   const data = await res.json() as { routes: RouteOption[] };
   return data.routes;
