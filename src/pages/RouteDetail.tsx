@@ -39,11 +39,39 @@ export default function RouteDetail() {
   const others = routes.filter(r => r.id !== id).sort((a, b) => a.score - b.score);
   const meta = typeMeta[route?.type || "combined"] || typeMeta.combined;
 
-  const scoreExplains = [
+  const tipsByType: Record<string, string[]> = {
+  driving: ["建议提前检查车况与油量", "节假日高速免费/拥堵注意错峰", "长途驾驶每 2 小时休息一次"],
+  train: ["建议提前 30 分钟到达车站", "取票进站需携带身份证", "高铁二等座性价比最高，商务座空间更佳"],
+  flight: ["建议提前 2 小时到达机场", "托运行李限重留意航司规则", "值机选座可通过航司 App 提前办理"],
+  combined: ["分段换乘注意预留 20-30 分钟接驳时间", "购票建议分段购买，退改灵活", "市内接驳优先地铁，避开高峰期打车"],
+};
+
+const scoreExplains = [
     { label: "时间成本", weight: "50%", value: route ? Math.round(route.timeSec / 60) : 0, unit: "分钟" },
     { label: "费用成本", weight: "30%", value: route?.priceValue || 0, unit: "元" },
     { label: "接驳便捷", weight: "20%", value: "—", unit: "" },
   ];
+
+  const priceDetail = route ? (() => {
+    const pv = route.priceValue || 0;
+    switch (route.type) {
+      case "train": return [
+        { label: "二等座", price: `¥${pv}` },
+        { label: "一等座", price: `约 ¥${Math.round(pv * 1.6 / 10) * 10}` },
+        { label: "商务座", price: `约 ¥${Math.round(pv * 2.6 / 10) * 10}` },
+      ];
+      case "flight": return [
+        { label: "经济舱", price: `¥${pv}` },
+        { label: "超级经济舱", price: `约 ¥${Math.round(pv * 1.3 / 10) * 10}` },
+        { label: "公务舱", price: `约 ¥${Math.round(pv * 2.8 / 10) * 10}` },
+      ];
+      default: return [
+        { label: "参考费用", price: `¥${pv}` },
+        { label: "费用构成", price: "油费 + 过路费 + 车辆损耗" },
+        { label: "拼车均摊", price: "多人出行人均更低" },
+      ];
+    }
+  })() : [];
 
   return (
     <div className="min-h-screen bg-white dark:bg-stone-950">
@@ -136,6 +164,34 @@ export default function RouteDetail() {
                 </div>
               </div>
             )}
+
+            {/* 费用明细 */}
+            {route.type !== "combined" && priceDetail.length > 0 && (
+              <div className="bg-gray-50 dark:bg-stone-900 rounded-2xl p-6 border border-gray-100 dark:border-stone-800 mb-6">
+                <h2 className="text-lg font-serif font-bold text-gray-900 dark:text-stone-100 mb-4">费用明细</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {priceDetail.map(d => (
+                    <div key={d.label} className="bg-white dark:bg-stone-800 rounded-xl p-4">
+                      <div className="text-sm font-medium text-gray-700 dark:text-stone-300 mb-1">{d.label}</div>
+                      <div className="text-lg font-bold text-orange-600">{d.price}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 出行小贴士 */}
+            <div className="bg-gray-50 dark:bg-stone-900 rounded-2xl p-6 border border-gray-100 dark:border-stone-800 mb-6">
+              <h2 className="text-lg font-serif font-bold text-gray-900 dark:text-stone-100 mb-4">出行小贴士</h2>
+              <ul className="space-y-2.5">
+                {(tipsByType[route.type] || tipsByType.combined).map((t, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-sm text-gray-600 dark:text-stone-300">
+                    <span className="w-5 h-5 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">{i + 1}</span>
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            </div>
 
             {/* 评分构成 */}
             <div className="bg-gray-50 dark:bg-stone-900 rounded-2xl p-6 border border-gray-100 dark:border-stone-800 mb-6">

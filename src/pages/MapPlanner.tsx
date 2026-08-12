@@ -151,8 +151,11 @@ export default function MapPlanner() {
         destPoint ? [destPoint.lng, destPoint.lat] : [{ keyword: destCity?.keyword, city: destCity?.name }],
         (status: string, result: any) => {
           if (status === 'complete') {
-            // ---- 自定义起终点标注（绿=起点，红=终点，不依赖高德默认）----
-            drawStartEndMarkers();
+            // ---- 自定义起终点标注：用高德回调返回的真实起终点位置 ----
+            drawStartEndMarkers(
+              result.origin ? [result.origin.lng, result.origin.lat] : null,
+              result.destination ? [result.destination.lng, result.destination.lat] : null,
+            );
             if (result.routes && result.routes.length > 0) {
               const route = result.routes[0];
               // 将时间（秒）转换为小时和分钟
@@ -178,21 +181,21 @@ export default function MapPlanner() {
     }
   };
 
-  // 自定义起终点标注：绿"起" / 红"终"（避免高德默认标注歧义）
-  const drawStartEndMarkers = () => {
+  // 自定义起终点标注：绿"起" / 红"终"（坐标优先用高德回调的真实位置）
+  const drawStartEndMarkers = (originOverride: number[] | null = null, destOverride: number[] | null = null) => {
     if (!mapInstance || !AMapObj) return;
     // 清除旧标注
     startEndMarkersRef.current.forEach(m => m.setMap(null));
     startEndMarkersRef.current = [];
 
-    const originCoord = originPoint ? [originPoint.lng, originPoint.lat] : (originCity ? (() => {
+    const originCoord = originOverride || (originPoint ? [originPoint.lng, originPoint.lat] : (originCity ? (() => {
       const c = cities.find(x => x.id === origin);
       return c ? [c.lng, c.lat] : null;
-    })() : null);
-    const destCoord = destPoint ? [destPoint.lng, destPoint.lat] : (destCity ? (() => {
+    })() : null));
+    const destCoord = destOverride || (destPoint ? [destPoint.lng, destPoint.lat] : (destCity ? (() => {
       const c = cities.find(x => x.id === destination);
       return c ? [c.lng, c.lat] : null;
-    })() : null);
+    })() : null));
 
     const mk = (coord: number[] | null, label: string, color: string) => {
       if (!coord) return null;
