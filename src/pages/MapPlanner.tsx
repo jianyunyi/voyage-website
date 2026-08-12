@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import AMapLoader from "@amap/amap-jsapi-loader";
 import { MapPin, Navigation, Clock, Star, ChevronRight } from "lucide-react";
 import { fetchRoutes, type RouteOption } from "../lib/api";
@@ -16,6 +17,7 @@ const cities = [
 ];
 
 export default function MapPlanner() {
+  const navigate = useNavigate();
   const [origin, setOrigin] = useState<string>("c1");
   const [destination, setDestination] = useState<string>("c4");
   const [showRoutes, setShowRoutes] = useState(false);
@@ -447,7 +449,11 @@ export default function MapPlanner() {
             <div className="space-y-4">
               <h3 className="text-sm font-medium text-gray-500 dark:text-stone-400 uppercase tracking-wider mb-2">推荐路线方案</h3>
               {routes.map((route, index) => (
-                <div key={route.id} className="bg-white dark:bg-stone-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-stone-700 hover:border-orange-300 transition-colors cursor-pointer group">
+                <div
+                  key={route.id}
+                  onClick={() => navigate(`/plan/${route.id}?originId=${origin}&destId=${destination}${originPoint ? `&originLngLat=${originPoint.lng},${originPoint.lat}&originName=${encodeURIComponent(originPoint.name)}` : ""}${destPoint ? `&destLngLat=${destPoint.lng},${destPoint.lat}&destName=${encodeURIComponent(destPoint.name)}` : ""}`)}
+                  className="bg-white dark:bg-stone-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-stone-700 hover:border-orange-300 transition-colors cursor-pointer group"
+                >
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-bold text-lg text-gray-900 dark:text-stone-100">{route.type}</span>

@@ -21,6 +21,7 @@ const HotelDetail = lazy(() => import("./pages/HotelDetail"));
 const Itinerary = lazy(() => import("./pages/Itinerary"));
 const Login = lazy(() => import("./pages/Login"));
 const GuideDetail = lazy(() => import("./pages/GuideDetail"));
+const RouteDetail = lazy(() => import("./pages/RouteDetail"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // 路由守卫：未登录访问受保护页 → 跳 /login
@@ -46,6 +47,7 @@ export default function App() {
               <Route path="guides" element={<Guides />} />
               <Route path="food" element={<Food />} />
               <Route path="planner" element={<MapPlanner />} />
+              <Route path="plan/:id" element={<RouteDetail />} />
               <Route path="compare" element={<Compare />} />
               <Route path="hotel/:id" element={<HotelDetail />} />
               <Route path="guide/:id" element={<GuideDetail />} />
