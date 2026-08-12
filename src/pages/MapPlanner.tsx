@@ -29,7 +29,11 @@ export default function MapPlanner() {
   const drivingRef = useRef<any>(null);
   const poiMarkersRef = useRef<any[]>([]);
   const startEndMarkersRef = useRef<any[]>([]);
+  const routeLineRef = useRef<any>(null);
   const [mapLoading, setMapLoading] = useState(true);
+  const [pickMode, setPickMode] = useState<"origin" | "dest" | null>(null);
+  const pickModeRef = useRef<"origin" | "dest" | null>(null);
+  const toastSuccessRef = useRef<(msg: string) => void>(() => undefined);
   const [poiType, setPoiType] = useState<"景点" | "美食" | "酒店">("景点");
   const [poiList, setPoiList] = useState<any[]>([]);
   const [poiLoading, setPoiLoading] = useState(false);
@@ -74,6 +78,25 @@ export default function MapPlanner() {
             showTraffic: true,
           });
           drivingRef.current = driving;
+
+          // 地图点击自定义选点（pickMode 激活时）
+          map.on("click", (e: any) => {
+            const target = pickModeRef.current;
+            if (!target) return;
+            const { lng, lat } = e.lnglat;
+            const name = `${lng.toFixed(4)}, ${lat.toFixed(4)}`;
+            if (target === "origin") {
+              setOrigin("custom");
+              setOriginPoint({ name, lng, lat });
+            } else {
+              setDestination("custom");
+              setDestPoint({ name, lng, lat });
+            }
+            setPickMode(null);
+            pickModeRef.current = null;
+            setShowRoutes(false);
+            toastSuccessRef.current(`已选${target === "origin" ? "起" : "终"}点：${name}`);
+          });
         }
       })
       .catch((e) => {
@@ -157,6 +180,27 @@ export default function MapPlanner() {
               result.destination ? [result.destination.lng, result.destination.lat] : null,
             );
             if (result.routes && result.routes.length > 0) {
+              // 绘制路线连线（Polyline）：从 steps 提取全部坐标
+              if (routeLineRef.current) { routeLineRef.current.setMap(null); routeLineRef.current = null; }
+              const steps = result.routes[0].steps || [];
+              const path: number[][] = [];
+              for (const step of steps) {
+                const coords = (step.path || []).map((pt: any) => [pt.lng, pt.lat]);
+                path.push(...coords);
+              }
+              if (path.length > 0) {
+                const line = new AMapObj.Polyline({
+                  path,
+                  strokeColor: "#2563EB",
+                  strokeWeight: 6,
+                  strokeOpacity: 0.85,
+                  lineJoin: "round",
+                  lineCap: "round",
+                  showDir: true,
+                });
+                line.setMap(mapInstance);
+                routeLineRef.current = line;
+              }
               const route = result.routes[0];
               // 将时间（秒）转换为小时和分钟
               const hours = Math.floor(route.time / 3600);
@@ -242,6 +286,12 @@ export default function MapPlanner() {
         });
       }
     });
+  };
+
+  // 进入地图点击选点模式
+  const startPick = (target: "origin" | "dest") => {
+    setPickMode(target);
+    pickModeRef.current = target;
   };
 
   const pickPlace = (name: string, location: { lng: number; lat: number }, target: "origin" | "dest") => {
@@ -436,6 +486,25 @@ export default function MapPlanner() {
               ))}
             </div>
           )}
+
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <button
+              onClick={() => startPick("origin")}
+              className={`px-3 py-2 rounded-xl text-sm font-medium border transition-colors ${
+                pickMode === "origin" ? "bg-emerald-600 text-white border-emerald-600" : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+              }`}
+            >
+              {pickMode === "origin" ? "点击地图选起点…" : "📍 地图选起点"}
+            </button>
+            <button
+              onClick={() => startPick("dest")}
+              className={`px-3 py-2 rounded-xl text-sm font-medium border transition-colors ${
+                pickMode === "dest" ? "bg-red-600 text-white border-red-600" : "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+              }`}
+            >
+              {pickMode === "dest" ? "点击地图选终点…" : "📍 地图选终点"}
+            </button>
+          </div>
 
           <button 
             onClick={handleSearch}
