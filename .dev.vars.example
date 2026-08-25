@@ -1,0 +1,12 @@
+# Local-only Worker secrets. Copy to .dev.vars and never commit the copy.
+DEEPSEEK_API_KEY="replace-with-a-local-key"
+JWT_SECRET="replace-with-a-long-random-secret"
+ALLOWED_ORIGINS="http://localhost:3000"
+ADMIN_IDS="user-id-1,user-id-2"
+ROLLINGGO_API_KEY="replace-with-rollinggo-key"
+ROLLINGGO_HOTEL_MCP_URL="https://mcp.rollinggo.cn/mcp"
+ROLLINGGO_FLIGHT_MCP_URL="https://mcp.rollinggo.cn/mcp/flight"
+ROLLINGGO_FLIGHT_ENABLED="false"
+ROLLINGGO_TIMEOUT_MS="5000"
+ROUTE_BACKEND_URL="http://localhost:8080"
+ROUTE_BACKEND_TIMEOUT_MS="5000"

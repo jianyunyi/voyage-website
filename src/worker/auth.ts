@@ -44,10 +44,32 @@ const ACCESS_TTL = 15 * 60;        // 15 分钟
 const REFRESH_TTL = 7 * 24 * 3600; // 7 天
 
 const CORS = {
-  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
+
+const ACCESS_COOKIE = "voyagex_access";
+const REFRESH_COOKIE = "voyagex_refresh";
+
+function cookieValue(request: Request, name: string): string {
+  const cookies = request.headers.get("Cookie") || "";
+  const match = cookies.split(";").map(value => value.trim()).find(value => value.startsWith(`${name}=`));
+  return match ? decodeURIComponent(match.slice(name.length + 1)) : "";
+}
+
+function withAuthCookies(response: Response, tokens: TokenPair): Response {
+  const headers = new Headers(response.headers);
+  headers.append("Set-Cookie", `${ACCESS_COOKIE}=${encodeURIComponent(tokens.accessToken)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${ACCESS_TTL}`);
+  headers.append("Set-Cookie", `${REFRESH_COOKIE}=${encodeURIComponent(tokens.refreshToken)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${REFRESH_TTL}`);
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
+
+function clearAuthCookies(response: Response): Response {
+  const headers = new Headers(response.headers);
+  headers.append("Set-Cookie", `${ACCESS_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
+  headers.append("Set-Cookie", `${REFRESH_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
 
 // KV key 助手
 const kUser = (id: string) => `user:${id}`;
@@ -170,7 +192,7 @@ async function handleRegister(request: Request, env: AuthEnv): Promise<Response>
   await env.AUTH_KV.put(kByName(nickname), user.id);
 
   const tokens = await issueTokens(env, user);
-  return json({ user: publicUser(user), ...tokens }, 201);
+  return withAuthCookies(json({ user: publicUser(user) }, 201), tokens);
 }
 
 // ---- POST /api/auth/login ----
@@ -194,14 +216,14 @@ async function handleLogin(request: Request, env: AuthEnv): Promise<Response> {
   }
 
   const tokens = await issueTokens(env, user);
-  return json({ user: publicUser(user), ...tokens }, 200);
+  return withAuthCookies(json({ user: publicUser(user) }, 200), tokens);
 }
 
 // ---- POST /api/auth/refresh（旋转 + 重用检测）----
 
 async function handleRefresh(request: Request, env: AuthEnv): Promise<Response> {
   const body = await request.json().catch(() => null) as { refreshToken?: string } | null;
-  const token = body?.refreshToken || "";
+  const token = cookieValue(request, REFRESH_COOKIE) || body?.refreshToken || "";
   if (!token) return json({ error: { code: "MISSING_TOKEN", message: "缺少 refreshToken" } }, 400);
 
   const payload = await verifyJwt(token, env.JWT_SECRET);
@@ -241,14 +263,14 @@ async function handleRefresh(request: Request, env: AuthEnv): Promise<Response> 
   const user = JSON.parse(userRaw) as User;
 
   const tokens = await issueTokens(env, user);
-  return json(tokens, 200);
+  return withAuthCookies(json({ success: true }, 200), tokens);
 }
 
 // ---- POST /api/auth/logout ----
 
 async function handleLogout(request: Request, env: AuthEnv): Promise<Response> {
   const body = await request.json().catch(() => null) as { refreshToken?: string } | null;
-  const token = body?.refreshToken || "";
+  const token = cookieValue(request, REFRESH_COOKIE) || body?.refreshToken || "";
   if (!token) return json({ error: { code: "MISSING_TOKEN", message: "缺少 refreshToken" } }, 400);
 
   const payload = await verifyJwt(token, env.JWT_SECRET);
@@ -257,14 +279,14 @@ async function handleLogout(request: Request, env: AuthEnv): Promise<Response> {
     const family = await getFamily(env, payload.sub);
     await env.AUTH_KV.put(kFamily(payload.sub), JSON.stringify(family.filter(j => j !== payload.jti)), { expirationTtl: REFRESH_TTL * 2 });
   }
-  return json({ success: true }, 200);
+  return clearAuthCookies(json({ success: true }, 200));
 }
 
 // ---- GET /api/auth/me | PATCH /api/auth/me（改昵称）----
 
 async function handleMe(request: Request, env: AuthEnv): Promise<Response> {
   const auth = request.headers.get("Authorization") || "";
-  const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : cookieValue(request, ACCESS_COOKIE);
   if (!token) return json({ error: { code: "UNAUTHORIZED", message: "未登录" } }, 401);
 
   const payload = await verifyJwt(token, env.JWT_SECRET);
@@ -312,7 +334,7 @@ async function handlePassword(request: Request, env: AuthEnv): Promise<Response>
   if (request.method !== "POST") return json({ error: { code: "METHOD_NOT_ALLOWED", message: "POST only" } }, 405);
 
   const auth = request.headers.get("Authorization") || "";
-  const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : cookieValue(request, ACCESS_COOKIE);
   if (!token) return json({ error: { code: "UNAUTHORIZED", message: "未登录" } }, 401);
 
   const payload = await verifyJwt(token, env.JWT_SECRET);
@@ -355,7 +377,7 @@ async function handleAvatar(request: Request, env: AuthEnv): Promise<Response> {
   if (request.method !== "POST") return json({ error: { code: "METHOD_NOT_ALLOWED", message: "POST only" } }, 405);
 
   const auth = request.headers.get("Authorization") || "";
-  const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : cookieValue(request, ACCESS_COOKIE);
   if (!token) return json({ error: { code: "UNAUTHORIZED", message: "未登录" } }, 401);
 
   const payload = await verifyJwt(token, env.JWT_SECRET);
@@ -394,7 +416,7 @@ function publicUser(user: User) {
 /** 从 Authorization: Bearer <accessToken> 解析 userId；无效返回 null */
 export async function resolveUser(request: Request, env: { AUTH_KV: KVNamespace; JWT_SECRET: string }): Promise<User | null> {
   const auth = request.headers.get("Authorization") || "";
-  const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : cookieValue(request, ACCESS_COOKIE);
   if (!token) return null;
 
   const payload = await verifyJwt(token, env.JWT_SECRET);

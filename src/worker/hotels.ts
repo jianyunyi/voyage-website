@@ -37,6 +37,8 @@ export interface HotelDetail {
   amenities: string[];
   rooms: HotelRoom[];
   reviews: HotelReview[];
+  dataSource?: "mock" | "provider";
+  isLive?: boolean;
 }
 
 const HOTEL_DB: Record<string, HotelDetail> = {
@@ -114,7 +116,8 @@ const HOTEL_DB: Record<string, HotelDetail> = {
 export async function getHotelDetail(id: string): Promise<HotelDetail | null> {
   // 模拟查询延迟
   await new Promise(r => setTimeout(r, 80 + Math.random() * 120));
-  return HOTEL_DB[id] ?? null;
+  const hotel = HOTEL_DB[id];
+  return hotel ? { ...hotel, dataSource: "mock", isLive: false } : null;
 }
 
 export { HOTEL_DB };

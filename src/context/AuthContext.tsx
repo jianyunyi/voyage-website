@@ -14,13 +14,10 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const LS_ACCESS = "voyagex_access_token";
-const LS_REFRESH = "voyagex_refresh_token";
 const LS_USER = "voyagex_user";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   // 更新用户并同步 localStorage
@@ -31,67 +28,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // 启动时恢复会话
   useEffect(() => {
-    const token = localStorage.getItem(LS_ACCESS);
-    const savedUser = localStorage.getItem(LS_USER);
-    if (token && savedUser) {
-      setAccessToken(token);
-      applyUser(JSON.parse(savedUser) as AuthUser);
-      // 后台验证 access token，失效则尝试 refresh
-      fetchMe(token).catch(() => {
-        const refresh = localStorage.getItem(LS_REFRESH);
-        if (refresh) {
-          refreshRemote(refresh)
-            .then(tokens => {
-              localStorage.setItem(LS_ACCESS, tokens.accessToken);
-              localStorage.setItem(LS_REFRESH, tokens.refreshToken);
-              setAccessToken(tokens.accessToken);
-            })
-            .catch(() => {
-              localStorage.removeItem(LS_ACCESS);
-              localStorage.removeItem(LS_REFRESH);
-              localStorage.removeItem(LS_USER);
-              setAccessToken(null);
-              setUser(null);
-            });
-        } else {
-          // 无 refresh token：access token 已失效，清空（避免无效 token 触发 401 噪音）
-          localStorage.removeItem(LS_ACCESS);
+    let cancelled = false;
+    const restore = async () => {
+      const savedUser = localStorage.getItem(LS_USER);
+      if (!savedUser) {
+        if (!cancelled) setLoading(false);
+        return;
+      }
+      try {
+        applyUser(JSON.parse(savedUser) as AuthUser);
+      } catch {
+        localStorage.removeItem(LS_USER);
+      }
+      try {
+        const remoteUser = await fetchMe().catch(async () => {
+          await refreshRemote();
+          return fetchMe();
+        });
+        if (!cancelled) applyUser(remoteUser);
+      } catch {
+        if (!cancelled) {
           localStorage.removeItem(LS_USER);
-          setAccessToken(null);
           setUser(null);
         }
-      });
-    }
-    setLoading(false);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    restore();
+    return () => { cancelled = true; };
   }, []);
 
-  const persist = (tokens: { accessToken: string; refreshToken: string }, u: AuthUser) => {
-    localStorage.setItem(LS_ACCESS, tokens.accessToken);
-    localStorage.setItem(LS_REFRESH, tokens.refreshToken);
+  const persist = (u: AuthUser) => {
     localStorage.setItem(LS_USER, JSON.stringify(u));
-    setAccessToken(tokens.accessToken);
     setUser(u);
   };
 
   const login = async (nickname: string, password: string) => {
     const result = await loginRemote(nickname, password);
-    persist(result, result.user);
+    persist(result.user);
   };
 
   const register = async (nickname: string, password: string) => {
     const result = await registerRemote(nickname, password);
-    persist(result, result.user);
+    persist(result.user);
   };
 
   const logout = async () => {
-    const refresh = localStorage.getItem(LS_REFRESH);
-    if (refresh) {
-      await logoutRemote(refresh).catch(() => undefined);
-    }
-    localStorage.removeItem(LS_ACCESS);
-    localStorage.removeItem(LS_REFRESH);
+    await logoutRemote().catch(() => undefined);
     localStorage.removeItem(LS_USER);
-    setAccessToken(null);
     setUser(null);
   };
 
@@ -99,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider value={{
       user,
       loading,
-      accessToken,
+      accessToken: user ? "cookie-session" : null,
       isAuthenticated: !!user,
       login,
       register,

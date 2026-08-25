@@ -4,6 +4,8 @@ dist/
 coverage/
 .DS_Store
 *.log
+.tmp-go-cache/
+backend/.tmp-go-cache/
 .env*
 !.env.example
 

@@ -6,8 +6,11 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
-  quality:
+  verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,13 +18,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - name: Install
-        run: npm ci
-      - name: Type check
-        run: npx tsc --noEmit
-      - name: Lint
-        run: npx eslint src --max-warnings=100
-      - name: Unit tests
-        run: npm test
-      - name: Build
-        run: npx vite build
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test -- --run
+      - run: npm run build

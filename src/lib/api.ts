@@ -59,9 +59,9 @@ export interface FavoriteItem {
 }
 
 /** 获取全部收藏（需登录） */
-export async function fetchFavorites(accessToken?: string | null): Promise<FavoriteItem[]> {
+export async function fetchFavorites(_accessToken?: string | null): Promise<FavoriteItem[]> {
   const res = await fetch("/api/user/favorites", {
-    headers: accessToken ? { Authorization: "Bearer " + accessToken } : undefined,
+    credentials: "include",
   });
   if (!res.ok) throw new Error(`获取收藏失败 (${res.status})`);
   const data = await res.json() as { favorites: FavoriteItem[] };
@@ -69,10 +69,11 @@ export async function fetchFavorites(accessToken?: string | null): Promise<Favor
 }
 
 /** 新增收藏（需登录） */
-export async function addFavoriteRemote(item: FavoriteItem, accessToken?: string | null): Promise<FavoriteItem[]> {
+export async function addFavoriteRemote(item: FavoriteItem, _accessToken?: string | null): Promise<FavoriteItem[]> {
   const res = await fetch("/api/user/favorites", {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...(accessToken ? { Authorization: "Bearer " + accessToken } : {}) },
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(item),
   });
   if (!res.ok) throw new Error(`添加收藏失败 (${res.status})`);
@@ -81,10 +82,10 @@ export async function addFavoriteRemote(item: FavoriteItem, accessToken?: string
 }
 
 /** 删除收藏（需登录） */
-export async function removeFavoriteRemote(id: string, accessToken?: string | null): Promise<FavoriteItem[]> {
+export async function removeFavoriteRemote(id: string, _accessToken?: string | null): Promise<FavoriteItem[]> {
   const res = await fetch(`/api/user/favorites/${encodeURIComponent(id)}`, {
     method: "DELETE",
-    headers: accessToken ? { Authorization: "Bearer " + accessToken } : undefined,
+    credentials: "include",
   });
   if (!res.ok) throw new Error(`删除收藏失败 (${res.status})`);
   const data = await res.json() as { favorites: FavoriteItem[] };
@@ -239,8 +240,8 @@ export interface AuthUser {
 }
 
 export interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
+  accessToken?: string;
+  refreshToken?: string;
 }
 
 export interface AuthResult extends AuthTokens {
@@ -251,6 +252,7 @@ export async function registerRemote(nickname: string, password: string): Promis
   const res = await fetch("/api/auth/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify({ nickname, password }),
   });
   const data = await res.json() as AuthResult;
@@ -262,6 +264,7 @@ export async function loginRemote(nickname: string, password: string): Promise<A
   const res = await fetch("/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify({ nickname, password }),
   });
   const data = await res.json() as AuthResult;
@@ -269,28 +272,28 @@ export async function loginRemote(nickname: string, password: string): Promise<A
   return data;
 }
 
-export async function refreshRemote(refreshToken: string): Promise<AuthTokens> {
+export async function refreshRemote(): Promise<AuthTokens> {
   const res = await fetch("/api/auth/refresh", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refreshToken }),
+    credentials: "include",
   });
   const data = await res.json() as AuthTokens;
   if (!res.ok) throw new Error((data as { error?: { message?: string } })?.error?.message || "登录已过期");
   return data;
 }
 
-export async function logoutRemote(refreshToken: string): Promise<void> {
+export async function logoutRemote(): Promise<void> {
   await fetch("/api/auth/logout", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refreshToken }),
+    credentials: "include",
   });
 }
 
-export async function fetchMe(accessToken: string): Promise<AuthUser> {
+export async function fetchMe(): Promise<AuthUser> {
   const res = await fetch("/api/auth/me", {
-    headers: { Authorization: "Bearer " + accessToken },
+    credentials: "include",
   });
   const data = await res.json() as { user: AuthUser; error?: { message?: string } };
   if (!res.ok) throw new Error(data.error?.message || "获取用户失败");
@@ -309,15 +312,16 @@ export interface Submission {
   destination?: string;
   content: string;
   extra?: Record<string, unknown>;
-  status: "pending" | "approved";
+  status: "pending" | "approved" | "rejected";
   createdAt: number;
 }
 
 /** 创建投稿（需登录） */
-export async function createSubmissionRemote(payload: { type: "guide" | "food"; title: string; destination?: string; content: string; extra?: Record<string, unknown> }, accessToken?: string | null): Promise<Submission> {
+export async function createSubmissionRemote(payload: { type: "guide" | "food"; title: string; destination?: string; content: string; extra?: Record<string, unknown> }, _accessToken?: string | null): Promise<Submission> {
   const res = await fetch("/api/submissions", {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...(accessToken ? { Authorization: "Bearer " + accessToken } : {}) },
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
   const data = await res.json() as { submission: Submission; error?: { message?: string } };
@@ -326,13 +330,73 @@ export async function createSubmissionRemote(payload: { type: "guide" | "food"; 
 }
 
 /** 我的投稿（需登录） */
-export async function fetchMySubmissions(accessToken?: string | null): Promise<Submission[]> {
+export async function fetchMySubmissions(_accessToken?: string | null): Promise<Submission[]> {
   const res = await fetch("/api/submissions", {
-    headers: accessToken ? { Authorization: "Bearer " + accessToken } : undefined,
+    credentials: "include",
   });
   if (!res.ok) throw new Error(`获取投稿失败 (${res.status})`);
   const data = await res.json() as { submissions: Submission[] };
   return data.submissions;
+}
+
+export interface PublicGuide {
+  id: string;
+  title: string;
+  author: string;
+  destination: string;
+  days: number;
+  budget: number;
+  likes: number;
+  image: string;
+  tags: string[];
+  content: string[];
+  highlights: string[];
+  comments: [];
+}
+
+export async function fetchPublicGuides(): Promise<PublicGuide[]> {
+  const res = await fetch("/api/guides/public");
+  if (!res.ok) throw new Error(`获取公开攻略失败 (${res.status})`);
+  const data = await res.json() as { guides: PublicGuide[] };
+  return data.guides;
+}
+
+export interface PublicFood {
+  id: string;
+  name: string;
+  author: string;
+  city: string;
+  address: string;
+  type: string;
+  price: number;
+  rating: number;
+  reviews: number;
+  image: string;
+  description: string;
+}
+
+export async function fetchPublicFoods(): Promise<PublicFood[]> {
+  const res = await fetch("/api/food/public");
+  if (!res.ok) throw new Error(`获取公开美食失败 (${res.status})`);
+  const data = await res.json() as { foods: PublicFood[] };
+  return data.foods;
+}
+
+export async function fetchAdminSubmissions(_accessToken?: string | null): Promise<Submission[]> {
+  const res = await fetch("/api/submissions/admin", { credentials: "include" });
+  const data = await res.json() as { submissions?: Submission[]; error?: { message?: string } };
+  if (!res.ok) throw new Error(data.error?.message || `获取审核队列失败 (${res.status})`);
+  return data.submissions || [];
+}
+
+export async function moderateSubmission(id: string, action: "approve" | "reject", _accessToken?: string | null): Promise<Submission> {
+  const res = await fetch(`/api/submissions/${encodeURIComponent(id)}/${action}`, {
+    method: "POST",
+    credentials: "include",
+  });
+  const data = await res.json() as { submission?: Submission; error?: { message?: string } };
+  if (!res.ok || !data.submission) throw new Error(data.error?.message || `审核失败 (${res.status})`);
+  return data.submission;
 }
 
 
@@ -359,10 +423,11 @@ export interface SavedItinerary {
 }
 
 /** 保存 AI 行程（需登录） */
-export async function saveItineraryRemote(payload: { title: string; destination?: string; days?: number; startDate?: string; endDate?: string; budget?: string; dayData: SavedItineraryDay[] }, accessToken?: string | null): Promise<SavedItinerary> {
+export async function saveItineraryRemote(payload: { title: string; destination?: string; days?: number; startDate?: string; endDate?: string; budget?: string; dayData: SavedItineraryDay[] }, _accessToken?: string | null): Promise<SavedItinerary> {
   const res = await fetch("/api/itineraries", {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...(accessToken ? { Authorization: "Bearer " + accessToken } : {}) },
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
   const data = await res.json() as { itinerary: SavedItinerary; error?: { message?: string } };
@@ -371,9 +436,9 @@ export async function saveItineraryRemote(payload: { title: string; destination?
 }
 
 /** 我的行程（需登录） */
-export async function fetchMyItineraries(accessToken?: string | null): Promise<SavedItinerary[]> {
+export async function fetchMyItineraries(_accessToken?: string | null): Promise<SavedItinerary[]> {
   const res = await fetch("/api/itineraries", {
-    headers: accessToken ? { Authorization: "Bearer " + accessToken } : undefined,
+    credentials: "include",
   });
   if (!res.ok) throw new Error(`获取行程失败 (${res.status})`);
   const data = await res.json() as { itineraries: SavedItinerary[] };
@@ -398,10 +463,11 @@ export interface PriceAlert {
 }
 
 /** 订阅比价项（需登录） */
-export async function subscribeAlertRemote(payload: { itemId: string; title: string; category?: string; subscribedPrice: number }, accessToken?: string | null): Promise<PriceAlert[]> {
+export async function subscribeAlertRemote(payload: { itemId: string; title: string; category?: string; subscribedPrice: number }, _accessToken?: string | null): Promise<PriceAlert[]> {
   const res = await fetch("/api/price-alerts", {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...(accessToken ? { Authorization: "Bearer " + accessToken } : {}) },
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
   const data = await res.json() as { alerts: PriceAlert[]; error?: { message?: string } };
@@ -410,9 +476,9 @@ export async function subscribeAlertRemote(payload: { itemId: string; title: str
 }
 
 /** 我的订阅列表（需登录） */
-export async function fetchAlertsRemote(accessToken?: string | null): Promise<PriceAlert[]> {
+export async function fetchAlertsRemote(_accessToken?: string | null): Promise<PriceAlert[]> {
   const res = await fetch("/api/price-alerts", {
-    headers: accessToken ? { Authorization: "Bearer " + accessToken } : undefined,
+    credentials: "include",
   });
   if (!res.ok) throw new Error(`获取订阅失败 (${res.status})`);
   const data = await res.json() as { alerts: PriceAlert[] };
@@ -420,10 +486,10 @@ export async function fetchAlertsRemote(accessToken?: string | null): Promise<Pr
 }
 
 /** 检查降价（需登录，模拟波动） */
-export async function checkAlertsRemote(accessToken?: string | null): Promise<PriceAlert[]> {
+export async function checkAlertsRemote(_accessToken?: string | null): Promise<PriceAlert[]> {
   const res = await fetch("/api/price-alerts/check", {
     method: "POST",
-    headers: accessToken ? { Authorization: "Bearer " + accessToken } : undefined,
+    credentials: "include",
   });
   if (!res.ok) throw new Error(`检查降价失败 (${res.status})`);
   const data = await res.json() as { alerts: PriceAlert[] };
@@ -436,10 +502,11 @@ export async function checkAlertsRemote(accessToken?: string | null): Promise<Pr
 // ============================================================
 
 /** 点赞/取消（需登录） */
-export async function toggleLikeRemote(itemId: string, accessToken?: string | null): Promise<{ count: number; liked: boolean }> {
+export async function toggleLikeRemote(itemId: string, _accessToken?: string | null): Promise<{ count: number; liked: boolean }> {
   const res = await fetch("/api/likes/toggle", {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...(accessToken ? { Authorization: "Bearer " + accessToken } : {}) },
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ itemId }),
   });
   const data = await res.json() as { count: number; liked: boolean; error?: { message?: string } };
@@ -448,9 +515,9 @@ export async function toggleLikeRemote(itemId: string, accessToken?: string | nu
 }
 
 /** 批量查询点赞数 + 已赞状态（需登录） */
-export async function fetchLikesRemote(ids: string[], accessToken?: string | null): Promise<Record<string, { count: number; liked: boolean }>> {
+export async function fetchLikesRemote(ids: string[], _accessToken?: string | null): Promise<Record<string, { count: number; liked: boolean }>> {
   const res = await fetch(`/api/likes?ids=${encodeURIComponent(ids.join(","))}`, {
-    headers: accessToken ? { Authorization: "Bearer " + accessToken } : undefined,
+    credentials: "include",
   });
   if (!res.ok) throw new Error(`获取点赞失败 (${res.status})`);
   const data = await res.json() as { likes: Record<string, { count: number; liked: boolean }> };
@@ -459,10 +526,11 @@ export async function fetchLikesRemote(ids: string[], accessToken?: string | nul
 
 
 /** 上传头像（base64 data URL，需登录） */
-export async function uploadAvatarRemote(avatar: string, accessToken?: string | null): Promise<AuthUser> {
+export async function uploadAvatarRemote(avatar: string, _accessToken?: string | null): Promise<AuthUser> {
   const res = await fetch("/api/auth/avatar", {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...(accessToken ? { Authorization: "Bearer " + accessToken } : {}) },
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ avatar }),
   });
   const data = await res.json() as { user: AuthUser; error?: { message?: string } };
@@ -494,10 +562,11 @@ export async function reportErrorRemote(payload: { message: string; stack?: stri
 // ============================================================
 
 /** 修改昵称 */
-export async function updateNicknameRemote(nickname: string, token: string | null): Promise<AuthUser> {
+export async function updateNicknameRemote(nickname: string, _token: string | null): Promise<AuthUser> {
   const res = await fetch("/api/auth/me", {
     method: "PATCH",
-    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ nickname }),
   });
   const data = (await res.json()) as { user?: AuthUser; error?: { message?: string } };
@@ -506,10 +575,11 @@ export async function updateNicknameRemote(nickname: string, token: string | nul
 }
 
 /** 修改密码 */
-export async function changePasswordRemote(oldPassword: string, newPassword: string, token: string | null): Promise<void> {
+export async function changePasswordRemote(oldPassword: string, newPassword: string, _token: string | null): Promise<void> {
   const res = await fetch("/api/auth/password", {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ oldPassword, newPassword }),
   });
   const data = (await res.json()) as { error?: { message?: string } };
@@ -517,10 +587,10 @@ export async function changePasswordRemote(oldPassword: string, newPassword: str
 }
 
 /** 删除行程 */
-export async function deleteItineraryRemote(id: string, token: string | null): Promise<SavedItinerary[]> {
+export async function deleteItineraryRemote(id: string, _token: string | null): Promise<SavedItinerary[]> {
   const res = await fetch(`/api/itineraries/${id}`, {
     method: "DELETE",
-    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    credentials: "include",
   });
   const data = (await res.json()) as { itineraries?: SavedItinerary[]; error?: { message?: string } };
   if (!res.ok || !data.itineraries) throw new Error(data.error?.message || "删除行程失败");
@@ -528,10 +598,10 @@ export async function deleteItineraryRemote(id: string, token: string | null): P
 }
 
 /** 撤回投稿 */
-export async function deleteSubmissionRemote(id: string, token: string | null): Promise<Submission[]> {
+export async function deleteSubmissionRemote(id: string, _token: string | null): Promise<Submission[]> {
   const res = await fetch(`/api/submissions/${id}`, {
     method: "DELETE",
-    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    credentials: "include",
   });
   const data = (await res.json()) as { submissions?: Submission[]; error?: { message?: string } };
   if (!res.ok || !data.submissions) throw new Error(data.error?.message || "撤回投稿失败");
@@ -539,10 +609,10 @@ export async function deleteSubmissionRemote(id: string, token: string | null): 
 }
 
 /** 取消降价订阅 */
-export async function deleteAlertRemote(id: string, token: string | null): Promise<PriceAlert[]> {
+export async function deleteAlertRemote(id: string, _token: string | null): Promise<PriceAlert[]> {
   const res = await fetch(`/api/price-alerts/${id}`, {
     method: "DELETE",
-    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    credentials: "include",
   });
   const data = (await res.json()) as { alerts?: PriceAlert[]; error?: { message?: string } };
   if (!res.ok || !data.alerts) throw new Error(data.error?.message || "取消订阅失败");

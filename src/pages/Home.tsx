@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Map, ArrowRight, Star, Compass, ArrowLeftRight, Globe, Navigation, ChevronLeft, ChevronRight, MapPin, Flame, ThumbsUp, Utensils, Route } from "lucide-react";
+import { Map, ArrowRight, Star, Compass, ArrowLeftRight, Globe, Navigation, ChevronLeft, ChevronRight, MapPin, ThumbsUp, Utensils, Route } from "lucide-react";
 import { travelGuides } from "../data/guides";
 import { imgSrc, preloadImages } from "../lib/image";
 import { foodRecommendations } from "../data/food";
@@ -91,9 +91,9 @@ export default function Home() {
   const activeRegionData = regions.find(r => r.id === activeRegion);
 
   return (
-    <div className="flex flex-col">
+    <div className="page-shell flex flex-col">
       {/* Hero Section with Carousel */}
-      <section className="relative h-[80vh] flex items-center justify-center overflow-hidden bg-black">
+      <section className="relative min-h-[min(760px,82dvh)] flex items-center overflow-hidden bg-[#17202a]">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}
@@ -122,7 +122,7 @@ export default function Home() {
           <ChevronRight className="w-6 h-6" />
         </button>
 
-        <div className="relative z-10 text-center px-4 max-w-4xl mx-auto mt-20">
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-10 lg:px-12 mt-16">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentSlide}
@@ -131,10 +131,11 @@ export default function Home() {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.5 }}
             >
-              <h1 className="text-5xl md:text-7xl font-serif font-bold text-white mb-4 leading-tight drop-shadow-lg">
+              <p className="mb-5 text-xs font-semibold uppercase tracking-[0.22em] text-orange-200">VoyageX / 旅行灵感</p>
+              <h1 className="max-w-3xl text-5xl md:text-7xl font-serif font-bold text-white mb-4 leading-[1.05] tracking-tight drop-shadow-lg">
                 {carouselItems[currentSlide].title}
               </h1>
-              <p className="text-xl md:text-2xl text-gray-200 mb-10 drop-shadow-md font-light">
+              <p className="max-w-xl text-lg md:text-xl text-gray-200 mb-10 drop-shadow-md font-light leading-relaxed">
                 {carouselItems[currentSlide].subtitle}
               </p>
             </motion.div>
@@ -144,13 +145,13 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center"
+            className="flex flex-col sm:flex-row gap-4 justify-start"
           >
-            <Link to="/planner" className="bg-orange-600 hover:bg-orange-700 text-white px-8 py-4 rounded-full font-medium transition-colors flex items-center justify-center gap-2 shadow-lg shadow-orange-600/30">
+            <Link to="/planner" className="btn-primary px-7 py-3.5 font-semibold flex items-center justify-center gap-2">
               <Map className="w-5 h-5" />
               开始规划路线
             </Link>
-            <Link to="/guides" className="bg-white/20 hover:bg-white/30 backdrop-blur-md text-white border border-white/30 px-8 py-4 rounded-full font-medium transition-colors flex items-center justify-center gap-2">
+            <Link to="/guides" className="rounded-[0.85rem] border border-white/35 bg-white/10 px-7 py-3.5 font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/20 flex items-center justify-center gap-2">
               <Compass className="w-5 h-5" />
               浏览热门攻略
             </Link>
@@ -171,14 +172,12 @@ export default function Home() {
       </section>
 
       {/* 热门内容（上下平行：攻略 / 美食 / 路线 三区块同时展示） */}
-      <section className="py-20 bg-white dark:bg-stone-950">
+      <section className="py-20 bg-[#f6f7f5] dark:bg-stone-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 dark:text-stone-100 mb-2 flex items-center justify-center gap-3">
-              <Flame className="w-8 h-8 text-orange-600" />
-              热门推荐
-            </h2>
-            <p className="text-gray-600 dark:text-stone-400">热度最高的攻略、美食与路线，旅行灵感从这里开始</p>
+          <div className="mb-12 max-w-2xl">
+            <p className="editorial-kicker mb-3">精选编辑</p>
+            <h2 className="editorial-title text-3xl md:text-5xl font-bold mb-4">热门推荐</h2>
+            <p className="text-gray-600 dark:text-stone-400">从真实旅行经验，到下一顿值得奔赴的味道。</p>
           </div>
 
           {/* 热门攻略 */}
@@ -196,7 +195,7 @@ export default function Home() {
                 <Link
                   key={g.id}
                   to={`/guide/${g.id}`}
-                  className="group bg-white dark:bg-stone-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-100 dark:border-stone-800"
+                  className="surface surface-hover group overflow-hidden"
                 >
                   <div className="relative h-44 overflow-hidden">
                     <img src={imgSrc(g.image, 600)} alt={g.title} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -230,7 +229,7 @@ export default function Home() {
                 <Link
                   key={f.id}
                   to="/food"
-                  className="group bg-white dark:bg-stone-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-100 dark:border-stone-800"
+                  className="surface surface-hover group overflow-hidden"
                 >
                   <div className="relative h-44 overflow-hidden">
                     <img src={imgSrc(f.image, 600)} alt={f.name} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -265,7 +264,7 @@ export default function Home() {
                 <Link
                   key={r.id}
                   to="/planner"
-                  className="group bg-white dark:bg-stone-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-100 dark:border-stone-800"
+                  className="surface surface-hover group overflow-hidden"
                 >
                   <div className="relative h-44 overflow-hidden">
                     <img src={imgSrc(r.image, 600)} alt={r.title} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />

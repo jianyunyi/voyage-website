@@ -30,14 +30,14 @@ async function regToken(e: ReturnType<typeof env>, nickname: string) {
     body: JSON.stringify({ nickname, password: "pass123" }),
   });
   const resp = await handleAuth(req, new URL("http://localhost/api/auth/register"), e);
-  const data = await resp.json() as any;
-  return data.accessToken as string;
+  const value = resp.headers.get("Set-Cookie")?.match(/voyagex_access=([^;]+)/)?.[1] || "";
+  return `voyagex_access=${value}`;
 }
 
 function authed(method: string, path: string, token: string, body?: unknown) {
   return new Request(`http://localhost${path}`, {
     method,
-    headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+    headers: { "Content-Type": "application/json", Cookie: token },
     body: body ? JSON.stringify(body) : undefined,
   });
 }

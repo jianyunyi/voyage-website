@@ -27,7 +27,7 @@ function mergeFavorites(local: FavoriteItem[], remote: FavoriteItem[]): Favorite
 }
 
 export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { accessToken } = useAuth();
+  const { accessToken, loading } = useAuth();
   const [favorites, setFavorites] = useState<FavoriteItem[]>(() => {
     const saved = localStorage.getItem('voyagex_favorites');
     return saved ? JSON.parse(saved) : [];
@@ -42,7 +42,7 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // 启动时从 KV 同步（合并去重：本地 + 远端，本地独有项回推远端）
   useEffect(() => {
     // 未登录/无 token：不发请求（避免 401 控制台噪音）
-    if (!accessToken) return;
+    if (loading || !accessToken) return;
     let cancelled = false;
     (async () => {
       try {
@@ -67,7 +67,7 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
     })();
     return () => { cancelled = true; };
-  }, [accessToken]);
+  }, [accessToken, loading]);
 
   const syncFavorites = useCallback(async () => {
     if (!accessToken) return;

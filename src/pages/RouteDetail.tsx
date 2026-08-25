@@ -104,6 +104,9 @@ const scoreExplains = [
                 <div>
                   <h1 className="text-2xl font-serif font-bold text-gray-900 dark:text-stone-100 flex items-center gap-2">
                     {route.label}方案
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${route.source === "estimate" ? "bg-amber-100 text-amber-700" : "bg-sky-100 text-sky-700"}`}>
+                      {route.source === "estimate" ? "估算参考" : "实时数据"}
+                    </span>
                     {route.isBest && (
                       <span className="text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 font-medium">⭐ 最佳推荐</span>
                     )}
@@ -128,6 +131,7 @@ const scoreExplains = [
                 <div className="bg-white dark:bg-stone-800 rounded-xl p-4">
                   <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-stone-500 mb-1"><DollarSign className="w-3.5 h-3.5" /> 参考费用</div>
                   <div className="text-xl font-bold text-orange-600">{route.price || "—"}</div>
+                  {route.source === "estimate" && <div className="text-xs text-amber-600 mt-1">暂无实时班次/票价</div>}
                 </div>
                 <div className="bg-white dark:bg-stone-800 rounded-xl p-4">
                   <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-stone-500 mb-1"><RouteIcon className="w-3.5 h-3.5" /> 总里程</div>
@@ -168,7 +172,7 @@ const scoreExplains = [
             {/* 费用明细 */}
             {route.type !== "combined" && priceDetail.length > 0 && (
               <div className="bg-gray-50 dark:bg-stone-900 rounded-2xl p-6 border border-gray-100 dark:border-stone-800 mb-6">
-                <h2 className="text-lg font-serif font-bold text-gray-900 dark:text-stone-100 mb-4">费用明细</h2>
+                <h2 className="text-lg font-serif font-bold text-gray-900 dark:text-stone-100 mb-4">{route.source === "estimate" ? "费用估算" : "费用明细"}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {priceDetail.map(d => (
                     <div key={d.label} className="bg-white dark:bg-stone-800 rounded-xl p-4">

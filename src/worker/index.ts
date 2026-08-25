@@ -12,6 +12,10 @@
 
 import { cacheGet, cacheSet, cacheSweep } from "./cache";
 import { rateLimit, rateLimitSweep } from "./rate-limit";
+import { getSecurityHeaders } from "./security";
+import { getRoutes } from "./routes";
+import { buildRollingGoConfig } from "./rollinggo";
+import { buildRouteBackendConfig, fetchRouteBackend } from "./route-backend";
 
 interface Env {
   ASSETS: { fetch: (req: Request) => Promise<Response> };
@@ -20,13 +24,15 @@ interface Env {
   DEEPSEEK_API_KEY?: string; // 从 .dev.vars（本地）/ secrets（生产）注入
   JWT_SECRET?: string;        // 从 .dev.vars（本地）/ secrets（生产）注入
   ADMIN_IDS?: string;         // 管理员用户 ID（逗号分隔），用于投稿审核
+  IMAGES_BUCKET?: R2Bucket;   // 可选：投稿图片 R2 存储
+  ALLOWED_ORIGINS?: string;   // 生产前端域名，逗号分隔
+  ROLLINGGO_API_KEY?: string;
+  ROLLINGGO_HOTEL_MCP_URL?: string;
+  ROLLINGGO_FLIGHT_MCP_URL?: string;
+  ROLLINGGO_TIMEOUT_MS?: string;
+  ROUTE_BACKEND_URL?: string;
+  ROUTE_BACKEND_TIMEOUT_MS?: string;
 }
-
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
 
 // 每 N 次请求清理一次缓存/限流窗口（防泄漏）
 let requestCount = 0;
@@ -35,6 +41,7 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     const path = url.pathname;
+    const CORS_HEADERS = getSecurityHeaders(request.headers.get("Origin") || undefined, env.ALLOWED_ORIGINS);
 
     // 生成请求追踪 ID（可观测性）
     const requestId = crypto.randomUUID().slice(0, 8);
@@ -65,7 +72,7 @@ export default {
     }
 
     if (path === "/api/compare") {
-      return handleCompare(url, requestId);
+      return handleCompare(url, requestId, CORS_HEADERS, env);
     }
 
     if (path.startsWith("/api/hotel/")) {
@@ -79,79 +86,124 @@ export default {
     }
 
     if (path === "/api/route") {
-      return handleRoute(url, requestId);
+      return handleRoute(url, requestId, CORS_HEADERS, env);
+    }
+
+    if (path === "/api/guides/public") {
+      const { handlePublicGuides } = await import("./submissions");
+      return withSecurityHeaders(await handlePublicGuides(request, url, {
+        FAVORITES_KV: env.FAVORITES_KV,
+        AUTH_KV: env.AUTH_KV,
+        JWT_SECRET: env.JWT_SECRET || "",
+      }), CORS_HEADERS);
+    }
+
+    if (path === "/api/food/public") {
+      const { handlePublicFoods } = await import("./submissions");
+      return withSecurityHeaders(await handlePublicFoods(request, url, {
+        FAVORITES_KV: env.FAVORITES_KV,
+        AUTH_KV: env.AUTH_KV,
+        JWT_SECRET: env.JWT_SECRET || "",
+      }), CORS_HEADERS);
+    }
+
+    if (path.startsWith("/api/submissions/image/")) {
+      const { handleSubmissionImage } = await import("./submissions");
+      return withSecurityHeaders(await handleSubmissionImage(request, url, {
+        FAVORITES_KV: env.FAVORITES_KV,
+        AUTH_KV: env.AUTH_KV,
+        JWT_SECRET: env.JWT_SECRET || "",
+        IMAGES_BUCKET: env.IMAGES_BUCKET,
+      }), CORS_HEADERS);
     }
 
     if (path === "/api/itinerary") {
-      return handleItinerary(request, requestId, env);
+      return handleItinerary(request, requestId, env, CORS_HEADERS);
     }
 
     if (path.startsWith("/api/auth/")) {
+      if (!env.JWT_SECRET) return json({ error: { code: "CONFIG_ERROR", message: "JWT secret is not configured" } }, 500, CORS_HEADERS);
       const { handleAuth } = await import("./auth");
-      return handleAuth(request, url, {
+      return withSecurityHeaders(await handleAuth(request, url, {
         AUTH_KV: env.AUTH_KV,
-        JWT_SECRET: env.JWT_SECRET || "dev-secret-change-me",
-      });
+        JWT_SECRET: env.JWT_SECRET,
+      }), CORS_HEADERS);
     }
 
     if (path === "/api/user/favorites" || path.startsWith("/api/user/favorites/")) {
+      if (!env.JWT_SECRET) return json({ error: { code: "CONFIG_ERROR", message: "JWT secret is not configured" } }, 500, CORS_HEADERS);
       const { handleFavorites } = await import("./favorites");
-      return handleFavorites(request, url, {
+      return withSecurityHeaders(await handleFavorites(request, url, {
         FAVORITES_KV: env.FAVORITES_KV,
         AUTH_KV: env.AUTH_KV,
-        JWT_SECRET: env.JWT_SECRET || "dev-secret-change-me",
-      });
+        JWT_SECRET: env.JWT_SECRET,
+      }), CORS_HEADERS);
     }
 
     if (path === "/api/submissions" || path.startsWith("/api/submissions/")) {
+      if (!env.JWT_SECRET) return json({ error: { code: "CONFIG_ERROR", message: "JWT secret is not configured" } }, 500, CORS_HEADERS);
       const { handleSubmissions } = await import("./submissions");
-      return handleSubmissions(request, url, {
+      return withSecurityHeaders(await handleSubmissions(request, url, {
         FAVORITES_KV: env.FAVORITES_KV,
         AUTH_KV: env.AUTH_KV,
-        JWT_SECRET: env.JWT_SECRET || "dev-secret-change-me",
-      });
+        JWT_SECRET: env.JWT_SECRET,
+        ADMIN_IDS: env.ADMIN_IDS,
+        IMAGES_BUCKET: env.IMAGES_BUCKET,
+      }), CORS_HEADERS);
     }
 
     if (path === "/api/errors") {
       const { handleErrors } = await import("./errors");
-      return handleErrors(request, {
+      return withSecurityHeaders(await handleErrors(request, {
         FAVORITES_KV: env.FAVORITES_KV,
         AUTH_KV: env.AUTH_KV,
-        JWT_SECRET: env.JWT_SECRET || "dev-secret-change-me",
-      });
+        JWT_SECRET: env.JWT_SECRET || "",
+      }), CORS_HEADERS);
     }
 
     if (path === "/api/likes" || path === "/api/likes/toggle") {
+      if (!env.JWT_SECRET) return json({ error: { code: "CONFIG_ERROR", message: "JWT secret is not configured" } }, 500, CORS_HEADERS);
       const { handleLikes } = await import("./likes");
-      return handleLikes(request, url, {
+      return withSecurityHeaders(await handleLikes(request, url, {
         FAVORITES_KV: env.FAVORITES_KV,
         AUTH_KV: env.AUTH_KV,
-        JWT_SECRET: env.JWT_SECRET || "dev-secret-change-me",
-      });
+        JWT_SECRET: env.JWT_SECRET,
+      }), CORS_HEADERS);
     }
 
     if (path === "/api/price-alerts" || path === "/api/price-alerts/check" || path.startsWith("/api/price-alerts/")) {
+      if (!env.JWT_SECRET) return json({ error: { code: "CONFIG_ERROR", message: "JWT secret is not configured" } }, 500, CORS_HEADERS);
       const { handlePriceAlerts } = await import("./price-alerts");
-      return handlePriceAlerts(request, url, {
+      return withSecurityHeaders(await handlePriceAlerts(request, url, {
         FAVORITES_KV: env.FAVORITES_KV,
         AUTH_KV: env.AUTH_KV,
-        JWT_SECRET: env.JWT_SECRET || "dev-secret-change-me",
-      });
+        JWT_SECRET: env.JWT_SECRET,
+      }), CORS_HEADERS);
     }
 
     if (path === "/api/itineraries" || path.startsWith("/api/itineraries/")) {
+      if (!env.JWT_SECRET) return json({ error: { code: "CONFIG_ERROR", message: "JWT secret is not configured" } }, 500, CORS_HEADERS);
       const { handleItineraries } = await import("./itineraries");
-      return handleItineraries(request, url, {
+      return withSecurityHeaders(await handleItineraries(request, url, {
         FAVORITES_KV: env.FAVORITES_KV,
         AUTH_KV: env.AUTH_KV,
-        JWT_SECRET: env.JWT_SECRET || "dev-secret-change-me",
-      });
+        JWT_SECRET: env.JWT_SECRET,
+      }), CORS_HEADERS);
     }
 
     // ---- Static Assets / SPA Fallback ----
-    return env.ASSETS.fetch(request);
+    return withSecurityHeaders(await env.ASSETS.fetch(request), CORS_HEADERS);
   },
 };
+
+function withSecurityHeaders(response: Response, securityHeaders: Record<string, string>): Response {
+  const headers = new Headers(response.headers);
+  headers.delete("Access-Control-Allow-Origin");
+  headers.delete("Access-Control-Allow-Methods");
+  headers.delete("Access-Control-Allow-Headers");
+  for (const [key, value] of Object.entries(securityHeaders)) headers.set(key, value);
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
 
 function json(data: unknown, status = 200, extraHeaders: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(data), {
@@ -163,7 +215,7 @@ function json(data: unknown, status = 200, extraHeaders: Record<string, string> 
 // ============================================================
 // /api/compare — 带缓存
 // ============================================================
-async function handleCompare(url: URL, requestId: string): Promise<Response> {
+async function handleCompare(url: URL, requestId: string, corsHeaders: Record<string, string>, env: Env): Promise<Response> {
   const category = url.searchParams.get("category") || "hotel";
   const destination = url.searchParams.get("destination") || "";
   const origin = url.searchParams.get("origin") || "";
@@ -171,28 +223,32 @@ async function handleCompare(url: URL, requestId: string): Promise<Response> {
   const checkOut = url.searchParams.get("checkOut") || "";
 
   if (!["transport", "hotel", "car"].includes(category)) {
-    return json({ error: { code: "INVALID_CATEGORY", message: "category must be transport|hotel|car" } }, 400, { ...CORS_HEADERS, "X-Request-Id": requestId });
+    return json({ error: { code: "INVALID_CATEGORY", message: "category must be transport|hotel|car" } }, 400, { ...corsHeaders, "X-Request-Id": requestId });
   }
 
-  // 缓存键：category + destination（TTL 60s）
-  const cacheKey = `compare:${category}:${destination}`;
+  // 缓存键包含日期和出发地，避免把不同查询的实时价格混在一起。
+  const cacheKey = `compare:${category}:${destination}:${origin}:${checkIn}:${checkOut}`;
   const cached = cacheGet<{ items: unknown[]; count: number }>(cacheKey);
   if (cached) {
-    return json({ ...cached, cached: true }, 200, { ...CORS_HEADERS, "X-Request-Id": requestId });
+    return json({ ...cached, cached: true }, 200, { ...corsHeaders, "X-Request-Id": requestId });
   }
 
   const { aggregate } = await import("./aggregator");
-  const items = await aggregate(category, { destination, origin, checkIn, checkOut });
+  const items = await aggregate(category, { destination, origin, checkIn, checkOut }, {
+    rollingGo: buildRollingGoConfig(env),
+  });
+  const isLive = items.length > 0 && items.every(item => item.source === "mcp");
+  const dataSource = isLive ? "mcp" : "fallback";
 
-  cacheSet(cacheKey, { items, count: items.length }, 60_000);
+  cacheSet(cacheKey, { items, count: items.length, dataSource, isLive }, 60_000);
 
-  return json({ items, count: items.length, cached: false }, 200, { ...CORS_HEADERS, "X-Request-Id": requestId });
+  return json({ items, count: items.length, cached: false, dataSource, isLive }, 200, { ...corsHeaders, "X-Request-Id": requestId });
 }
 
 // ============================================================
 // /api/route — 路线聚合（带缓存）
 // ============================================================
-async function handleRoute(url: URL, requestId: string): Promise<Response> {
+async function handleRoute(url: URL, requestId: string, corsHeaders: Record<string, string>, env: Env): Promise<Response> {
   const originId = url.searchParams.get("originId") || "";
   const destId = url.searchParams.get("destId") || "";
   // 用户搜索定位坐标（format: "lng,lat"）
@@ -211,32 +267,44 @@ async function handleRoute(url: URL, requestId: string): Promise<Response> {
 
   // 必须提供城市 ID 或坐标
   if (!originId && !originPoint) {
-    return json({ error: { code: "INVALID_ROUTE", message: "originId or originLngLat is required" } }, 400, { ...CORS_HEADERS, "X-Request-Id": requestId });
+    return json({ error: { code: "INVALID_ROUTE", message: "originId or originLngLat is required" } }, 400, { ...corsHeaders, "X-Request-Id": requestId });
   }
   if (!destId && !destPoint) {
-    return json({ error: { code: "INVALID_ROUTE", message: "destId or destLngLat is required" } }, 400, { ...CORS_HEADERS, "X-Request-Id": requestId });
+    return json({ error: { code: "INVALID_ROUTE", message: "destId or destLngLat is required" } }, 400, { ...corsHeaders, "X-Request-Id": requestId });
   }
 
   const cacheKey = `route:${originId || originLngLat}:${destId || destLngLat}`;
-  const cached = cacheGet<{ routes: unknown[] }>(cacheKey);
+  const cached = cacheGet<{ routes: unknown[]; count: number; dataSource: string; isLive: boolean }>(cacheKey);
   if (cached) {
-    return json({ ...cached, cached: true }, 200, { ...CORS_HEADERS, "X-Request-Id": requestId });
+    return json({ ...cached, cached: true }, 200, { ...corsHeaders, "X-Request-Id": requestId });
   }
 
-  const { getRoutes } = await import("./routes");
+  const routeQuery = { originId, destId, originPoint, destPoint };
+  const backendConfig = buildRouteBackendConfig(env);
+  if (backendConfig) {
+    try {
+      const live = await fetchRouteBackend(backendConfig, routeQuery);
+      cacheSet(cacheKey, live, 120_000);
+      return json({ ...live, cached: false }, 200, { ...corsHeaders, "X-Request-Id": requestId });
+    } catch {
+      // Fall back to the local estimator when the Go service is unavailable.
+    }
+  }
+
   const routes = await getRoutes({ origin: originId || "custom", dest: destId || "custom", originPoint, destPoint });
 
-  cacheSet(cacheKey, { routes }, 120_000);
+  const fallback = { routes, count: routes.length, dataSource: "estimate", isLive: false };
+  cacheSet(cacheKey, fallback, 120_000);
 
-  return json({ routes, count: routes.length, cached: false }, 200, { ...CORS_HEADERS, "X-Request-Id": requestId });
+  return json({ ...fallback, cached: false }, 200, { ...corsHeaders, "X-Request-Id": requestId });
 }
 
 // ============================================================
 // /api/itinerary — 行程生成
 // ============================================================
-async function handleItinerary(request: Request, requestId: string, env: Env): Promise<Response> {
+async function handleItinerary(request: Request, requestId: string, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
   if (request.method !== "POST") {
-    return json({ error: { code: "METHOD_NOT_ALLOWED", message: "POST required" } }, 405, { ...CORS_HEADERS, "X-Request-Id": requestId });
+    return json({ error: { code: "METHOD_NOT_ALLOWED", message: "POST required" } }, 405, { ...corsHeaders, "X-Request-Id": requestId });
   }
 
   try {
@@ -245,13 +313,13 @@ async function handleItinerary(request: Request, requestId: string, env: Env): P
     const cacheKey = `itinerary:${JSON.stringify(body)}`;
     const cached = cacheGet<Record<string, unknown>>(cacheKey);
     if (cached) {
-      return json({ ...cached, cached: true }, 200, { ...CORS_HEADERS, "X-Request-Id": requestId });
+      return json({ ...cached, cached: true }, 200, { ...corsHeaders, "X-Request-Id": requestId });
     }
     const { generateItinerary } = await import("./itinerary");
     const itinerary = await generateItinerary(body, env);
     cacheSet(cacheKey, itinerary, 600_000);
-    return json(itinerary, 200, { ...CORS_HEADERS, "X-Request-Id": requestId });
+    return json(itinerary, 200, { ...corsHeaders, "X-Request-Id": requestId });
   } catch (e) {
-    return json({ error: { code: "INVALID_ITINERARY", message: "invalid request body" } }, 400, { ...CORS_HEADERS, "X-Request-Id": requestId });
+    return json({ error: { code: "INVALID_ITINERARY", message: "invalid request body" } }, 400, { ...corsHeaders, "X-Request-Id": requestId });
   }
 }

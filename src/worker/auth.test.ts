@@ -34,6 +34,19 @@ function call(method: string, path: string, body?: unknown, envObj = env()) {
   return handleAuth(req, new URL(`http://localhost${path}`), envObj);
 }
 
+function cookie(resp: Response, name: string): string {
+  return resp.headers.get("Set-Cookie")?.match(new RegExp(`${name}=([^;]+)`))?.[1] || "";
+}
+
+function callWithCookie(method: string, path: string, cookieHeader: string, body?: unknown, envObj = env()) {
+  const req = new Request(`http://localhost${path}`, {
+    method,
+    headers: { "Content-Type": "application/json", Cookie: cookieHeader },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  return handleAuth(req, new URL(`http://localhost${path}`), envObj);
+}
+
 async function json(resp: Response) {
   return { status: resp.status, data: await resp.json() as any };
 }
@@ -44,8 +57,9 @@ describe("auth register", () => {
     const { status, data } = await json(await call("POST", "/api/auth/register", { nickname: "张三", password: "pass123" }, e));
     expect(status).toBe(201);
     expect(data.user.nickname).toBe("张三");
-    expect(data.accessToken).toBeTruthy();
-    expect(data.refreshToken).toBeTruthy();
+    expect(data.accessToken).toBeUndefined();
+    expect(data.refreshToken).toBeUndefined();
+    expect((await call("POST", "/api/auth/register", { nickname: "李明", password: "pass123" }, e)).headers.get("Set-Cookie")).toContain("voyagex_access=");
     // 密码不暴露
     expect(JSON.stringify(data)).not.toContain("pass123");
   });
@@ -79,22 +93,23 @@ describe("auth login", () => {
 describe("auth refresh rotation + reuse detection", () => {
   it("refresh 旋转：旧 token 作废，新 token 可用", async () => {
     const e = env();
-    const reg = await json(await call("POST", "/api/auth/register", { nickname: "王五", password: "pass123" }, e));
-    const rt1 = reg.data.refreshToken;
+    const regResponse = await call("POST", "/api/auth/register", { nickname: "王五", password: "pass123" }, e);
+    const rt1 = cookie(regResponse, "voyagex_refresh");
 
     // 第一次 refresh → 旋转成功
-    const r1 = await json(await call("POST", "/api/auth/refresh", { refreshToken: rt1 }, e));
+    const r1Response = await callWithCookie("POST", "/api/auth/refresh", `voyagex_refresh=${rt1}`, undefined, e);
+    const r1 = await json(r1Response);
     expect(r1.status).toBe(200);
-    const rt2 = r1.data.refreshToken;
+    const rt2 = cookie(r1Response, "voyagex_refresh");
     expect(rt2).not.toBe(rt1);
 
     // 重用检测：旧 rt1 再 refresh → TOKEN_REUSED + 家族撤销
-    const reuse = await json(await call("POST", "/api/auth/refresh", { refreshToken: rt1 }, e));
+    const reuse = await json(await callWithCookie("POST", "/api/auth/refresh", `voyagex_refresh=${rt1}`, undefined, e));
     expect(reuse.status).toBe(401);
     expect(reuse.data.error.code).toBe("TOKEN_REUSED");
 
     // 家族撤销：rt2 也应失效
-    const family = await json(await call("POST", "/api/auth/refresh", { refreshToken: rt2 }, e));
+    const family = await json(await callWithCookie("POST", "/api/auth/refresh", `voyagex_refresh=${rt2}`, undefined, e));
     expect(family.status).toBe(401);
   });
 
@@ -108,8 +123,8 @@ describe("auth refresh rotation + reuse detection", () => {
 describe("auth me + logout", () => {
   it("me 需要有效 access token", async () => {
     const e = env();
-    const reg = await json(await call("POST", "/api/auth/register", { nickname: "赵六", password: "pass123" }, e));
-    const at = reg.data.accessToken;
+    const regResponse = await call("POST", "/api/auth/register", { nickname: "赵六", password: "pass123" }, e);
+    const at = cookie(regResponse, "voyagex_access");
 
     const ok = await json(await call("GET", "/api/auth/me", undefined, {
       ...e,
@@ -120,7 +135,7 @@ describe("auth me + logout", () => {
 
     // 带 token 的请求
     const req = new Request("http://localhost/api/auth/me", {
-      headers: { Authorization: "Bearer " + at },
+      headers: { Cookie: `voyagex_access=${at}` },
     });
     const me = await json(await handleAuth(req, new URL("http://localhost/api/auth/me"), e));
     expect(me.status).toBe(200);
@@ -129,13 +144,13 @@ describe("auth me + logout", () => {
 
   it("logout 后 refresh 失效", async () => {
     const e = env();
-    const reg = await json(await call("POST", "/api/auth/register", { nickname: "钱七", password: "pass123" }, e));
-    const rt = reg.data.refreshToken;
+    const regResponse = await call("POST", "/api/auth/register", { nickname: "钱七", password: "pass123" }, e);
+    const rt = cookie(regResponse, "voyagex_refresh");
 
-    const out = await json(await call("POST", "/api/auth/logout", { refreshToken: rt }, e));
+    const out = await json(await callWithCookie("POST", "/api/auth/logout", `voyagex_refresh=${rt}`, undefined, e));
     expect(out.status).toBe(200);
 
-    const again = await json(await call("POST", "/api/auth/refresh", { refreshToken: rt }, e));
+    const again = await json(await callWithCookie("POST", "/api/auth/refresh", `voyagex_refresh=${rt}`, undefined, e));
     expect(again.status).toBe(401);
   });
 });

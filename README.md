@@ -1,20 +1,46 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="./Snipaste_2026-04-10_15-54-31.png" />
-</div>
+# VoyageX
 
-# Run and deploy your AI Studio app
+旅行规划、路线推荐、AI 行程、比价和地道美食探索平台。
 
-This contains everything you need to run your app locally.
+## 本地开发
 
-View your app in AI Studio: https://ai.studio/apps/b96a6d96-8a47-48b7-897f-839d0eb67f2e
+```powershell
+npm ci
+Copy-Item .dev.vars.example .dev.vars
+npm run dev
+```
 
-## Run Locally
+`.dev.vars` 只用于本地 Worker，禁止提交。前端地图变量配置在 `.env.local`，同样禁止提交。
 
-**Prerequisites:**  Node.js
+## 验证
 
+```powershell
+npm run lint
+npm test -- --run
+npm run build
+```
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Cloudflare 部署
+
+1. 登录 Wrangler：`npx wrangler login`
+2. 配置生产密钥，不要写入 Git：
+
+```powershell
+npx wrangler secret put DEEPSEEK_API_KEY
+npx wrangler secret put JWT_SECRET
+npx wrangler secret put ROLLINGGO_API_KEY
+```
+
+RollingGo 酒店搜索使用 MCP。机票 MCP 当前下线维护，因此 `ROLLINGGO_FLIGHT_ENABLED` 默认关闭；服务恢复后设置为 `true` 再启用。可选配置 `ROLLINGGO_HOTEL_MCP_URL`、`ROLLINGGO_FLIGHT_MCP_URL` 和 `ROLLINGGO_TIMEOUT_MS`，默认超时 5 秒。供应商不可用时接口会返回 `dataSource: "fallback"`，不会把兜底数据标记为实时。
+
+3. 在 Cloudflare Worker Variables 中配置 `ALLOWED_ORIGINS`，只填写正式前端域名。
+4. 确认 `FAVORITES_KV` 与 `AUTH_KV` 绑定到生产 namespace。
+5. 执行 `npm run deploy`，并检查 `/api/health`、登录、路线和行程生成链路。
+
+## 生产安全基线
+
+- Access/Refresh Token 不应通过 URL 传输。
+- 生产环境必须配置随机 `JWT_SECRET`，代码不会再回退到默认密钥。
+- CORS 只允许 `ALLOWED_ORIGINS` 中的来源。
+- API 响应统一包含安全响应头与请求追踪 ID。
+- 暴露过的 API Key 必须先撤销，再生成新 Key。

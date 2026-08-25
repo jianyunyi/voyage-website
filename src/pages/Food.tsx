@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Star, MapPin, Search, Filter, Heart, X, MessageSquare, Navigation, PlusCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useFavorites } from "../context/FavoritesContext";
@@ -9,6 +9,7 @@ const provinces = ["全部", "北京", "上海", "广东", "四川", "浙江", "
 
 import { foodRecommendations } from "../data/food";
 import { imgSrc } from "../lib/image";
+import { fetchPublicFoods, type PublicFood } from "../lib/api";
 
 export default function Food() {
   const [activeProvince, setActiveProvince] = useState("全部");
@@ -17,26 +18,46 @@ export default function Food() {
   const [selectedFood, setSelectedFood] = useState<any | null>(null);
   const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false);
   const { isFavorite, toggleFavorite } = useFavorites();
+  const [publishedFoods, setPublishedFoods] = useState<PublicFood[]>([]);
 
-  const filteredFood = foodRecommendations
+  useEffect(() => {
+    fetchPublicFoods().then(setPublishedFoods).catch(() => undefined);
+  }, []);
+
+  const communityFoods = publishedFoods.map(food => ({
+    id: food.id as unknown as number,
+    name: food.name,
+    province: "",
+    city: food.city,
+    address: food.address,
+    rating: food.rating,
+    reviews: food.reviews,
+    type: food.type,
+    image: food.image,
+    price: `¥${food.price}/人`,
+    description: food.description,
+    reviewsList: [],
+  }));
+  const filteredFood = [...communityFoods, ...foodRecommendations]
     .filter(food => (activeProvince === "全部" || food.province === activeProvince))
     .filter(food => food.name.toLowerCase().includes(searchQuery.toLowerCase()) || food.type.includes(searchQuery))
     .filter(food => food.rating >= minRating)
     .sort((a, b) => b.rating - a.rating);
 
   return (
-    <div className="bg-gray-50 dark:bg-stone-950 min-h-screen pb-20">
+    <div className="page-shell pb-20">
       {/* Header */}
-      <div className="bg-white dark:bg-stone-900 border-b border-gray-200 dark:border-stone-700 py-12">
+      <div className="border-b border-[#e2e7e4] bg-white/70 py-14 dark:border-stone-800 dark:bg-stone-950/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-4">
             <div>
-              <h1 className="text-4xl font-serif font-bold text-gray-900 dark:text-stone-100 mb-4">探索地道美食</h1>
+              <p className="editorial-kicker mb-3">本地味觉地图</p>
+              <h1 className="editorial-title text-4xl md:text-5xl font-bold text-gray-900 dark:text-stone-100 mb-4">探索地道美食</h1>
               <p className="text-lg text-gray-600 dark:text-stone-300 max-w-3xl">发现全国各地最地道的美食，基于真实用户评价星级排序，绝不踩雷。</p>
             </div>
             <button 
               onClick={() => setIsSubmissionModalOpen(true)}
-              className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-xl font-medium transition-colors shadow-sm whitespace-nowrap"
+              className="btn-primary flex items-center gap-2 px-6 py-3 font-semibold whitespace-nowrap"
             >
               <PlusCircle className="w-5 h-5" />
               推荐美食

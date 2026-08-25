@@ -1,22 +1,67 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "voyagex",
-  "main": "src/worker/index.ts",
-  "compatibility_date": "2026-04-08",
-  "observability": {
-    "enabled": true
-  },
-  "assets": {
-    "directory": "./dist/client",
-    "binding": "ASSETS",
-    "not_found_handling": "single-page-application",
-    "run_worker_first": true
-  },
-  "kv_namespaces": [
-    { "binding": "FAVORITES_KV", "id": "voyagex-favorites" },
-    { "binding": "AUTH_KV", "id": "voyagex-auth" }
-  ],
-  "compatibility_flags": [
-    "nodejs_compat"
-  ]
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "voyagex",
+	"main": "src/worker/index.ts",
+	"compatibility_date": "2026-04-08",
+	"vars": {
+		"ALLOWED_ORIGINS": "https://voyagex.us.ci",
+		"ADMIN_IDS": "u_f60551e5487b42f4818a865652fc8eb5",
+		"ROUTE_BACKEND_URL": "https://route-api.voyagex.us.ci",
+		"ROUTE_BACKEND_TIMEOUT_MS": "5000"
+	},
+	"observability": {
+		"enabled": true
+	},
+	"assets": {
+		"directory": "./dist/client",
+		"binding": "ASSETS",
+		"not_found_handling": "single-page-application",
+		"run_worker_first": true
+	},
+	"r2_buckets": [
+		{
+			"binding": "IMAGES_BUCKET",
+			"bucket_name": "voyagex-submission-images"
+		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "FAVORITES_KV",
+			"id": "558b587cb0b84940bfe4bd5d54481278"
+		},
+		{
+			"binding": "AUTH_KV",
+			"id": "0e79e35f7bbe4b56bd779071b2f764fe"
+		}
+	],
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"env": {
+		"staging": {
+			"name": "voyagex-staging",
+			"vars": {
+				"ALLOWED_ORIGINS": "https://staging.voyagex.us.ci",
+				"ROUTE_BACKEND_URL": "https://route-api.voyagex.us.ci",
+				"ADMIN_IDS": "u_f60551e5487b42f4818a865652fc8eb5",
+				"ROUTE_BACKEND_TIMEOUT_MS": "5000"
+			},
+			"kv_namespaces": [
+				{
+					"binding": "FAVORITES_KV",
+					"id": "88bc5e7c174041529e022105c174fc1e"
+				},
+				{
+					"binding": "AUTH_KV",
+					"id": "69271aa18eb14212841a368ef4408cfb"
+				}
+			],
+			"r2_buckets": [
+				{
+					"binding": "IMAGES_BUCKET",
+					"bucket_name": "voyagex-submission-images-staging"
+				}
+			]
+		}
+	}
 }

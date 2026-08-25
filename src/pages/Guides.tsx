@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Filter, MapPin, Calendar, ThumbsUp, PlusCircle } from "lucide-react";
-import { toggleLikeRemote, fetchLikesRemote } from "../lib/api";
+import { toggleLikeRemote, fetchLikesRemote, fetchPublicGuides, type PublicGuide } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { motion } from "framer-motion";
 import SubmissionModal from "../components/SubmissionModal";
@@ -15,6 +15,11 @@ export default function Guides() {
   const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false);
   const { accessToken } = useAuth();
   const [likesMap, setLikesMap] = useState<Record<string, { count: number; liked: boolean }>>({});
+  const [publishedGuides, setPublishedGuides] = useState<PublicGuide[]>([]);
+
+  useEffect(() => {
+    fetchPublicGuides().then(setPublishedGuides).catch(() => undefined);
+  }, []);
 
   // 加载点赞状态
   useEffect(() => {
@@ -34,7 +39,8 @@ export default function Guides() {
     }
   };
 
-  const filteredGuides = travelGuides.filter(guide => 
+  const allGuides = [...publishedGuides, ...travelGuides.filter(guide => !publishedGuides.some(item => item.id === guide.id))];
+  const filteredGuides = allGuides.filter(guide =>
     guide.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
     guide.destination.includes(searchQuery)
   );
@@ -55,18 +61,19 @@ export default function Guides() {
   };
 
   return (
-    <div className="bg-gray-50 dark:bg-stone-950 min-h-screen pb-20">
+    <div className="page-shell pb-20">
       {/* Header */}
-      <div className="bg-white dark:bg-stone-900 border-b border-gray-200 dark:border-stone-700 py-12">
+      <div className="border-b border-[#e2e7e4] bg-white/70 py-14 dark:border-stone-800 dark:bg-stone-950/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-4">
             <div>
-              <h1 className="text-4xl font-serif font-bold text-gray-900 dark:text-stone-100 mb-4">精选旅行攻略</h1>
+              <p className="editorial-kicker mb-3">旅行编辑部</p>
+              <h1 className="editorial-title text-4xl md:text-5xl font-bold text-gray-900 dark:text-stone-100 mb-4">精选旅行攻略</h1>
               <p className="text-lg text-gray-600 dark:text-stone-300 max-w-3xl">发现真实旅行者的足迹，获取详细的行程安排、预算规划和避坑指南。</p>
             </div>
             <button 
               onClick={() => setIsSubmissionModalOpen(true)}
-              className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-xl font-medium transition-colors shadow-sm whitespace-nowrap"
+              className="btn-primary flex items-center gap-2 px-6 py-3 font-semibold whitespace-nowrap"
             >
               <PlusCircle className="w-5 h-5" />
               发布攻略
@@ -86,7 +93,7 @@ export default function Guides() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <button className="flex items-center justify-center gap-2 px-6 py-3 border border-gray-300 dark:border-stone-600 rounded-xl bg-white dark:bg-stone-900 text-gray-700 dark:text-stone-200 hover:bg-gray-50 dark:bg-stone-950 transition-colors font-medium">
+              <button className="flex items-center justify-center gap-2 rounded-xl border border-[#e2e7e4] bg-white px-6 py-3 font-medium text-gray-700 transition-colors hover:border-[#d95f32] dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200">
               <Filter className="w-5 h-5" />
               筛选
             </button>
@@ -102,7 +109,7 @@ export default function Guides() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: index * 0.1 }}
-              className="bg-white dark:bg-stone-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-100 dark:border-stone-800 group cursor-pointer flex flex-col"
+              className="surface surface-hover group cursor-pointer overflow-hidden flex flex-col"
               onClick={() => navigate(`/guide/${guide.id}`)}
             >
               <div className="relative h-56 overflow-hidden">

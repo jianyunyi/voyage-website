@@ -127,7 +127,7 @@ export async function getRoutes(query: RouteQuery): Promise<RouteOption[]> {
     tolls: tolls > 0 ? `约¥${tolls}` : "免费",
     tag: "最自由",
     score: 0, // 占位，统一评分
-    source: "amap",
+    source: "estimate",
   });
 
   // 2. 高铁直达（含两端地铁接驳）
@@ -208,8 +208,6 @@ export async function getRoutes(query: RouteQuery): Promise<RouteOption[]> {
   };
   best.bestReason = `${best.label}综合评分最优：${bestType[best.type] || "推荐方案"}`;
 
-  // 模拟聚合延迟
-  await new Promise(r => setTimeout(r, 200 + Math.random() * 300));
   return options;
 }
 

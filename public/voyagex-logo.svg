@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="80" viewBox="0 0 320 80" role="img" aria-labelledby="title desc">
+  <title id="title">VoyageX</title>
+  <desc id="desc">VoyageX 智能旅行助手品牌标志</desc>
+  <g transform="translate(8 8)" fill="none" stroke="#D95F32" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="32" cy="32" r="28" stroke-width="3"/>
+    <path d="m41.9 22.1-5.7 14.1-14.1 5.7 5.7-14.1 14.1-5.7Z" stroke-width="3"/>
+    <path d="m27.8 37.8 8.4-8.4" stroke-width="3"/>
+  </g>
+  <text x="84" y="53" fill="#17202A" font-family="Georgia, 'Times New Roman', serif" font-size="38" font-weight="700" letter-spacing="-1.2">Voyage<tspan fill="#EA580C">X</tspan></text>
+</svg>

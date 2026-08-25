@@ -1,19 +1,85 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 @import "tailwindcss";
 
 /* 黑暗模式：class 策略（html.dark） */
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Playfair Display", ui-serif, Georgia, serif;
+  --font-sans: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Source Han Serif SC", "Songti SC", Georgia, serif;
+  --color-ink: #17202a;
+  --color-muted: #66727f;
+  --color-paper: #f6f7f5;
+  --color-line: #e2e7e4;
+  --color-accent: #d95f32;
 }
 
 body {
-  background-color: #fff7ed;
-  color: #0f172a;
+  background-color: #f6f7f5;
+  color: #17202a;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+button, a, input, textarea, select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.page-shell {
+  min-height: 100dvh;
+  background: #f6f7f5;
+}
+
+.editorial-kicker {
+  color: #d95f32;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.editorial-title {
+  color: #17202a;
+  font-family: var(--font-serif);
+  letter-spacing: -0.035em;
+}
+
+.surface {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid #e2e7e4;
+  border-radius: 1.25rem;
+  box-shadow: 0 12px 36px rgba(23, 32, 42, 0.06);
+}
+
+.surface-hover {
+  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+}
+
+.surface-hover:hover {
+  border-color: rgba(217, 95, 50, 0.35);
+  box-shadow: 0 18px 44px rgba(23, 32, 42, 0.1);
+  transform: translateY(-3px);
+}
+
+.btn-primary {
+  background: #d95f32;
+  color: #fff;
+  border-radius: 0.85rem;
+  box-shadow: 0 8px 18px rgba(217, 95, 50, 0.2);
+  transition: background 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+}
+
+.btn-primary:hover {
+  background: #bd4c25;
+  box-shadow: 0 12px 24px rgba(217, 95, 50, 0.28);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .surface-hover, .btn-primary { transition: none; }
 }
 
 body.dark {
@@ -21,6 +87,10 @@ body.dark {
   color: #e7e5e4;
   color-scheme: dark;
 }
+
+body.dark .page-shell { background: #0d1217; }
+body.dark .editorial-title { color: #eef2ef; }
+body.dark .surface { background: rgba(20, 28, 34, 0.9); border-color: #26343d; }
 
 /* 深色滚动条 */
 body.dark ::-webkit-scrollbar-thumb {

@@ -92,6 +92,7 @@ export default function MapPlanner() {
               setDestination("custom");
               setDestPoint({ name, lng, lat });
             }
+            setHasSearched(false);
             setPickMode(null);
             pickModeRef.current = null;
             setShowRoutes(false);
@@ -116,7 +117,7 @@ export default function MapPlanner() {
   const poiKeywords: Record<string, string> = { "景点": "风景名胜", "美食": "美食", "酒店": "酒店" };
   const poiColors: Record<string, string> = { "景点": "#0891B2", "美食": "#EA580C", "酒店": "#7C3AED" };
 
-  const searchPoi = () => {
+  const searchPoi = (type = poiType) => {
     if (!mapInstance || !AMapObj || !destCity) return;
     setPoiLoading(true);
     const placeSearch = new AMapObj.PlaceSearch({
@@ -124,7 +125,7 @@ export default function MapPlanner() {
       city: destCity.name,
       extensions: "all",
     });
-    placeSearch.search(poiKeywords[poiType], (status: string, result: any) => {
+    placeSearch.search(poiKeywords[type], (status: string, result: any) => {
       // 清除旧 marker
       poiMarkersRef.current.forEach(m => m.setMap(null));
       poiMarkersRef.current = [];
@@ -134,7 +135,7 @@ export default function MapPlanner() {
         const markers = pois.map((poi: any) => {
           const marker = new AMapObj.Marker({
             position: [poi.location.lng, poi.location.lat],
-            content: `<div style="background:${poiColors[poiType]};color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:12px;box-shadow:0 2px 6px rgba(0,0,0,.3);">${poiType[0]}</div>`,
+            content: `<div style="background:${poiColors[type]};color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:12px;box-shadow:0 2px 6px rgba(0,0,0,.3);">${type[0]}</div>`,
             offset: new AMapObj.Pixel(-14, -14),
             title: poi.name,
           });
@@ -157,14 +158,10 @@ export default function MapPlanner() {
     });
   };
 
-  // 目的地/POI 类型变化时搜索周边 POI（地图就绪后）
-  useEffect(() => {
-    if (mapInstance && destCity) searchPoi();
-  }, [mapInstance, destination, poiType]);
-
   const handleSearch = () => {
     if (origin && destination && origin !== destination && drivingRef.current) {
       setShowRoutes(true);
+      setHasSearched(true);
       setRouteInfo(null);
       
       drivingRef.current.clear();
@@ -263,6 +260,7 @@ export default function MapPlanner() {
 
   // 路线方案：驾车由高德实时计算，高铁/飞机由后端聚合 API 提供
   const [apiRoutes, setApiRoutes] = useState<RouteOption[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
 
   // ---- 搜索定位（精确起点/终点）----
   const [originPoint, setOriginPoint] = useState<{ name: string; lng: number; lat: number } | null>(null);
@@ -302,29 +300,21 @@ export default function MapPlanner() {
       setDestination("custom");
       setDestPoint({ name, lng: location.lng, lat: location.lat });
     }
+    setHasSearched(false);
     setSearchResults(null);
     setShowRoutes(false);
   };
 
-  // 选择变化时获取高铁/飞机方案
+  // 只有用户主动搜索后才获取高铁/飞机方案，避免阻塞 Planner 首屏
   useEffect(() => {
-    if (origin && destination && origin !== destination) {
+    if (hasSearched && origin && destination && origin !== destination) {
       fetchRoutes(origin, destination, originPoint || undefined, destPoint || undefined)
         .then(r => setApiRoutes(r.filter(r => r.type !== "driving")))
         .catch(() => setApiRoutes([]));
     } else {
       setApiRoutes([]);
     }
-  }, [origin, destination, originPoint, destPoint]);
-
-  // 系统选项/自定义选点变化 → 自动计算最佳路线并在地图标记（无需手动点搜索）
-  useEffect(() => {
-    if (!mapInstance || !drivingRef.current) return;
-    if (origin && destination && origin !== destination) {
-      handleSearch();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [origin, destination, originPoint, destPoint, mapInstance]);
+  }, [hasSearched, origin, destination, originPoint, destPoint]);
 
   const routes = [
     { 
@@ -369,7 +359,7 @@ export default function MapPlanner() {
               {(["景点", "美食", "酒店"] as const).map(t => (
                 <button
                   key={t}
-                  onClick={() => setPoiType(t)}
+                  onClick={() => { setPoiType(t); searchPoi(t); }}
                   className={`text-xs px-3 py-1 rounded-full font-medium transition-colors ${
                     poiType === t
                       ? "bg-orange-600 text-white"
@@ -417,7 +407,7 @@ export default function MapPlanner() {
                 <select 
                   className="w-full border-gray-300 dark:border-stone-600 rounded-lg shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm p-2 border"
                   value={origin}
-                  onChange={(e) => { setOrigin(e.target.value); }}
+                  onChange={(e) => { setOrigin(e.target.value); setHasSearched(false); setShowRoutes(false); }}
                 >
                   <option value="">选择出发地</option>
                   {cities.map(city => (
@@ -435,7 +425,7 @@ export default function MapPlanner() {
                 />
                 {originQuery && originPoint && (
                   <button
-                    onClick={() => { setOriginPoint(null); setOrigin(""); setOriginQuery(""); }}
+                    onClick={() => { setOriginPoint(null); setOrigin(""); setOriginQuery(""); setHasSearched(false); setShowRoutes(false); }}
                     className="mt-1 text-xs text-red-500 hover:text-red-600"
                   >
                     清除自定义定位
@@ -453,7 +443,7 @@ export default function MapPlanner() {
                 <select 
                   className="w-full border-gray-300 dark:border-stone-600 rounded-lg shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm p-2 border"
                   value={destination}
-                  onChange={(e) => { setDestination(e.target.value); }}
+                  onChange={(e) => { setDestination(e.target.value); setHasSearched(false); setShowRoutes(false); }}
                 >
                   <option value="">选择目的地</option>
                   {cities.map(city => (
@@ -471,7 +461,7 @@ export default function MapPlanner() {
                 />
                 {destQuery && destPoint && (
                   <button
-                    onClick={() => { setDestPoint(null); setDestination(""); setDestQuery(""); }}
+                    onClick={() => { setDestPoint(null); setDestination(""); setDestQuery(""); setHasSearched(false); setShowRoutes(false); }}
                     className="mt-1 text-xs text-red-500 hover:text-red-600"
                   >
                     清除自定义定位

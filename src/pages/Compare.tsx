@@ -133,10 +133,11 @@ export default function Compare() {
   };
 
   return (
-    <div className="bg-gray-50 dark:bg-stone-950 min-h-screen py-12">
+    <div className="page-shell min-h-screen py-14">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-serif font-bold text-gray-900 dark:text-stone-100 mb-4">全网综合比价</h1>
+        <div className="mb-12 max-w-3xl">
+          <p className="editorial-kicker mb-3">决策工具</p>
+          <h1 className="editorial-title text-4xl md:text-5xl font-bold text-gray-900 dark:text-stone-100 mb-4">全网综合比价</h1>
           <p className="text-lg text-gray-600 dark:text-stone-300 max-w-2xl mx-auto">
             一键对比各大平台价格，帮您找到最划算的预订方案。数据实时更新，确保价格准确。
           </p>
@@ -175,7 +176,7 @@ export default function Compare() {
         </div>
 
         {/* Search Form */}
-        <div className="bg-white dark:bg-stone-900 rounded-2xl p-6 shadow-sm mb-8 border border-gray-100 dark:border-stone-800">
+          <div className="surface mb-8 p-6">
           {activeCategory === "hotel" ? (
             <form onSubmit={handleSearch} className="flex flex-col lg:flex-row gap-4 items-end">
               <div className="flex-1 w-full">

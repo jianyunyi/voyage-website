@@ -5,12 +5,16 @@ import { findGuide, travelGuides } from "../data/guides";
 import { imgSrc } from "../lib/image";
 import { useFavorites } from "../context/FavoritesContext";
 import { useAuth } from "../context/AuthContext";
-import { toggleLikeRemote, fetchLikesRemote } from "../lib/api";
+import { toggleLikeRemote, fetchLikesRemote, fetchPublicGuides, type PublicGuide } from "../lib/api";
 
 export default function GuideDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const guide = id ? findGuide(id) : undefined;
+  const [publishedGuides, setPublishedGuides] = useState<PublicGuide[]>([]);
+  useEffect(() => {
+    fetchPublicGuides().then(setPublishedGuides).catch(() => undefined);
+  }, []);
+  const guide = id ? (findGuide(id) || publishedGuides.find(item => item.id === id)) : undefined;
   const { isFavorite, toggleFavorite } = useFavorites();
   const { accessToken } = useAuth();
   const [likeState, setLikeState] = useState<{ count: number; liked: boolean }>({ count: 0, liked: false });
@@ -45,7 +49,8 @@ export default function GuideDetail() {
   const fav = isFavorite(guide.id);
 
   // 相关攻略推荐：同目的地优先 → 共享标签 → 排除当前，取 3
-  const relatedGuides = travelGuides
+  const allGuides = [...publishedGuides, ...travelGuides.filter(item => !publishedGuides.some(publicGuide => publicGuide.id === item.id))];
+  const relatedGuides = allGuides
     .filter(g => g.id !== guide.id)
     .sort((a, b) => {
       const aScore = (a.destination === guide.destination ? 2 : 0) + a.tags.filter(t => guide.tags.includes(t)).length;

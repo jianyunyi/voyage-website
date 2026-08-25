@@ -34,7 +34,7 @@ const keyFor = (userId: string) => `priceAlerts:${userId}`;
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" },
+    headers: { "Content-Type": "application/json; charset=utf-8" },
   });
 }
 
@@ -64,7 +64,7 @@ export async function handlePriceAlerts(request: Request, url: URL, env: AlertEn
       }
     }
     await env.FAVORITES_KV.put(keyFor(user.id), JSON.stringify(list));
-    return json({ alerts: list, count: list.length, checkedAt: Date.now() }, 200);
+    return json({ alerts: list, count: list.length, checkedAt: Date.now(), dataSource: "simulation", isLive: false }, 200);
   }
 
   // ---- POST /api/price-alerts（订阅）----

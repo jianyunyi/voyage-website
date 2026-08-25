@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent, type ChangeEvent } from "react";
 import { X, Upload, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createSubmissionRemote } from "../lib/api";
@@ -14,6 +14,18 @@ export default function SubmissionModal({ isOpen, onClose, type }: SubmissionMod
   const { accessToken } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [image, setImage] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return alert("请选择图片文件");
+    if (file.size > 500 * 1024) return alert("图片不能超过 500KB");
+    const reader = new FileReader();
+    reader.onload = () => setImage(String(reader.result));
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -23,11 +35,18 @@ export default function SubmissionModal({ isOpen, onClose, type }: SubmissionMod
     const form = e.currentTarget as HTMLFormElement;
     const fd = new FormData(form);
     const title = String(fd.get("title") || fd.get("name") || "未命名投稿").trim();
-    const content = String(fd.get("content") || fd.get("description") || fd.get("address") || "").trim();
+    const content = String(fd.get("content") || fd.get("description") || "").trim();
     const destination = String(fd.get("destination") || fd.get("city") || "").trim();
+    const extra = {
+      image,
+      days: Number(fd.get("days") || 1),
+      budget: Number(fd.get("budget") || 0),
+      tags: String(fd.get("tags") || "").split(/[，,]/).map(item => item.trim()).filter(Boolean),
+      highlights: String(fd.get("highlights") || "").split(/[，,]/).map(item => item.trim()).filter(Boolean),
+    };
 
     try {
-      await createSubmissionRemote({ type, title, destination: destination || undefined, content }, accessToken);
+      await createSubmissionRemote({ type, title, destination: destination || undefined, content, extra }, accessToken);
       setIsSubmitting(false);
       setIsSuccess(true);
       setTimeout(() => {
@@ -91,11 +110,10 @@ export default function SubmissionModal({ isOpen, onClose, type }: SubmissionMod
                   {/* Common Image Upload */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">封面图片</label>
-                    <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
-                      <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                      <span className="text-sm text-gray-500">点击或拖拽上传图片</span>
-                      <span className="text-xs text-gray-400 mt-1">支持 JPG, PNG 格式</span>
+                    <div onClick={() => fileRef.current?.click()} className="border-2 border-dashed border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
+                      {image ? <img src={image} alt="封面预览" className="h-32 w-full rounded-lg object-cover" /> : <><Upload className="w-8 h-8 text-gray-400 mb-2" /><span className="text-sm text-gray-500">点击上传封面图片</span><span className="text-xs text-gray-400 mt-1">JPG、PNG，最大 500KB</span></>}
                     </div>
+                    <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
                   </div>
 
                   {type === "guide" ? (
@@ -111,15 +129,17 @@ export default function SubmissionModal({ isOpen, onClose, type }: SubmissionMod
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">游玩天数</label>
-                          <input required type="number" min="1" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all" placeholder="例如：5" />
+                          <input required name="days" type="number" min="1" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all" placeholder="例如：5" />
                         </div>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">人均预算 (元)</label>
-                        <input required type="number" min="0" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all" placeholder="例如：3000" />
+                        <input required name="budget" type="number" min="0" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all" placeholder="例如：3000" />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">攻略正文</label>
+                        <input name="tags" className="w-full px-4 py-3 mb-4 rounded-xl border border-gray-200" placeholder="标签，用逗号分隔，如：美食,周末游" />
+                        <input name="highlights" className="w-full px-4 py-3 mb-4 rounded-xl border border-gray-200" placeholder="亮点，用逗号分隔，如：熊猫基地,火锅" />
                         <textarea required rows={6} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all resize-none" name="content" placeholder="分享您的行程安排、交通指南、避坑建议等..."></textarea>
                       </div>
                     </>
@@ -141,21 +161,21 @@ export default function SubmissionModal({ isOpen, onClose, type }: SubmissionMod
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">详细地址</label>
-                        <input required type="text" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all" placeholder="例如：青羊区宽巷子8号" />
+                          <input required name="address" type="text" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all" placeholder="例如：青羊区宽巷子8号" />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">美食类型</label>
-                          <input required type="text" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all" placeholder="例如：火锅、川菜" />
+                          <input required name="tags" type="text" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all" placeholder="例如：火锅、川菜" />
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">人均消费 (元)</label>
-                          <input required type="number" min="0" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all" placeholder="例如：120" />
+                        <input required name="budget" type="number" min="0" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all" placeholder="例如：120" />
                         </div>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">推荐理由</label>
-                        <textarea required rows={4} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all resize-none" placeholder="说说这家店有什么必点菜，环境如何，服务怎样..."></textarea>
+                        <textarea required name="content" rows={4} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all resize-none" placeholder="说说这家店有什么必点菜，环境如何，服务怎样..."></textarea>
                       </div>
                     </>
                   )}

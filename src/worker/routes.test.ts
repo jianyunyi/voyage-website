@@ -17,7 +17,7 @@ describe("getRoutes", () => {
     expect(driving).toBeDefined();
     expect(driving!.timeSec).toBeGreaterThan(0);
     expect(driving!.distanceMeters).toBeGreaterThan(0);
-    expect(driving!.source).toBe("amap");
+    expect(driving!.source).toBe("estimate");
   });
 
   it("高铁价格合理且快于驾车", async () => {
@@ -51,5 +51,11 @@ describe("getRoutes", () => {
     const a = await getRoutes({ origin: "c2", dest: "c7" }); // 上海→厦门
     const b = await getRoutes({ origin: "c2", dest: "c7" });
     expect(a[0].distanceMeters).toBe(b[0].distanceMeters);
+  });
+
+  it("路线估算不应包含人为聚合延迟", async () => {
+    const startedAt = performance.now();
+    await getRoutes({ origin: "c1", dest: "c4" });
+    expect(performance.now() - startedAt).toBeLessThan(150);
   });
 });
