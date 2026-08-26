@@ -3,15 +3,69 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { subscribeAlertRemote } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { Bell, Share2 } from "lucide-react";
-import { Plane, Car, Building, ArrowRight, Check, Info, Search, MapPin, Calendar, Users, Loader2, Star } from "lucide-react";
+import { Plane, Car, Building, ArrowRight, Check, Info, Search, MapPin, Calendar, Users, Loader2, Star, Hotel } from "lucide-react";
 import { motion } from "framer-motion";
 import { fetchCompare, type CompareItem } from "../lib/api";
+import { handleHotelImageError, resolveHotelImage } from "../lib/hotel-images";
 
 const categories = [
   { id: "transport", name: "交通工具", icon: Plane },
   { id: "hotel", name: "酒店住宿", icon: Building },
   { id: "car", name: "租车服务", icon: Car },
 ];
+
+type HotelItem = CompareItem & {
+  rating?: number;
+  address?: string;
+  location?: string;
+  roomType?: string;
+  cancellationPolicy?: string;
+  breakfast?: string;
+  unit?: string;
+  source?: string;
+  dataSource?: string;
+};
+
+export function isLiveResult(item: CompareItem): boolean {
+  const hotel = item as HotelItem;
+  return hotel.source === "mcp" || hotel.source === "live" || hotel.dataSource === "mcp";
+}
+
+export function getResultSourceLabel(item: CompareItem): string {
+  return isLiveResult(item) ? "实时数据" : "参考数据";
+}
+
+function Detail({ label, value }: { label: string; value?: string }) {
+  if (!value) return null;
+  return <div><dt className="text-xs text-stone-500 dark:text-stone-400">{label}</dt><dd className="mt-1 text-sm font-medium text-stone-800 dark:text-stone-200">{value}</dd></div>;
+}
+
+function HotelCard({ item, index, onBook, onSubscribe, subscribed, subscribing }: {
+  key?: string;
+  item: HotelItem;
+  index: number;
+  onBook: (item: CompareItem) => void;
+  onSubscribe: (item: CompareItem) => void;
+  subscribed: boolean;
+  subscribing: boolean;
+}) {
+  const title = item.name || "未命名酒店";
+  const location = item.location || item.address;
+  const roomType = item.roomType || item.time || "标准房型";
+  const cancellation = item.cancellationPolicy || item.features.find(feature => feature.includes("取消"));
+  const breakfast = item.breakfast || item.features.find(feature => feature.includes("早餐"));
+  return <motion.article initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: index * 0.08 }} className={`surface surface-hover overflow-hidden ${index === 0 ? "border-orange-300 ring-1 ring-orange-100" : ""}`}>
+    <div className="grid gap-0 lg:grid-cols-[minmax(280px,1.1fr)_minmax(260px,1fr)_180px]">
+      <div className="relative min-h-56 bg-stone-200 lg:min-h-full"><img src={resolveHotelImage(item)} alt={title} onError={handleHotelImageError} className="absolute inset-0 h-full w-full object-cover" /><div className="absolute left-4 top-4 flex gap-2"><span className={`rounded-full px-3 py-1 text-xs font-bold ${isLiveResult(item) ? "bg-emerald-100 text-emerald-800" : "bg-stone-900/75 text-white"}`}>{getResultSourceLabel(item)}</span>{index === 0 && <span className="rounded-full bg-orange-500 px-3 py-1 text-xs font-bold text-white">全网最低</span>}</div></div>
+      <div className="p-5 sm:p-6"><div className="mb-4 flex items-start justify-between gap-3"><div><p className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-orange-600">{item.type || "酒店住宿"}</p><h2 className="font-serif text-2xl font-bold tracking-tight text-stone-900 dark:text-stone-100">{title}</h2></div>{item.rating !== undefined && <span className="flex items-center gap-1 rounded-lg bg-orange-50 px-2 py-1 text-sm font-bold text-orange-700"><Star className="h-4 w-4 fill-current" />{item.rating}</span>}</div>{location && <p className="mb-4 flex items-center gap-1.5 text-sm text-stone-600 dark:text-stone-300"><MapPin className="h-4 w-4 text-orange-600" />{location}</p>}<dl className="grid grid-cols-2 gap-x-4 gap-y-4"><Detail label="房型" value={roomType} /><Detail label="供应商" value={item.platform} /><Detail label="取消政策" value={cancellation} /><Detail label="早餐" value={breakfast} /></dl>{item.features.length > 0 && <div className="mt-5 flex flex-wrap gap-2">{item.features.map((feature, featureIndex) => <span key={`${feature}-${featureIndex}`} className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs text-emerald-800"><Check className="h-3 w-3" />{feature}</span>)}</div>}</div>
+      <div className="flex flex-col justify-between border-t border-stone-100 bg-stone-50/70 p-5 dark:border-stone-800 dark:bg-stone-950/40 sm:p-6 lg:border-l lg:border-t-0"><div><p className="text-xs text-stone-500 dark:text-stone-400">{item.platform}报价</p><p className="num mt-1 text-3xl font-bold text-orange-700 dark:text-orange-400">{item.price}</p><p className="mt-1 text-xs text-stone-500 dark:text-stone-400">{item.unit || "每晚"} · 以平台最终价格为准</p></div><div className="mt-5 space-y-2"><button onClick={() => onSubscribe(item)} disabled={subscribing || subscribed} className={`flex w-full items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-sm font-medium ${subscribed ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-orange-200 bg-white text-orange-700 hover:bg-orange-50 dark:bg-stone-900"}`}><Bell className={`h-4 w-4 ${subscribed ? "fill-current" : ""}`} />{subscribed ? "已订阅" : subscribing ? "订阅中..." : "订阅降价"}</button><button onClick={() => onBook(item)} className="btn-primary w-full px-4 py-2.5 text-sm font-bold">去预订</button></div></div>
+    </div>
+  </motion.article>;
+}
+
+function ResultSkeleton() {
+  return <div className="surface grid animate-pulse gap-5 overflow-hidden p-5 lg:grid-cols-[280px_1fr_170px]"><div className="h-48 rounded-xl bg-stone-200 dark:bg-stone-800" /><div className="space-y-4"><div className="h-4 w-24 rounded bg-stone-200 dark:bg-stone-800" /><div className="h-8 w-2/3 rounded bg-stone-200 dark:bg-stone-800" /><div className="h-4 w-full rounded bg-stone-200 dark:bg-stone-800" /><div className="h-4 w-1/2 rounded bg-stone-200 dark:bg-stone-800" /></div><div className="h-32 rounded-xl bg-stone-200 dark:bg-stone-800" /></div>;
+}
 
 
 
@@ -119,11 +173,11 @@ export default function Compare() {
     }
   };
 
-  const handleSubscribe = async (item: { id: string; title: string; category: string; price: number }) => {
+  const handleSubscribe = async (item: CompareItem) => {
     if (subscribing) return;
     setSubscribing(item.id);
     try {
-      const alerts = await subscribeAlertRemote({ itemId: item.id, title: item.title, category: item.category, subscribedPrice: item.price }, accessToken);
+      const alerts = await subscribeAlertRemote({ itemId: item.id, title: item.name || item.type || item.platform, category: activeCategory, subscribedPrice: Number(item.priceValue ?? 0) }, accessToken);
       setSubscribedIds(alerts.map(a => a.itemId));
     } catch (err) {
       console.error("订阅失败:", err);
@@ -272,85 +326,24 @@ export default function Compare() {
 
         {/* Results */}
         {error && (
-          <div className="flex flex-col items-center justify-center py-20">
-            <p className="text-red-500 mb-2">{error}</p>
-            <button onClick={handleSearch} className="text-sm text-gray-500 dark:text-stone-400 underline">重试</button>
+          <div role="alert" className="surface mb-6 flex flex-wrap items-center justify-between gap-4 border-red-200 p-5 text-red-700">
+            <span>{error}</span>
+            <button onClick={() => void handleSearch(new Event("submit") as unknown as FormEvent)} className="rounded-lg underline">重试</button>
           </div>
         )}
         {isLoading && (
-          <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="w-10 h-10 text-orange-500 animate-spin mb-4" />
-            <p className="text-gray-500 dark:text-stone-400">正在全网比价中，请稍候...</p>
+          <div className="space-y-4" aria-label="加载比价结果">
+            {[0, 1, 2].map(index => <ResultSkeleton key={index} />)}
           </div>
         )}
         {!isLoading && !error && results.length > 0 && (
-          <div className="space-y-4">
-            {results.map((item, index) => (
-              <motion.div 
-                key={item.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
-                className={`bg-white dark:bg-stone-900 rounded-2xl p-6 shadow-sm border transition-colors ${
-                  index === 0 ? "border-orange-300 ring-1 ring-orange-100" : "border-gray-100 dark:border-stone-800 hover:border-gray-300 dark:border-stone-600"
-                }`}
-              >
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                  <div className="flex-grow">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="font-bold text-lg text-gray-900 dark:text-stone-100">{item.platform}</span>
-                      {index === 0 && (
-                        <span className="bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-md font-medium flex items-center gap-1">
-                          <Star className="w-3 h-3" /> 全网最低
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-gray-600 dark:text-stone-300 mb-3">
-                      {item.type ? `${item.type} | ${item.time || ""}` : item.name}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {item.features.map((feature, i) => (
-                        <span key={i} className="inline-flex items-center gap-1 text-xs text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md">
-                          <Check className="w-3 h-3" /> {feature}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-row md:flex-col items-center md:items-end justify-between w-full md:w-auto gap-4">
-                    <div className="text-3xl font-bold text-orange-600 num">{item.price}</div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleSubscribe({ id: item.id, title: item.title, category: activeCategory, price: Number(item.priceValue ?? 0) })}
-                        disabled={subscribing === item.id || subscribedIds.includes(item.id)}
-                        className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                          subscribedIds.includes(item.id)
-                            ? "bg-emerald-50 text-emerald-700"
-                            : "bg-white dark:bg-stone-900 border border-orange-200 text-orange-600 hover:bg-orange-50"
-                        }`}
-                      >
-                        <Bell className={`w-4 h-4 ${subscribedIds.includes(item.id) ? "fill-emerald-600" : ""}`} />
-                        {subscribedIds.includes(item.id) ? "已订阅" : subscribing === item.id ? "订阅中..." : "订阅降价"}
-                      </button>
-                      <button 
-                        onClick={() => handleBook(item)}
-                        className={`px-8 py-3 rounded-xl font-medium transition-colors ${
-                        index === 0 
-                          ? "bg-orange-600 hover:bg-orange-700 text-white shadow-md" 
-                          : "bg-gray-100 hover:bg-gray-200 text-gray-900 dark:text-stone-100"
-                      }`}>
-                        去预订
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+          activeCategory === "hotel" ? <div className="space-y-4">{results.map((item, index) => <HotelCard key={item.id} item={item as HotelItem} index={index} onBook={handleBook} onSubscribe={handleSubscribe} subscribed={subscribedIds.includes(item.id)} subscribing={subscribing === item.id} />)}</div> : <div className="space-y-4">{results.map((item, index) => <motion.div key={item.id} className="surface flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between"><div><div className="flex items-center gap-3"><strong className="text-lg">{item.platform}</strong>{index === 0 && <span className="rounded-full bg-orange-100 px-2 py-1 text-xs text-orange-700">全网最低</span>}</div><p className="mt-2 text-stone-600 dark:text-stone-300">{item.type ? `${item.type} · ${item.time || ""}` : item.name}</p><div className="mt-3 flex flex-wrap gap-2">{item.features.map(feature => <span key={feature} className="text-xs text-emerald-700">✓ {feature}</span>)}</div></div><div className="flex items-center justify-between gap-4 sm:flex-col sm:items-end"><strong className="num text-2xl text-orange-700">{item.price}</strong><button onClick={() => handleBook(item)} className="btn-primary px-5 py-2 text-sm">去预订</button></div></motion.div>)}</div>
         )}
         {!isLoading && !error && results.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20">
-            <p className="text-gray-400 dark:text-stone-500">点击搜索开始比价</p>
+          <div className="surface flex flex-col items-center justify-center px-6 py-16 text-center">
+            <Hotel className="mb-4 h-10 w-10 text-orange-500" />
+            <h2 className="font-serif text-2xl font-bold">还没有比价结果</h2>
+            <p className="mt-2 text-sm text-stone-500">调整目的地或日期后，再试一次搜索。</p>
           </div>
         )}
         
