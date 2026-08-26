@@ -7,22 +7,30 @@ import { MemoryRouter } from "react-router-dom";
 import Compare from "./Compare";
 import { DEFAULT_HOTEL_IMAGE } from "../lib/hotel-images";
 
+const navigateMock = vi.hoisted(() => vi.fn());
+
 vi.mock("../context/AuthContext", () => ({
   useAuth: () => ({ accessToken: null }),
 }));
 
 vi.mock("../lib/api", async () => {
   const actual = await vi.importActual<typeof import("../lib/api")>("../lib/api");
-  return { ...actual, fetchCompare: vi.fn() };
+  return { ...actual, fetchCompare: vi.fn(), subscribeAlertRemote: vi.fn() };
 });
 
-import { fetchCompare } from "../lib/api";
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
+  return { ...actual, useNavigate: () => navigateMock };
+});
+
+import { fetchCompare, subscribeAlertRemote } from "../lib/api";
 
 const mockedFetchCompare = vi.mocked(fetchCompare);
+const mockedSubscribe = vi.mocked(subscribeAlertRemote);
 
-function renderCompare() {
+function renderCompare(initialEntries = ["/compare"]) {
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={initialEntries}>
       <Compare />
     </MemoryRouter>,
   );
@@ -31,6 +39,8 @@ function renderCompare() {
 describe("Compare hotel results", () => {
   beforeEach(() => {
     mockedFetchCompare.mockReset();
+    mockedSubscribe.mockReset();
+    navigateMock.mockReset();
   });
   afterEach(() => cleanup());
 
@@ -94,5 +104,71 @@ describe("Compare hotel results", () => {
     fireEvent.error(image);
 
     await waitFor(() => expect(image).toHaveAttribute("src", DEFAULT_HOTEL_IMAGE));
+  });
+
+  it("marks hotel images as lazy and adds a readable gradient overlay", async () => {
+    mockedFetchCompare.mockResolvedValueOnce([{
+      id: "hotel-overlay", platform: "RollingGo", price: "¥520/晚", priceValue: 520,
+      name: "夜景酒店", features: [], source: "mcp",
+    } as unknown as import("../lib/api").CompareItem]);
+    renderCompare();
+    fireEvent.click(screen.getByRole("button", { name: "搜索" }));
+    const image = await screen.findByRole("img", { name: "夜景酒店" });
+    expect(image).toHaveAttribute("loading", "lazy");
+    expect(image.parentElement).toHaveClass("hotel-image-overlay");
+  });
+
+  it("shows skeletons while loading and a useful empty state", async () => {
+    let resolveResults!: (items: import("../lib/api").CompareItem[]) => void;
+    mockedFetchCompare.mockReturnValueOnce(new Promise(resolve => { resolveResults = resolve; }));
+    renderCompare();
+    fireEvent.click(screen.getByRole("button", { name: "搜索" }));
+    expect(screen.getByLabelText("加载比价结果")).toBeInTheDocument();
+    resolveResults([]);
+    expect(await screen.findByText("还没有比价结果")).toBeInTheDocument();
+    expect(screen.getByText("调整目的地或日期后，再试一次搜索。")).toBeInTheDocument();
+  });
+
+  it("shows an error and retries the failed search", async () => {
+    mockedFetchCompare.mockRejectedValueOnce(new Error("网络暂时不可用"));
+    mockedFetchCompare.mockResolvedValueOnce([]);
+    renderCompare();
+    fireEvent.click(screen.getByRole("button", { name: "搜索" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("网络暂时不可用");
+    fireEvent.click(screen.getByRole("button", { name: "重试" }));
+    await waitFor(() => expect(mockedFetchCompare).toHaveBeenCalledTimes(2));
+  });
+
+  it("preserves share, subscribe, book, and search behavior", async () => {
+    mockedFetchCompare.mockResolvedValueOnce([{
+      id: "hotel-actions", platform: "携程旅行", price: "¥450/晚", priceValue: 450,
+      name: "中心酒店", features: [], source: "fallback",
+    } as unknown as import("../lib/api").CompareItem]);
+    mockedSubscribe.mockResolvedValueOnce([{ itemId: "hotel-actions" } as import("../lib/api").PriceAlert]);
+    Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
+    renderCompare();
+    fireEvent.click(screen.getByRole("button", { name: "搜索" }));
+    expect(await screen.findByRole("img", { name: "中心酒店" })).toBeInTheDocument();
+    expect(mockedFetchCompare).toHaveBeenCalledWith(expect.objectContaining({ category: "hotel", destination: "成都" }));
+    fireEvent.click(screen.getByRole("button", { name: "分享比价" }));
+    expect(await screen.findByText("已复制")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "订阅降价" }));
+    await waitFor(() => expect(mockedSubscribe).toHaveBeenCalledWith(expect.objectContaining({ itemId: "hotel-actions", subscribedPrice: 450 }), null));
+    fireEvent.click(screen.getByRole("button", { name: "去预订" }));
+    expect(navigateMock).toHaveBeenCalledWith("/hotel/hotel-actions");
+  });
+
+  it("loads and books non-hotel category results", async () => {
+    mockedFetchCompare.mockResolvedValueOnce([{
+      id: "train-1", platform: "12306", price: "¥680", priceValue: 680,
+      type: "高铁", time: "08:00 - 16:30", features: [], url: "https://12306.cn",
+    }]);
+    const openMock = vi.spyOn(window, "open").mockImplementation(() => null);
+    renderCompare(["/compare?category=transport&destination=成都"]);
+    expect(await screen.findByText("12306")).toBeInTheDocument();
+    expect(mockedFetchCompare).toHaveBeenCalledWith(expect.objectContaining({ category: "transport" }));
+    fireEvent.click(screen.getByRole("button", { name: "去预订" }));
+    expect(openMock).toHaveBeenCalledWith("https://12306.cn", "_blank");
+    openMock.mockRestore();
   });
 });
