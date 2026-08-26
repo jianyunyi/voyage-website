@@ -13,11 +13,11 @@ export function resolveHotelImage(item: Pick<CompareItem, "image" | "images">): 
 }
 
 export function handleHotelImageError(event: Event): void {
-  const image = event.currentTarget as HTMLImageElement | null;
-  if (!image) return;
+  const target = event.currentTarget;
+  if (typeof HTMLImageElement === "undefined" || !(target instanceof HTMLImageElement)) return;
 
-  image.onerror = null;
-  image.src = DEFAULT_HOTEL_IMAGE;
+  target.onerror = null;
+  target.src = DEFAULT_HOTEL_IMAGE;
 }
 
 function isSafeImageUrl(value: unknown): value is string {

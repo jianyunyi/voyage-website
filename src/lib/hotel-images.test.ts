@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_HOTEL_IMAGE,
@@ -29,14 +31,21 @@ describe("resolveHotelImage", () => {
 
 describe("handleHotelImageError", () => {
   it("replaces the failed image and removes its error handler", () => {
-    const image = {
-      src: "https://example.com/missing.jpg",
-      onerror: () => undefined,
-    } as unknown as HTMLImageElement;
+    const image = document.createElement("img");
+    image.src = "https://example.com/missing.jpg";
+    image.onerror = () => undefined;
 
     handleHotelImageError({ currentTarget: image } as unknown as Event);
 
     expect(image.src).toBe(DEFAULT_HOTEL_IMAGE);
     expect(image.onerror).toBeNull();
+  });
+
+  it("ignores a non-image event target", () => {
+    const target = document.createElement("div");
+
+    expect(() => handleHotelImageError({ currentTarget: target } as unknown as Event)).not.toThrow();
+    expect(target.getAttribute("src")).toBeNull();
+    expect((target as HTMLDivElement & { src?: string }).src).toBeUndefined();
   });
 });
