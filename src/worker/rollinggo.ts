@@ -208,6 +208,9 @@ export function normalizeHotels(raw: unknown): CompareItem[] {
     const name = stringValue(value.name);
     if (!id || !name || price === undefined || price < 0) return [];
     const features = stringArray(value.hotelAmenities).concat(stringArray(value.tags));
+    const images = imageArray(value.image)
+      .concat(imageArray(value.imageUrl), imageArray(value.coverImage), imageArray(value.images));
+    const validImages = [...new Set(images)];
     return [{
       id: `rollinggo-hotel-${id || index}`,
       platform: "RollingGo",
@@ -216,6 +219,7 @@ export function normalizeHotels(raw: unknown): CompareItem[] {
       name,
       features: [...new Set(features)],
       url: stringValue(value.bookingUrl),
+      ...(validImages.length > 0 ? { image: validImages[0], images: validImages } : {}),
       source: "mcp" as const,
     }];
   });
@@ -271,6 +275,23 @@ function numberAt(value: unknown, key: string): number | undefined {
 
 function stringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter(item => typeof item === "string") : [];
+}
+
+function imageArray(value: unknown): string[] {
+  const values = Array.isArray(value) ? value : [value];
+  return values
+    .filter((item): item is string => typeof item === "string")
+    .map(item => item.trim())
+    .filter(isHttpUrl);
+}
+
+function isHttpUrl(value: string): boolean {
+  try {
+    const protocol = new URL(value).protocol;
+    return protocol === "http:" || protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 function nightsBetween(checkIn: string, checkOut: string): number {

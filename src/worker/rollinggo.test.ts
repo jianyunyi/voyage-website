@@ -34,10 +34,43 @@ describe("RollingGo response mapping", () => {
       price: "¥352/晚",
       priceValue: 352,
       name: "杭州测试酒店",
+      image: "https://img.test/hotel.jpg",
+      images: ["https://img.test/hotel.jpg"],
       features: ["免费 WiFi"],
       url: "https://rollinggo.cn/book/1",
       source: "mcp",
     })]);
+  });
+
+  it("maps the first valid image and preserves valid image arrays", () => {
+    const items = normalizeHotels({
+      hotels: [{
+        hotelId: "array-images",
+        name: "图片数组酒店",
+        price: 420,
+        images: ["http://img.test/one.jpg", "javascript:alert(1)", "https://img.test/two.jpg"],
+      }],
+    });
+
+    expect(items[0]).toEqual(expect.objectContaining({
+      image: "http://img.test/one.jpg",
+      images: ["http://img.test/one.jpg", "https://img.test/two.jpg"],
+    }));
+  });
+
+  it("keeps hotel results when image fields are missing or invalid", () => {
+    const items = normalizeHotels({
+      hotels: [
+        { hotelId: "no-image", name: "无图酒店", price: 300 },
+        { hotelId: "invalid-image", name: "无效图片酒店", price: 310, image: "data:image/png;base64,abc" },
+      ],
+    });
+
+    expect(items).toHaveLength(2);
+    expect(items[0]).not.toHaveProperty("image");
+    expect(items[0]).not.toHaveProperty("images");
+    expect(items[1]).not.toHaveProperty("image");
+    expect(items[1]).not.toHaveProperty("images");
   });
 
   it("maps flight results and ignores records without a valid price", () => {

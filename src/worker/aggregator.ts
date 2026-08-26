@@ -12,6 +12,8 @@ export interface CompareItem {
   type?: string;
   time?: string;
   name?: string;
+  image?: string;
+  images?: string[];
   features: string[];
   url?: string;
   source: "mcp" | "fallback";
