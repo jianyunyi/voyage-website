@@ -44,6 +44,12 @@ describe("Compare hotel results", () => {
   });
   afterEach(() => cleanup());
 
+  it("shows an initial state before the first search", () => {
+    renderCompare();
+    expect(screen.getByText("开始探索价格")).toBeInTheDocument();
+    expect(screen.queryByText("没有找到匹配结果")).not.toBeInTheDocument();
+  });
+
   it("renders a hotel image and labels live results", async () => {
     mockedFetchCompare.mockResolvedValueOnce([{
         id: "hotel-live",
@@ -82,7 +88,7 @@ describe("Compare hotel results", () => {
     fireEvent.click(screen.getByRole("button", { name: "搜索" }));
 
     expect(await screen.findByRole("img", { name: "无图酒店" })).toHaveAttribute("src", DEFAULT_HOTEL_IMAGE);
-    expect(screen.getByText("参考数据")).toBeInTheDocument();
+    expect(screen.getByText("估算/兜底数据")).toBeInTheDocument();
   });
 
   it("switches a failed hotel image to the shared fallback", async () => {
@@ -125,7 +131,7 @@ describe("Compare hotel results", () => {
     fireEvent.click(screen.getByRole("button", { name: "搜索" }));
     expect(screen.getByLabelText("加载比价结果")).toBeInTheDocument();
     resolveResults([]);
-    expect(await screen.findByText("还没有比价结果")).toBeInTheDocument();
+    expect(await screen.findByText("没有找到匹配结果")).toBeInTheDocument();
     expect(screen.getByText("调整目的地或日期后，再试一次搜索。")).toBeInTheDocument();
   });
 
@@ -170,5 +176,33 @@ describe("Compare hotel results", () => {
     fireEvent.click(screen.getByRole("button", { name: "去预订" }));
     expect(openMock).toHaveBeenCalledWith("https://12306.cn", "_blank");
     openMock.mockRestore();
+  });
+
+  it("searches with a usable transport form when switching category", async () => {
+    mockedFetchCompare.mockResolvedValueOnce([{
+      id: "train-switch", platform: "12306", price: "¥680", priceValue: 680,
+      type: "高铁", time: "08:00 - 16:30", features: [], source: "fallback",
+    } as unknown as import("../lib/api").CompareItem]);
+    renderCompare();
+
+    fireEvent.click(screen.getByRole("button", { name: "交通工具" }));
+
+    expect(await screen.findByText("12306")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("城市/机场/车站")).toHaveValue("北京");
+    expect(screen.getByRole("button", { name: "搜索" })).toBeInTheDocument();
+    expect(mockedFetchCompare).toHaveBeenCalledWith(expect.objectContaining({ category: "transport", origin: "北京", destination: "成都" }));
+    expect(screen.getByText("估算/兜底数据")).toBeInTheDocument();
+  });
+
+  it("prefers publisher images before supplier images", async () => {
+    mockedFetchCompare.mockResolvedValueOnce([{
+      id: "hotel-publisher", platform: "RollingGo", price: "¥520/晚", priceValue: 520,
+      name: "发布者酒店", image: "https://example.com/supplier.jpg",
+      images: ["https://example.com/supplier-2.jpg"],
+      publisherImage: "https://example.com/publisher.jpg", features: [], source: "mcp",
+    } as unknown as import("../lib/api").CompareItem]);
+    renderCompare();
+    fireEvent.click(screen.getByRole("button", { name: "搜索" }));
+    expect(await screen.findByRole("img", { name: "发布者酒店" })).toHaveAttribute("src", "https://example.com/publisher.jpg");
   });
 });
