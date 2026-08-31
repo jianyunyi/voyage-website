@@ -210,7 +210,10 @@ export function normalizeHotels(raw: unknown): CompareItem[] {
     const features = stringArray(value.hotelAmenities).concat(stringArray(value.tags));
     const images = imageArray(value.image)
       .concat(imageArray(value.imageUrl), imageArray(value.coverImage), imageArray(value.images));
+    const publisherImages = imageArray(value.publisherImage)
+      .concat(imageArray(value.publisherImages));
     const validImages = [...new Set(images)];
+    const validPublisherImages = [...new Set(publisherImages)];
     return [{
       id: `rollinggo-hotel-${id || index}`,
       platform: "RollingGo",
@@ -220,6 +223,7 @@ export function normalizeHotels(raw: unknown): CompareItem[] {
       features: [...new Set(features)],
       url: stringValue(value.bookingUrl),
       ...(validImages.length > 0 ? { image: validImages[0], images: validImages } : {}),
+      ...(validPublisherImages.length > 0 ? { publisherImage: validPublisherImages[0], publisherImages: validPublisherImages } : {}),
       source: "mcp" as const,
     }];
   });

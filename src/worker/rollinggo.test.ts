@@ -58,6 +58,25 @@ describe("RollingGo response mapping", () => {
     }));
   });
 
+  it("maps publisher images separately so callers can prefer them", () => {
+    const items = normalizeHotels({
+      hotels: [{
+        hotelId: "publisher-images",
+        name: "投稿酒店",
+        price: 520,
+        image: "https://img.test/supplier.jpg",
+        publisherImage: "https://img.test/publisher.jpg",
+        publisherImages: ["https://img.test/publisher-2.jpg", "javascript:bad"],
+      }],
+    });
+
+    expect(items[0]).toEqual(expect.objectContaining({
+      image: "https://img.test/supplier.jpg",
+      publisherImage: "https://img.test/publisher.jpg",
+      publisherImages: ["https://img.test/publisher.jpg", "https://img.test/publisher-2.jpg"],
+    }));
+  });
+
   it("keeps hotel results when image fields are missing or invalid", () => {
     const items = normalizeHotels({
       hotels: [

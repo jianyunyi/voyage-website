@@ -60,7 +60,7 @@ describe("Compare hotel results", () => {
         image: "https://example.com/hotel.jpg",
         features: ["含早餐"],
         source: "mcp",
-      } as unknown as import("../lib/api").CompareItem]);
+     }]);
 
     renderCompare();
 
@@ -185,7 +185,7 @@ describe("Compare hotel results", () => {
     } as unknown as import("../lib/api").CompareItem]);
     renderCompare();
 
-    fireEvent.click(screen.getByRole("button", { name: "交通工具" }));
+    fireEvent.click(screen.getByRole("tab", { name: "交通工具" }));
 
     expect(await screen.findByText("12306")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("城市/机场/车站")).toHaveValue("北京");
@@ -204,5 +204,38 @@ describe("Compare hotel results", () => {
     renderCompare();
     fireEvent.click(screen.getByRole("button", { name: "搜索" }));
     expect(await screen.findByRole("img", { name: "发布者酒店" })).toHaveAttribute("src", "https://example.com/publisher.jpg");
+  });
+
+  it("uses all shared URL values when auto-searching", async () => {
+    mockedFetchCompare.mockResolvedValueOnce([]);
+    renderCompare(["/compare?category=hotel&destination=上海&origin=杭州&checkIn=2026-11-02&checkOut=2026-11-05&adults=3"]);
+
+    await waitFor(() => expect(mockedFetchCompare).toHaveBeenCalledWith({
+      category: "hotel",
+      destination: "上海",
+      origin: "杭州",
+      checkIn: "2026-11-02",
+      checkOut: "2026-11-05",
+    }));
+  });
+
+  it("maps car pickup and dropoff fields to the existing API contract", async () => {
+    mockedFetchCompare.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+    renderCompare();
+    fireEvent.click(screen.getByRole("tab", { name: "租车服务" }));
+
+    await waitFor(() => expect(mockedFetchCompare).toHaveBeenCalledWith(expect.objectContaining({ category: "car" })));
+
+    fireEvent.change(screen.getByLabelText("取车地点"), { target: { value: "成都机场" } });
+    fireEvent.change(screen.getByLabelText("还车地点"), { target: { value: "成都东站" } });
+    fireEvent.click(screen.getByRole("button", { name: "搜索" }));
+
+    await waitFor(() => expect(mockedFetchCompare).toHaveBeenLastCalledWith({
+      category: "car",
+      destination: "成都机场",
+      origin: "成都东站",
+      checkIn: "2026-10-01",
+      checkOut: "2026-10-07",
+    }));
   });
 });

@@ -24,8 +24,6 @@ type HotelItem = CompareItem & {
   unit?: string;
   source?: string;
   dataSource?: string;
-  publisherImage?: string;
-  publisherImages?: string[];
 };
 
 export function isLiveResult(item: CompareItem): boolean {
@@ -88,23 +86,25 @@ export default function Compare() {
     checkOut: "2026-10-07",
     adults: 2,
     origin: "北京",
+    pickup: "成都",
+    dropoff: "成都",
   });
 
   const [results, setResults] = useState<CompareItem[]>([]);
   const [error, setError] = useState<string>("");
   const [hasSearched, setHasSearched] = useState(false);
 
-  const performSearch = async (category: string = activeCategory) => {
+  const performSearch = async (category: string = activeCategory, params = searchParams) => {
     setIsLoading(true);
     setError("");
     setHasSearched(true);
     try {
       const items = await fetchCompare({
         category: category as "transport" | "hotel" | "car",
-        destination: searchParams.destination,
-        origin: searchParams.origin,
-        checkIn: searchParams.checkIn,
-        checkOut: searchParams.checkOut,
+        destination: category === "car" ? params.pickup : params.destination,
+        origin: category === "car" ? params.dropoff : params.origin,
+        checkIn: params.checkIn,
+        checkOut: params.checkOut,
       });
       setResults(items);
     } catch (err) {
@@ -126,11 +126,13 @@ export default function Compare() {
       checkOut: urlParams.get("checkOut") || "2026-10-07",
       adults: Number(urlParams.get("adults")) || 2,
       origin: urlParams.get("origin") || "北京",
+      pickup: urlParams.get("pickup") || dest,
+      dropoff: urlParams.get("dropoff") || urlParams.get("origin") || dest,
     };
     setActiveCategory(cat);
     setSearchParams(initial);
     (async () => {
-      await performSearch(cat);
+      await performSearch(cat, initial);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -139,8 +141,8 @@ export default function Compare() {
   const handleShare = async () => {
     const params = new URLSearchParams({
       category: activeCategory,
-      destination: searchParams.destination,
-      origin: searchParams.origin,
+      destination: activeCategory === "car" ? searchParams.pickup : searchParams.destination,
+      origin: activeCategory === "car" ? searchParams.dropoff : searchParams.origin,
       checkIn: searchParams.checkIn,
       checkOut: searchParams.checkOut,
       adults: String(searchParams.adults),
@@ -208,12 +210,16 @@ export default function Compare() {
             {shared ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
             {shared ? "已复制" : "分享比价"}
           </button>
-          <div className="bg-white dark:bg-stone-900 p-1 rounded-2xl shadow-sm inline-flex">
+          <div role="tablist" aria-label="比价类别" className="bg-white dark:bg-stone-900 p-1 rounded-2xl shadow-sm inline-flex">
             {categories.map((cat) => {
               const isActive = activeCategory === cat.id;
               return (
                 <button
                   key={cat.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  tabIndex={isActive ? 0 : -1}
                   onClick={() => handleCategoryChange(cat.id)}
                   className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition-all ${
                     isActive 
@@ -234,7 +240,7 @@ export default function Compare() {
           {(
             <form onSubmit={handleSearch} className="flex flex-col lg:flex-row gap-4 items-end">
               <div className="flex-1 w-full">
-                <label className="block text-xs font-medium text-gray-500 dark:text-stone-400 mb-1">{activeCategory === "car" ? "取车地点" : "目的地"}</label>
+                <label htmlFor={activeCategory === "car" ? "car-pickup" : "compare-destination"} className="block text-xs font-medium text-gray-500 dark:text-stone-400 mb-1">{activeCategory === "car" ? "取车地点" : "目的地"}</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <MapPin className="h-4 w-4 text-gray-400 dark:text-stone-500" />
@@ -242,25 +248,26 @@ export default function Compare() {
                   <input 
                     type="text" 
                     required 
-                    value={searchParams.destination} 
-                    onChange={e => setSearchParams({...searchParams, destination: e.target.value})} 
+                    id={activeCategory === "car" ? "car-pickup" : "compare-destination"}
+                    value={activeCategory === "car" ? searchParams.pickup : searchParams.destination}
+                    onChange={e => setSearchParams({...searchParams, ...(activeCategory === "car" ? { pickup: e.target.value } : { destination: e.target.value })})}
                     className="block w-full pl-9 pr-3 py-3 border border-gray-300 dark:border-stone-600 rounded-xl text-sm focus:ring-orange-500 focus:border-orange-500" 
                     placeholder={activeCategory === "car" ? "城市/机场/门店" : "城市/区域/酒店名"}
                   />
                 </div>
               </div>
               {activeCategory !== "hotel" && <div className="flex-1 w-full">
-                <label className="block text-xs font-medium text-gray-500 dark:text-stone-400 mb-1">{activeCategory === "car" ? "还车地点" : "出发地"}</label>
-                <div className="relative"><MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" /><input type="text" required value={searchParams.origin} onChange={e => setSearchParams({...searchParams, origin: e.target.value})} className="block w-full pl-9 pr-3 py-3 border border-gray-300 dark:border-stone-600 rounded-xl text-sm" placeholder={activeCategory === "car" ? "同上或输入还车地点" : "城市/机场/车站"} /></div>
+                <label htmlFor={activeCategory === "car" ? "car-dropoff" : "compare-origin"} className="block text-xs font-medium text-gray-500 dark:text-stone-400 mb-1">{activeCategory === "car" ? "还车地点" : "出发地"}</label>
+                <div className="relative"><MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" /><input id={activeCategory === "car" ? "car-dropoff" : "compare-origin"} type="text" required value={activeCategory === "car" ? searchParams.dropoff : searchParams.origin} onChange={e => setSearchParams({...searchParams, ...(activeCategory === "car" ? { dropoff: e.target.value } : { origin: e.target.value })})} className="block w-full pl-9 pr-3 py-3 border border-gray-300 dark:border-stone-600 rounded-xl text-sm" placeholder={activeCategory === "car" ? "同上或输入还车地点" : "城市/机场/车站"} /></div>
               </div>}
               <div className="flex-1 w-full">
-                <label className="block text-xs font-medium text-gray-500 dark:text-stone-400 mb-1">入住日期</label>
+                <label htmlFor="compare-check-in" className="block text-xs font-medium text-gray-500 dark:text-stone-400 mb-1">入住日期</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Calendar className="h-4 w-4 text-gray-400 dark:text-stone-500" />
                   </div>
                   <input 
-                    type="date" 
+                    id="compare-check-in" type="date"
                     required 
                     value={searchParams.checkIn} 
                     onChange={e => setSearchParams({...searchParams, checkIn: e.target.value})} 
@@ -269,13 +276,13 @@ export default function Compare() {
                 </div>
               </div>
               <div className="flex-1 w-full">
-                <label className="block text-xs font-medium text-gray-500 dark:text-stone-400 mb-1">退房日期</label>
+                <label htmlFor="compare-check-out" className="block text-xs font-medium text-gray-500 dark:text-stone-400 mb-1">退房日期</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Calendar className="h-4 w-4 text-gray-400 dark:text-stone-500" />
                   </div>
                   <input 
-                    type="date" 
+                    id="compare-check-out" type="date"
                     required 
                     value={searchParams.checkOut} 
                     onChange={e => setSearchParams({...searchParams, checkOut: e.target.value})} 
@@ -284,13 +291,13 @@ export default function Compare() {
                 </div>
               </div>
               <div className="w-full lg:w-32">
-                <label className="block text-xs font-medium text-gray-500 dark:text-stone-400 mb-1">成人</label>
+                <label htmlFor="compare-adults" className="block text-xs font-medium text-gray-500 dark:text-stone-400 mb-1">成人</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Users className="h-4 w-4 text-gray-400 dark:text-stone-500" />
                   </div>
                   <input 
-                    type="number" 
+                    id="compare-adults" type="number"
                     min="1" 
                     required 
                     value={searchParams.adults} 

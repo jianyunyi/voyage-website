@@ -12,8 +12,12 @@ export interface CompareItem {
   name?: string;
   image?: string;
   images?: string[];
+  publisherImage?: string;
+  publisherImages?: string[];
   features: string[];
   url?: string;
+  source?: "mcp" | "fallback" | "live";
+  dataSource?: "mcp" | "fallback" | "reference";
 }
 
 export interface CompareParams {
