@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { MapPin, Phone, Star, ArrowLeft, Check, ExternalLink, Loader2 } from "lucide-react";
+import { MapPin, Phone, Star, ArrowLeft, Check, ExternalLink, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { fetchHotelDetail, type HotelDetail as HotelDetailType } from "../lib/api";
-import { imgSrc } from "../lib/image";
+import { DEFAULT_HOTEL_IMAGE, handleHotelImageError, resolveHotelImage } from "../lib/hotel-images";
 
 
 
@@ -12,14 +12,17 @@ export default function HotelDetail() {
   const [hotel, setHotel] = useState<HotelDetailType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedImage, setSelectedImage] = useState(0);
 
   useEffect(() => {
     if (!id) return;
+    const controller = new AbortController();
     setLoading(true);
-    fetchHotelDetail(id)
-      .then(h => { setHotel(h); setError(""); })
-      .catch(e => setError(e instanceof Error ? e.message : "加载失败"))
+    fetchHotelDetail(id, controller.signal)
+      .then(h => { setHotel(h); setSelectedImage(0); setError(""); })
+      .catch(e => { if (!controller.signal.aborted) setError(e instanceof Error ? e.message : "加载失败"); })
       .finally(() => setLoading(false));
+    return () => controller.abort();
   }, [id]);
 
   if (loading) {
@@ -40,31 +43,49 @@ export default function HotelDetail() {
     );
   }
 
+  const gallery = [
+    ...(hotel.publisherImage ? [hotel.publisherImage] : []),
+    ...(hotel.publisherImages || []),
+    ...(hotel.images || []),
+  ].filter((image, index, images) => typeof image === "string" && /^https?:\/\//i.test(image) && images.indexOf(image) === index);
+  const imageItem = gallery[selectedImage] ? { image: gallery[selectedImage], images: gallery } : { image: DEFAULT_HOTEL_IMAGE, images: [] };
+  const imageSource = hotel.isLive || hotel.dataSource === "provider" ? "实时数据" : "参考/兜底数据";
+  const previousImage = () => setSelectedImage(index => (index - 1 + Math.max(gallery.length, 1)) % Math.max(gallery.length, 1));
+  const nextImage = () => setSelectedImage(index => (index + 1) % Math.max(gallery.length, 1));
+
   return (
     <div className="bg-gray-50 dark:bg-stone-950 min-h-screen pb-20">
       {/* Header / Images */}
-      <div className="relative h-[40vh] md:h-[50vh] bg-gray-900">
+      <div className="relative h-[48vh] min-h-[360px] bg-stone-950 md:h-[58vh]">
         <img 
-          src={imgSrc(hotel.images[0], 1280)} 
+          src={resolveHotelImage(imageItem)}
           alt={hotel.name} 
           fetchPriority="high"
-          className="w-full h-full object-cover opacity-80"
+          onError={handleHotelImageError}
+          className="h-full w-full object-cover opacity-85"
           referrerPolicy="no-referrer"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
         
         <button 
           onClick={() => navigate(-1)}
-          className="absolute top-6 left-6 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+          aria-label="返回上一页"
+          className="absolute top-6 left-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md transition-colors hover:bg-white/30"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
 
+        {gallery.length > 1 && <>
+          <button aria-label="上一张酒店图片" onClick={previousImage} className="absolute left-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur hover:bg-black/50"><ChevronLeft className="h-5 w-5" /></button>
+          <button aria-label="下一张酒店图片" onClick={nextImage} className="absolute right-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur hover:bg-black/50"><ChevronRight className="h-5 w-5" /></button>
+        </>}
+
         <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div className="text-white">
-              <h1 className="text-3xl md:text-5xl font-bold mb-2">{hotel.name}</h1>
-              <div className="flex items-center gap-4 text-sm md:text-base opacity-90">
+              <div className="mb-3 flex flex-wrap items-center gap-2"><span className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium backdrop-blur">{imageSource}</span><span className="rounded-full bg-orange-500 px-3 py-1 text-xs font-bold">酒店详情</span></div>
+              <h1 className="mb-2 font-serif text-3xl font-bold md:text-5xl">{hotel.name}</h1>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm opacity-90 md:text-base">
                 <span className="flex items-center gap-1">
                   <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
                   {hotel.rating} ({hotel.reviewsCount}条评价)
@@ -79,14 +100,16 @@ export default function HotelDetail() {
         </div>
       </div>
 
+      {gallery.length > 1 && <div className="bg-stone-950 px-4 py-3"><div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto">{gallery.map((image, index) => <button key={`${image}-${index}`} aria-label={`查看第${index + 1}张酒店图片`} aria-pressed={selectedImage === index} onClick={() => setSelectedImage(index)} className={`h-14 w-20 shrink-0 overflow-hidden rounded-lg border-2 ${selectedImage === index ? "border-orange-400" : "border-transparent opacity-60"}`}><img src={resolveHotelImage({ image })} alt="" loading="lazy" onError={handleHotelImageError} className="h-full w-full object-cover" /></button>)}</div></div>}
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             {/* Description */}
-            <section className="bg-white dark:bg-stone-900 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-stone-800">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-stone-100 mb-4">酒店介绍</h2>
+            <section className="surface p-6">
+              <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="editorial-kicker mb-2">入住决策</p><h2 className="font-serif text-2xl font-bold text-gray-900 dark:text-stone-100">酒店介绍</h2></div><div className="text-right"><p className="text-xs text-gray-500 dark:text-stone-400">全网最低价</p><p className="num text-3xl font-bold text-orange-600">¥450<span className="text-sm font-normal text-gray-500">/晚起</span></p></div></div>
               <p className="text-gray-600 dark:text-stone-300 leading-relaxed">{hotel.description}</p>
               
               <div className="mt-6 flex items-center gap-2 text-gray-600 dark:text-stone-300">
@@ -96,7 +119,7 @@ export default function HotelDetail() {
             </section>
 
             {/* Amenities */}
-            <section className="bg-white dark:bg-stone-900 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-stone-800">
+            <section className="surface p-6">
               <h2 className="text-xl font-bold text-gray-900 dark:text-stone-100 mb-4">热门设施</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {hotel.amenities.map((amenity, index) => (
@@ -109,7 +132,7 @@ export default function HotelDetail() {
             </section>
 
             {/* Room Types */}
-            <section className="bg-white dark:bg-stone-900 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-stone-800">
+            <section className="surface p-6">
               <h2 className="text-xl font-bold text-gray-900 dark:text-stone-100 mb-4">房型与价格</h2>
               <div className="space-y-4">
                 {hotel.rooms.map((room: any) => (
@@ -139,7 +162,7 @@ export default function HotelDetail() {
             </section>
 
             {/* Reviews */}
-            <section className="bg-white dark:bg-stone-900 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-stone-800">
+            <section className="surface p-6">
               <h2 className="text-xl font-bold text-gray-900 dark:text-stone-100 mb-4">用户评价</h2>
               <div className="space-y-6">
                 {hotel.reviews.map((review: any) => (
@@ -164,20 +187,16 @@ export default function HotelDetail() {
           <div className="lg:col-span-1">
             <div className="bg-white dark:bg-stone-900 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-stone-800 sticky top-24">
               <div className="text-sm text-gray-500 dark:text-stone-400 mb-1">全网最低价</div>
-              <div className="text-3xl font-bold text-orange-600 mb-6">¥450<span className="text-base font-normal text-gray-500 dark:text-stone-400">/晚起</span></div>
+              <div className="text-3xl font-bold text-orange-600 mb-6">{hotel.rooms[0]?.price || "暂无"}<span className="text-base font-normal text-gray-500 dark:text-stone-400">{hotel.rooms[0] ? "/晚起" : ""}</span></div>
               
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 dark:text-stone-300">携程旅行</span>
-                  <span className="font-medium text-gray-900 dark:text-stone-100">¥450</span>
+                  <span className="text-gray-600 dark:text-stone-300">{hotel.platform}</span>
+                  <span className="font-medium text-gray-900 dark:text-stone-100">{hotel.rooms[0]?.price || "暂无报价"}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 dark:text-stone-300">Booking.com</span>
-                  <span className="font-medium text-gray-900 dark:text-stone-100">¥480</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 dark:text-stone-300">Agoda</span>
-                  <span className="font-medium text-gray-900 dark:text-stone-100">¥430 (不可取消)</span>
+                  <span className="text-gray-600 dark:text-stone-300">数据状态</span>
+                  <span className="font-medium text-gray-900 dark:text-stone-100">{imageSource}</span>
                 </div>
               </div>
 

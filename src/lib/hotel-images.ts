@@ -3,10 +3,15 @@ import type { CompareItem } from "./api";
 export const DEFAULT_HOTEL_IMAGE =
   "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1000";
 
-export function resolveHotelImage(item: Pick<CompareItem, "image" | "images">): string {
+export function resolveHotelImage(item: Pick<CompareItem, "image" | "images"> & { publisherImage?: string; publisherImages?: string[] }): string {
+  if (isSafeImageUrl(item.publisherImage)) return item.publisherImage.trim();
+
+  const firstPublisherImage = item.publisherImages?.find(isSafeImageUrl);
+  if (firstPublisherImage) return firstPublisherImage.trim();
+
   if (isSafeImageUrl(item.image)) return item.image.trim();
 
-  const firstImage = item.images?.[0];
+  const firstImage = item.images?.find(isSafeImageUrl);
   if (isSafeImageUrl(firstImage)) return firstImage.trim();
 
   return DEFAULT_HOTEL_IMAGE;

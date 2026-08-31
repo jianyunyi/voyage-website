@@ -17,7 +17,7 @@ export interface CompareItem {
   features: string[];
   url?: string;
   source?: "mcp" | "fallback" | "live";
-  dataSource?: "mcp" | "fallback" | "reference";
+  dataSource?: "mcp" | "fallback" | "reference" | "mock" | "provider";
 }
 
 export interface CompareParams {
@@ -131,13 +131,16 @@ export interface HotelDetail {
   phone: string;
   description: string;
   images: string[];
+  publisherImage?: string;
+  publisherImages?: string[];
+  dataSource?: "mcp" | "fallback" | "reference";
   amenities: string[];
   rooms: HotelRoom[];
   reviews: HotelReview[];
 }
 
-export async function fetchHotelDetail(id: string): Promise<HotelDetail> {
-  const res = await fetch(`/api/hotel/${encodeURIComponent(id)}`);
+export async function fetchHotelDetail(id: string, signal?: AbortSignal): Promise<HotelDetail> {
+  const res = await fetch(`/api/hotel/${encodeURIComponent(id)}`, { signal });
   if (!res.ok) throw new Error(`获取酒店详情失败 (${res.status})`);
   return await res.json() as HotelDetail;
 }
