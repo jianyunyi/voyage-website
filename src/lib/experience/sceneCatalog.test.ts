@@ -18,7 +18,7 @@ test('planner selects the route terrain scene and poster fallback', () => {
   });
 });
 
-test('an unknown path uses the quiet home current instead of no backdrop', () => {
+test('an unknown path uses the Field Notes home fallback instead of no backdrop', () => {
   assert.equal(getSceneForPath('/unknown').tone, 'home');
 });
 
