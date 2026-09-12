@@ -1,7 +1,49 @@
-import { useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plane, Train, Car, Building, ArrowRight, Check, Info, Search, MapPin, Calendar, Users, Loader2 } from "lucide-react";
+import {
+  ArrowRight,
+  Building,
+  Calendar,
+  Car,
+  Check,
+  Info,
+  Loader2,
+  MapPin,
+  Plane,
+  Star,
+  Users,
+} from "lucide-react";
 import { motion } from "framer-motion";
+import { ActionButton } from "../components/ActionButton";
+
+interface TransportItem {
+  id: string;
+  platform: string;
+  price: string;
+  type: string;
+  time: string;
+  features: string[];
+  url: string;
+}
+
+interface HotelItem {
+  id: string;
+  platform: string;
+  price: string;
+  name: string;
+  features: string[];
+}
+
+interface CarItem {
+  id: string;
+  platform: string;
+  price: string;
+  name: string;
+  features: string[];
+  url: string;
+}
+
+type CompareItem = TransportItem | HotelItem | CarItem;
 
 const categories = [
   { id: "transport", name: "交通工具", icon: Plane },
@@ -9,7 +51,11 @@ const categories = [
   { id: "car", name: "租车服务", icon: Car },
 ];
 
-const mockData = {
+const mockData: {
+  transport: TransportItem[];
+  hotel: HotelItem[];
+  car: CarItem[];
+} = {
   transport: [
     { id: "t1", platform: "携程旅行", price: "¥850", type: "飞机", time: "10:00 - 13:00", features: ["退改无忧", "含20kg托运"], url: "https://flights.ctrip.com/" },
     { id: "t2", platform: "飞猪旅行", price: "¥820", type: "飞机", time: "10:00 - 13:00", features: ["含20kg托运"], url: "https://fliggy.com/" },
@@ -39,8 +85,15 @@ export default function Compare() {
     adults: 2,
     origin: "北京",
   });
+  const comparisonResults = useMemo(
+    () =>
+      [...mockData[activeCategory as keyof typeof mockData]].sort(
+        (a, b) => Number(a.price.replace(/[^\d]/g, "")) - Number(b.price.replace(/[^\d]/g, ""))
+      ),
+    [activeCategory]
+  );
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     // Simulate API call
@@ -49,18 +102,18 @@ export default function Compare() {
     }, 800);
   };
 
-  const handleBook = (item: any) => {
+  const handleBook = (item: CompareItem) => {
     if (activeCategory === "hotel") {
       navigate(`/hotel/${item.id}`);
-    } else if (item.url) {
+    } else if ('url' in item) {
       window.open(item.url, '_blank');
     }
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
+    <main className="voyage-content-page voyage-content-page--compare voyage-compare min-h-screen py-12">
+      <div className="voyage-compare__frame max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="voyage-compare__intro text-center mb-12">
           <h1 className="text-4xl font-serif font-bold text-gray-900 mb-4">全网综合比价</h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             一键对比各大平台价格，帮您找到最划算的预订方案。数据实时更新，确保价格准确。
@@ -68,7 +121,7 @@ export default function Compare() {
         </div>
 
         {/* Category Tabs */}
-        <div className="flex justify-center mb-12">
+        <div className="voyage-compare__categories flex justify-center mb-12">
           <div className="bg-white p-1 rounded-2xl shadow-sm inline-flex">
             {categories.map((cat) => {
               const isActive = activeCategory === cat.id;
@@ -76,7 +129,7 @@ export default function Compare() {
                 <button
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition-all ${
+                  className={`voyage-compare__category flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition-all ${
                     isActive 
                       ? "bg-gray-900 text-white shadow-md" 
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
@@ -91,9 +144,9 @@ export default function Compare() {
         </div>
 
         {/* Search Form */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm mb-8 border border-gray-100">
+        <div className="voyage-compare__parameters bg-white rounded-2xl p-6 shadow-sm mb-8 border border-gray-100">
           {activeCategory === "hotel" ? (
-            <form onSubmit={handleSearch} className="flex flex-col lg:flex-row gap-4 items-end">
+            <form onSubmit={handleSearch} className="voyage-compare__form flex flex-col lg:flex-row gap-4 items-end">
               <div className="flex-1 w-full">
                 <label className="block text-xs font-medium text-gray-500 mb-1">目的地</label>
                 <div className="relative">
@@ -156,14 +209,13 @@ export default function Compare() {
                   />
                 </div>
               </div>
-              <button 
-                type="submit" 
-                disabled={isLoading}
+              <ActionButton
+                action="search-price"
+                pending={isLoading}
+                type="submit"
                 className="w-full lg:w-auto bg-orange-600 hover:bg-orange-700 text-white px-8 py-3 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 disabled:bg-orange-400"
               >
-                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
-                搜索
-              </button>
+              </ActionButton>
             </form>
           ) : (
             <div className="flex flex-col md:flex-row items-center justify-between py-2">
@@ -192,14 +244,14 @@ export default function Compare() {
             <p className="text-gray-500">正在全网比价中，请稍候...</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {mockData[activeCategory as keyof typeof mockData].map((item, index) => (
+          <div className="voyage-compare__results space-y-4">
+            {comparisonResults.map((item, index) => (
               <motion.div 
                 key={index}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
-                className={`bg-white rounded-2xl p-6 shadow-sm border transition-colors ${
+                className={`voyage-compare__result bg-white rounded-2xl p-6 shadow-sm border transition-colors ${
                   index === 0 ? "border-orange-300 ring-1 ring-orange-100" : "border-gray-100 hover:border-gray-300"
                 }`}
               >
@@ -214,7 +266,11 @@ export default function Compare() {
                       )}
                     </div>
                     <div className="text-gray-600 mb-3">
-                      {activeCategory === "hotel" && searchParams.destination ? `[${searchParams.destination}] ${item.name}` : ('time' in item ? `${item.type} | ${item.time}` : item.name)}
+                      {activeCategory === "hotel" && searchParams.destination
+                        ? `[${searchParams.destination}] ${'name' in item ? item.name : item.type}`
+                        : 'time' in item
+                          ? `${item.type} | ${item.time}`
+                          : item.name}
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {item.features.map((feature, i) => (
@@ -243,31 +299,11 @@ export default function Compare() {
           </div>
         )}
         
-        <div className="mt-8 text-center text-sm text-gray-500 flex items-center justify-center gap-1">
+        <div className="voyage-compare__disclaimer mt-8 text-center text-sm text-gray-500 flex items-center justify-center gap-1">
           <Info className="w-4 h-4" />
           价格每15分钟更新一次，最终价格以各平台实际显示为准。
         </div>
       </div>
-    </div>
+    </main>
   );
-}
-
-// Missing Star icon import in Compare.tsx, let's fix it inline
-function Star(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-    </svg>
-  )
 }

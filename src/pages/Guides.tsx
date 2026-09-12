@@ -1,5 +1,14 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { Search, Filter, MapPin, Calendar, ThumbsUp, PlusCircle, X, Loader2 } from "lucide-react";
+import {
+  CalendarDays,
+  Filter,
+  Loader2,
+  MapPin,
+  PlusCircle,
+  Search,
+  ThumbsUp,
+  X,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import SubmissionModal from "../components/SubmissionModal";
 import { usePreferences } from "../context/PreferencesContext";
@@ -96,9 +105,9 @@ export default function Guides() {
   };
 
   return (
-    <div className="bg-[#fcfbf9] min-h-screen pb-20">
-      <div className="bg-white border-b border-gray-200/50 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <main className="voyage-content-page voyage-guides">
+      <div className="voyage-guides__intro bg-white border-b border-gray-200/50 py-16">
+        <div className="voyage-guides__intro-inner max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
             <div>
               <h1 className="text-4xl md:text-5xl font-serif font-bold text-gray-900 mb-4">
@@ -110,15 +119,15 @@ export default function Guides() {
             </div>
             <button
               onClick={() => setIsSubmissionModalOpen(true)}
-              className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3.5 rounded-full font-bold transition-all duration-300 shadow-lg shadow-orange-600/20 whitespace-nowrap hover:-translate-y-1"
+              className="voyage-guides__publish flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3.5 rounded-full font-bold transition-all duration-300 shadow-lg shadow-orange-600/20 whitespace-nowrap hover:-translate-y-1"
             >
               <PlusCircle className="w-5 h-5" />
               发布攻略
             </button>
           </div>
 
-          <div className="mt-8 flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-grow max-w-md">
+          <div className="voyage-guides__search-rail mt-8 flex flex-col sm:flex-row gap-4">
+            <div className="voyage-guides__search-field relative flex-grow max-w-md">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400" />
               </div>
@@ -132,7 +141,7 @@ export default function Guides() {
             </div>
             <button
               onClick={() => setIsFilterExpanded(!isFilterExpanded)}
-              className={`flex items-center justify-center gap-2 px-6 py-3.5 border rounded-full transition-all duration-300 font-bold ${
+              className={`voyage-guides__filter-toggle flex items-center justify-center gap-2 px-6 py-3.5 border rounded-full transition-all duration-300 font-bold ${
                 hasActiveFilters || isFilterExpanded
                   ? "bg-orange-50 border-orange-200 text-orange-700 shadow-sm"
                   : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
@@ -154,7 +163,7 @@ export default function Guides() {
                 exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden"
               >
-                <div className="pt-6 mt-6 border-t border-gray-100 space-y-6">
+                <div className="voyage-guides__filter-panel pt-6 mt-6 border-t border-gray-100 space-y-6">
                   <div className="flex justify-between items-center mb-2">
                     <h3 className="font-bold text-gray-900">高级筛选</h3>
                     {hasActiveFilters && (
@@ -243,8 +252,8 @@ export default function Guides() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
-        <div className="mb-8 flex justify-between items-end">
+      <section className="voyage-guides__index max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
+        <div className="voyage-guides__index-heading mb-8 flex justify-between items-end">
           <h2 className="text-2xl font-serif font-bold text-gray-900">全部攻略</h2>
           <span className="text-sm text-gray-500 font-medium">
             {preferences.destinations.length > 0 || preferences.travelTypes.length > 0
@@ -269,7 +278,7 @@ export default function Guides() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="voyage-guides__list grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredGuides.map((guide, index) => {
               const isPref =
                 preferences.destinations.includes(guide.destination) ||
@@ -280,16 +289,15 @@ export default function Guides() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: index * 0.1 }}
-                  className="bg-white rounded-[32px] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 border border-gray-100 group cursor-pointer flex flex-col relative hover:-translate-y-1"
+                  className="voyage-guide-card bg-white overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 border border-gray-100 group cursor-pointer flex flex-col relative hover:-translate-y-1"
                 >
-                  <div className="relative h-64 overflow-hidden">
+                  <div className="voyage-guide-card__image relative h-64 overflow-hidden">
                     <img
                       src={guide.image}
                       alt={guide.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                       referrerPolicy="no-referrer"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                     <div className="absolute top-4 left-4 flex gap-2">
                       {guide.tags.slice(0, 2).map((tag, i) => (
                         <span
@@ -312,7 +320,7 @@ export default function Guides() {
                     )}
                   </div>
 
-                  <div className="p-8 flex flex-col flex-grow">
+                  <div className="voyage-guide-card__body p-8 flex flex-col flex-grow">
                     <h3 className="text-2xl font-serif font-bold text-gray-900 mb-4 line-clamp-2 group-hover:text-orange-600 transition-colors">
                       {guide.title}
                     </h3>
@@ -322,7 +330,7 @@ export default function Guides() {
                         <MapPin className="w-4 h-4" /> {guide.destination}
                       </span>
                       <span className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-md">
-                        <Calendar className="w-4 h-4" /> {guide.days}天
+                        <CalendarDays className="w-4 h-4" /> {guide.days}天
                       </span>
                       <span className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-md">
                         ¥{guide.budget}
@@ -353,7 +361,7 @@ export default function Guides() {
             <p className="text-gray-500 text-lg">没有找到匹配的攻略，换个筛选条件试试吧</p>
           </div>
         )}
-      </div>
+      </section>
 
       <SubmissionModal
         isOpen={isSubmissionModalOpen}
@@ -361,6 +369,6 @@ export default function Guides() {
         type="guide"
         onSuccess={loadGuides}
       />
-    </div>
+    </main>
   );
 }

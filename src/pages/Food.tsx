@@ -1,5 +1,17 @@
 import { useState, useEffect, useCallback } from "react";
-import { Star, MapPin, Search, Filter, Heart, X, MessageSquare, Navigation, PlusCircle, ArrowRight, Loader2 } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronDown,
+  Heart,
+  Loader2,
+  MapPin,
+  MessageSquare,
+  Navigation,
+  PlusCircle,
+  Search,
+  Star,
+  X,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useFavorites } from "../context/FavoritesContext";
 import { usePreferences } from "../context/PreferencesContext";
@@ -73,10 +85,10 @@ export default function Food() {
     });
 
   return (
-    <div className="bg-[#fcfbf9] min-h-screen pb-20">
+    <main className="voyage-content-page voyage-food">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200/50 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="voyage-food__intro bg-white border-b border-gray-200/50 py-16">
+        <div className="voyage-food__intro-inner max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
             <div>
               <h1 className="text-4xl md:text-5xl font-serif font-bold text-gray-900 mb-4">探索地道美食</h1>
@@ -84,15 +96,15 @@ export default function Food() {
             </div>
             <button 
               onClick={() => setIsSubmissionModalOpen(true)}
-              className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3.5 rounded-full font-bold transition-all duration-300 shadow-lg shadow-orange-600/20 whitespace-nowrap hover:-translate-y-1"
+              className="voyage-food__submit flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3.5 rounded-full font-bold transition-all duration-300 shadow-lg shadow-orange-600/20 whitespace-nowrap hover:-translate-y-1"
             >
               <PlusCircle className="w-5 h-5" />
               推荐美食
             </button>
           </div>
           
-          <div className="mt-8 flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-grow max-w-md">
+          <div className="voyage-food__search-rail mt-8 flex flex-col sm:flex-row gap-4">
+            <div className="voyage-food__search-field relative flex-grow max-w-md">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400" />
               </div>
@@ -104,12 +116,9 @@ export default function Food() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <div className="relative w-full sm:w-48">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Filter className="h-5 w-5 text-gray-400" />
-              </div>
+            <div className="voyage-food__rating-select relative w-full sm:w-48">
               <select
-                className="block w-full pl-12 pr-10 py-3.5 border border-gray-200 rounded-full leading-5 bg-gray-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:bg-white transition-all sm:text-sm appearance-none cursor-pointer"
+                className="block w-full px-4 py-3.5 border border-gray-200 rounded-full leading-5 bg-gray-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:bg-white transition-all sm:text-sm appearance-none cursor-pointer"
                 value={minRating}
                 onChange={(e) => setMinRating(Number(e.target.value))}
               >
@@ -118,19 +127,17 @@ export default function Food() {
                 <option value={4.5}>4.5 星以上</option>
                 <option value={4.8}>4.8 星以上</option>
               </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                <ChevronDown className="h-4 w-4" aria-hidden="true" />
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
+      <section className="voyage-food__listing max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
         {/* Province Filter */}
-        <div className="flex overflow-x-auto pb-4 mb-10 gap-3 hide-scrollbar">
+        <div className="voyage-food__province-rail flex overflow-x-auto pb-4 mb-10 gap-3 hide-scrollbar">
           {provinces.map(province => (
             <button
               key={province}
@@ -145,7 +152,7 @@ export default function Food() {
         </div>
 
         {/* Food List */}
-        <div className="mb-8 flex justify-between items-end">
+        <div className="voyage-food__listing-heading mb-8 flex justify-between items-end">
           <h2 className="text-2xl font-serif font-bold text-gray-900">高分美食推荐</h2>
           <span className="text-sm text-gray-500 font-medium">
             {preferences.destinations.length > 0 ? "已根据您的偏好优先展示" : "按星级评分排序"}
@@ -168,7 +175,7 @@ export default function Food() {
             </button>
           </div>
         ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="voyage-food__grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredFood.map((food, index) => {
             const foodId = `food-${food.id}`;
             const isFav = isFavorite(foodId);
@@ -179,12 +186,11 @@ export default function Food() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: index * 0.1 }}
-                className="bg-white rounded-[32px] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 border border-gray-100 relative group cursor-pointer hover:-translate-y-1"
+                className="voyage-food-card bg-white overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 border border-gray-100 relative group cursor-pointer hover:-translate-y-1"
                 onClick={() => setSelectedFood(food)}
               >
-                <div className="relative h-56">
+                <div className="voyage-food-card__image relative h-56">
                   <img src={food.image} alt={food.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" referrerPolicy="no-referrer" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                   <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
                     <Star className="w-4 h-4 text-orange-500 fill-orange-500" />
                     <span className="font-bold text-gray-900 text-sm">{food.rating}</span>
@@ -217,7 +223,7 @@ export default function Food() {
                     <Heart className={`w-5 h-5 transition-colors ${isFav ? 'text-orange-600 fill-orange-600' : 'text-gray-400'}`} />
                   </button>
                 </div>
-                <div className="p-8">
+                <div className="voyage-food-card__body p-8">
                   <div className="flex justify-between items-start mb-3">
                     <h3 className="text-2xl font-serif font-bold text-gray-900 line-clamp-1 group-hover:text-orange-600 transition-colors">{food.name}</h3>
                   </div>
@@ -242,7 +248,7 @@ export default function Food() {
             <p className="text-gray-500 text-lg">没有找到匹配的美食推荐</p>
           </div>
         )}
-      </div>
+      </section>
 
       {/* Food Detail Modal */}
       <AnimatePresence>
@@ -251,7 +257,7 @@ export default function Food() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            className="voyage-food-modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
             onClick={() => setSelectedFood(null)}
           >
             <motion.div
@@ -259,9 +265,9 @@ export default function Food() {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-[32px] overflow-hidden shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col"
+              className="voyage-food-modal__panel bg-white overflow-hidden shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col"
             >
-              <div className="relative h-72 flex-shrink-0">
+              <div className="voyage-food-modal__image relative h-72 flex-shrink-0">
                 <img src={selectedFood.image} alt={selectedFood.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                 <button
                   onClick={() => setSelectedFood(null)}
@@ -269,7 +275,7 @@ export default function Food() {
                 >
                   <X className="w-5 h-5" />
                 </button>
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#1a1918]/90 to-transparent p-8">
+                <div className="voyage-food-modal__image-caption absolute bottom-0 left-0 right-0 p-8">
                   <h2 className="text-4xl font-serif font-bold text-white mb-3">{selectedFood.name}</h2>
                   <div className="flex items-center gap-4 text-white/90 text-sm font-medium">
                     <span className="flex items-center gap-1 bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm"><Star className="w-4 h-4 text-yellow-400 fill-yellow-400" /> {selectedFood.rating}</span>
@@ -279,8 +285,8 @@ export default function Food() {
                 </div>
               </div>
 
-              <div className="p-8 overflow-y-auto flex-grow">
-                <div className="flex items-start gap-4 mb-8 bg-orange-50/50 p-5 rounded-2xl border border-orange-100">
+              <div className="voyage-food-modal__content p-8 overflow-y-auto flex-grow">
+                <div className="voyage-food-modal__address flex items-start gap-4 mb-8 p-5">
                   <MapPin className="w-6 h-6 text-orange-600 flex-shrink-0 mt-0.5" />
                   <div>
                     <div className="font-bold text-gray-900 mb-1 text-lg">{selectedFood.address}</div>
@@ -338,6 +344,6 @@ export default function Food() {
         type="food"
         onSuccess={loadFoods}
       />
-    </div>
+    </main>
   );
 }

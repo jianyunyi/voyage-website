@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { submitGuide } from '../lib/guideService';
 import { submitFood } from '../lib/foodService';
+import { ActionButton } from './ActionButton';
 
 interface SubmissionModalProps {
   isOpen: boolean;
@@ -444,21 +445,14 @@ export default function SubmissionModal({ isOpen, onClose, type, onSuccess }: Su
                 >
                   取消
                 </button>
-                <button
+                <ActionButton
+                  action={type === 'guide' ? 'publish-guide' : 'publish-food'}
+                  pending={isSubmitting}
                   type="submit"
                   form="submission-form"
-                  disabled={isSubmitting}
                   className="px-6 py-2.5 rounded-xl font-medium text-white bg-orange-600 hover:bg-orange-700 transition-colors disabled:bg-orange-400 flex items-center gap-2"
                 >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      提交中...
-                    </>
-                  ) : (
-                    '确认发布'
-                  )}
-                </button>
+                </ActionButton>
               </div>
             )}
           </motion.div>
