@@ -1140,7 +1140,10 @@ button:has([data-action-button-icon]) {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-field-notes-media__video,
+  .home-field-notes-media__video {
+    display: none;
+  }
+
   .voyage-guide-card,
   .voyage-food-card,
   .voyage-food-card__image > img,
