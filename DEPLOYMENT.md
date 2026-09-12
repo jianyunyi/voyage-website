@@ -44,7 +44,7 @@ npx wrangler deploy --env staging
 
 ## 4. 构建 + 部署
 ```bash
-npm run build          # 产物 dist/client + dist/voyagex
+npm run build          # Vite 静态产物 dist/
 npx wrangler deploy
 ```
 
