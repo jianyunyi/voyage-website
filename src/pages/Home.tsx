@@ -81,16 +81,28 @@ const regions = [
   }
 ];
 
-export function HomeHeroMedia({ scene }: { scene: SceneDefinition }) {
+export function HomeHeroMedia({
+  scene,
+  destinationImageSrc,
+}: {
+  scene: SceneDefinition;
+  destinationImageSrc: string;
+}) {
   return (
     <div aria-hidden="true" className="absolute inset-0 z-0 overflow-hidden">
       <img
+        src={destinationImageSrc}
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover opacity-70"
+        referrerPolicy="no-referrer"
+      />
+      <img
         src={scene.posterSrc}
         alt=""
-        className="absolute inset-0 h-full w-full object-cover opacity-35"
+        className="absolute inset-0 h-full w-full object-cover opacity-20"
       />
       <video
-        className="absolute inset-0 h-full w-full object-cover opacity-55"
+        className="absolute inset-0 h-full w-full object-cover opacity-35"
         muted
         loop
         playsInline
@@ -185,7 +197,21 @@ export default function Home() {
     <div className="voyage-content-page flex flex-col">
       {/* Hero Section with Carousel */}
       <section className="relative h-[80vh] flex items-center justify-center overflow-hidden bg-black">
-        <HomeHeroMedia scene={getSceneForPath("/")} />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentSlide}
+            initial={{ opacity: 0, scale: 1.05 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.2 }}
+            className="absolute inset-0 z-0"
+          >
+            <HomeHeroMedia
+              scene={getSceneForPath("/")}
+              destinationImageSrc={carouselItems[currentSlide].image}
+            />
+          </motion.div>
+        </AnimatePresence>
         
         {/* Carousel Controls */}
         <button
