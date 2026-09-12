@@ -5,17 +5,29 @@ export const HOME_FIELD_NOTES_DURATION = 360;
 
 const routePath = 'M 1110 792 C 1272 664 1340 834 1488 666 S 1698 462 1844 290';
 
+export const getHomeFieldNotesPhase = (frame: number) => {
+  if (frame < 90) return 'masthead';
+  if (frame < 240) return 'editorial';
+  return 'route';
+};
+
 const phaseOpacity = (frame: number, start: number, end: number) =>
-  interpolate(frame, [start - 16, start, end - 16, end], [0, 1, 1, 0], {
+  interpolate(frame, [start, start + 16, end - 16, end], [0, 1, 1, 0], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
   });
 
 export const HomeFieldNotes = () => {
   const frame = useCurrentFrame();
-  const mastheadOpacity = phaseOpacity(frame, 0, 106);
-  const editorialOpacity = phaseOpacity(frame, 90, 256);
-  const routeOpacity = phaseOpacity(frame, 240, HOME_FIELD_NOTES_DURATION);
+  const phase = getHomeFieldNotesPhase(frame);
+  const mastheadOpacity = phase === 'masthead' ? phaseOpacity(frame, 0, 90) : 0;
+  const editorialOpacity = phase === 'editorial' ? phaseOpacity(frame, 90, 240) : 0;
+  const routeOpacity = phase === 'route'
+    ? interpolate(frame, [240, 256], [0, 1], {
+      extrapolateLeft: 'clamp',
+      extrapolateRight: 'clamp',
+    })
+    : 0;
   const editorialLift = interpolate(frame, [90, 150, 240], [36, 0, -16], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
