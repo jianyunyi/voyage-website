@@ -419,3 +419,702 @@ button:has([data-action-button-icon]) {
 /* Leaflet map styles */
 @import "leaflet/dist/leaflet.css";
 
+/* Discovery and comparison surfaces */
+.voyage-guides,
+.voyage-food,
+.voyage-compare {
+  color: #173c37;
+  min-block-size: 100vh;
+  padding-block-end: 5rem;
+}
+
+.voyage-guides__intro,
+.voyage-food__intro {
+  background: rgb(252 251 249 / 0.93);
+  border-block-end-color: rgb(18 50 47 / 0.18);
+  padding-block: clamp(2.75rem, 6vw, 5.5rem);
+}
+
+.voyage-guides__intro-inner,
+.voyage-food__intro-inner {
+  align-items: end;
+  display: flex;
+  gap: 2rem;
+  justify-content: space-between;
+}
+
+.voyage-guides__intro h1,
+.voyage-food__intro h1,
+.voyage-compare__intro h1 {
+  color: #112d2a;
+  font-family: var(--font-serif);
+  font-size: clamp(2.35rem, 5vw, 4.4rem);
+  line-height: 1;
+  margin: 0;
+}
+
+.voyage-guides__intro p,
+.voyage-food__intro p,
+.voyage-compare__intro p {
+  color: #47645e;
+  font-size: 1rem;
+  line-height: 1.7;
+  margin: 1rem 0 0;
+  max-inline-size: 39rem;
+}
+
+.voyage-guides__publish,
+.voyage-food__submit {
+  align-items: center;
+  background: #173c37;
+  border: 0;
+  border-radius: 0;
+  box-shadow: 0 10px 24px rgb(14 47 43 / 0.2);
+  color: #fff;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 0.9rem;
+  gap: 0.55rem;
+  justify-content: center;
+  min-block-size: 3rem;
+  padding-inline: 1.1rem;
+}
+
+.voyage-guides__publish:hover,
+.voyage-food__submit:hover {
+  background: #0f2b27;
+  transform: translateY(-1px);
+}
+
+.voyage-guides__publish svg,
+.voyage-food__submit svg {
+  block-size: 1.1rem;
+  inline-size: 1.1rem;
+}
+
+.voyage-guides__search-rail,
+.voyage-food__search-rail {
+  align-items: stretch;
+  margin-block-start: 2.75rem;
+  max-inline-size: 49rem;
+}
+
+.voyage-guides__search-field,
+.voyage-food__search-field {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #aec5bf;
+  display: flex;
+  min-block-size: 3.15rem;
+}
+
+.voyage-guides__search-field > div,
+.voyage-food__search-field > div {
+  position: static;
+}
+
+.voyage-guides__search-field svg,
+.voyage-food__search-field svg {
+  color: #2d6b60;
+  flex: 0 0 auto;
+  margin-inline: 0.9rem;
+}
+
+.voyage-guides__search-field input,
+.voyage-food__search-field input {
+  background: transparent;
+  border: 0;
+  color: #173c37;
+  flex: 1;
+  font: inherit;
+  min-inline-size: 0;
+  outline: 0;
+  padding: 0.75rem 0.8rem 0.75rem 0;
+}
+
+.voyage-guides__search-field:focus-within,
+.voyage-food__search-field:focus-within,
+.voyage-food__rating-select:focus-within {
+  border-color: #157568;
+  box-shadow: 0 0 0 3px rgb(21 117 104 / 0.18);
+}
+
+.voyage-guides__filter-toggle,
+.voyage-food__rating-select {
+  background: #e5efeb;
+  border-color: #aec5bf;
+  border-radius: 0;
+  color: #173c37;
+  font-size: 0.875rem;
+}
+
+.voyage-guides__filter-toggle {
+  min-inline-size: 7.5rem;
+}
+
+.voyage-guides__filter-toggle span {
+  background: #c75c32;
+  block-size: 0.45rem;
+  border-radius: 50%;
+  inline-size: 0.45rem;
+}
+
+.voyage-guides__filter-panel {
+  border-block-start-color: #c9d7d2;
+  margin-block-start: 1.5rem;
+}
+
+.voyage-guides__filter-panel h3 {
+  color: #173c37;
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+}
+
+.voyage-guides__filter-panel select {
+  border-color: #aec5bf;
+  border-radius: 0;
+  color: #173c37;
+}
+
+.voyage-guides__filter-panel select:focus {
+  border-color: #157568;
+  box-shadow: 0 0 0 3px rgb(21 117 104 / 0.18);
+}
+
+.voyage-guides__filter-panel button[aria-pressed="true"] {
+  background: #173c37;
+  border-color: #173c37;
+  color: #fff;
+}
+
+.voyage-guides__index,
+.voyage-food__listing {
+  margin-block-start: clamp(2.5rem, 5vw, 5rem);
+}
+
+.voyage-guides__index-heading,
+.voyage-food__listing-heading {
+  align-items: end;
+  border-block-end: 1px solid #aec5bf;
+  padding-block-end: 1.1rem;
+}
+
+.voyage-guides__index-heading h2,
+.voyage-food__listing-heading h2 {
+  color: #112d2a;
+  font-family: var(--font-serif);
+  font-size: clamp(1.65rem, 3vw, 2.25rem);
+  line-height: 1.1;
+  margin: 0;
+}
+
+.voyage-guides__index-heading span,
+.voyage-food__listing-heading > span {
+  color: #47706a;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.voyage-guide-card,
+.voyage-food-card {
+  background: #fff;
+  border-color: #c9d7d2;
+  border-radius: 0;
+  box-shadow: none;
+  min-inline-size: 0;
+  overflow: hidden;
+  transform: none;
+}
+
+.voyage-guides__list {
+  gap: 1.25rem;
+}
+
+.voyage-guide-card {
+  display: grid;
+  grid-template-columns: minmax(9.5rem, 0.8fr) minmax(0, 1.15fr);
+}
+
+.voyage-guide-card:hover,
+.voyage-food-card:hover {
+  border-color: #47706a;
+  box-shadow: 0 14px 28px rgb(18 50 47 / 0.12);
+  transform: translateY(-2px);
+}
+
+.voyage-guide-card__image {
+  block-size: 100%;
+  min-block-size: 14rem;
+}
+
+.voyage-guide-card__image > img,
+.voyage-food-card__image > img {
+  block-size: 100%;
+  inline-size: 100%;
+  object-fit: cover;
+}
+
+.voyage-guide-card__body,
+.voyage-food-card__body {
+  padding: 1.25rem;
+}
+
+.voyage-guide-card__body h3,
+.voyage-food-card__body h3 {
+  color: #112d2a;
+  font-family: var(--font-serif);
+  font-size: 1.45rem;
+  line-height: 1.18;
+  margin: 0.85rem 0;
+}
+
+.voyage-guide-card__body > div:nth-of-type(1) {
+  color: #31665d;
+}
+
+.voyage-guide-card__body .bg-gray-50,
+.voyage-food-card__body .bg-gray-50 {
+  background: transparent;
+  padding: 0;
+}
+
+.voyage-guide-card__body .border-t,
+.voyage-food-card__body .border-t {
+  border-color: #d7e1dd;
+  margin-block-start: 1rem;
+  padding-block-start: 1rem;
+}
+
+.voyage-guide-card__body .rounded-full,
+.voyage-food-card__body .rounded-full {
+  border-radius: 50%;
+}
+
+.voyage-guide-card__body .rounded-md,
+.voyage-food-card__body .rounded-md {
+  border-radius: 0;
+}
+
+.voyage-guide-card__body .bg-orange-100 {
+  background: #e5efeb;
+  color: #236b61;
+}
+
+.voyage-guide-card__body .text-orange-600,
+.voyage-food-card__body .text-orange-600 {
+  color: #c75c32;
+}
+
+.voyage-food__rating-select {
+  align-items: center;
+  background: #e5efeb;
+  border: 1px solid #aec5bf;
+  display: flex;
+  min-block-size: 3.15rem;
+}
+
+.voyage-food__rating-select select {
+  appearance: auto;
+  background: transparent;
+  border: 0;
+  color: #173c37;
+  flex: 1;
+  font: inherit;
+  outline: 0;
+}
+
+.voyage-food__province-rail {
+  border-block-end: 1px solid #c9d7d2;
+  margin-block-start: 2rem;
+  padding-block-end: 1rem;
+}
+
+.voyage-food__province-rail button {
+  background: transparent;
+  border: 1px solid #aec5bf;
+  border-radius: 0;
+  color: #315851;
+  min-block-size: 2.35rem;
+  padding-inline: 0.85rem;
+}
+
+.voyage-food__province-rail button[aria-pressed="true"] {
+  background: #173c37;
+  border-color: #173c37;
+  color: #fff;
+}
+
+.voyage-food__grid {
+  gap: 1.25rem;
+}
+
+.voyage-food-card__image {
+  block-size: 13rem;
+}
+
+.voyage-food-card__image > img {
+  transition: transform 360ms ease;
+}
+
+.voyage-food-card:hover .voyage-food-card__image > img {
+  transform: scale(1.035);
+}
+
+.voyage-food-card .bg-white\/90,
+.voyage-food-card .bg-emerald-500\/90 {
+  backdrop-filter: none;
+  border-radius: 0;
+}
+
+.voyage-food-card .bg-white\/90 {
+  background: #fcfbf9;
+  border: 1px solid #aec5bf;
+}
+
+.voyage-food-card .bg-emerald-500\/90 {
+  background: #173c37;
+}
+
+.voyage-food-card__body .text-gray-500,
+.voyage-food-card__body .text-gray-400 {
+  color: #5f746f;
+}
+
+.voyage-food-card__body > div:first-child {
+  align-items: baseline;
+  border-block-end: 1px solid #d7e1dd;
+  padding-block-end: 0.75rem;
+}
+
+.voyage-food-card__body .group-hover\:gap-2 {
+  transition: none;
+}
+
+.voyage-food-modal {
+  background: rgb(15 43 39 / 0.72);
+}
+
+.voyage-food-modal__panel {
+  border-radius: 0;
+  max-inline-size: 58rem;
+}
+
+.voyage-food-modal__image {
+  block-size: 16rem;
+}
+
+.voyage-food-modal__image-caption {
+  background: rgb(15 43 39 / 0.82);
+}
+
+.voyage-food-modal__content {
+  padding: 1.5rem;
+}
+
+.voyage-food-modal__address {
+  background: #e5efeb;
+  border: 1px solid #aec5bf;
+  border-radius: 0;
+}
+
+.voyage-food-modal__address button {
+  background: #173c37;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.voyage-food-modal__address button:hover {
+  background: #0f2b27;
+}
+
+.voyage-food-modal .rounded-full {
+  border-radius: 50%;
+}
+
+.voyage-compare {
+  background: rgb(247 250 248 / 0.9);
+  padding-block: clamp(2.75rem, 6vw, 5.5rem);
+}
+
+.voyage-compare__frame {
+  max-inline-size: 76rem;
+}
+
+.voyage-compare__intro {
+  margin-inline: auto;
+  max-inline-size: 48rem;
+  text-align: start;
+}
+
+.voyage-compare__intro p {
+  max-inline-size: 38rem;
+}
+
+.voyage-compare__categories {
+  justify-content: flex-start;
+  margin-block: 2.5rem;
+  overflow-x: auto;
+}
+
+.voyage-compare__categories > div {
+  background: transparent;
+  border-block-end: 1px solid #aec5bf;
+  border-radius: 0;
+  box-shadow: none;
+  min-inline-size: max-content;
+  padding: 0;
+}
+
+.voyage-compare__category {
+  background: transparent;
+  border: 0;
+  border-block-end: 2px solid transparent;
+  border-radius: 0;
+  color: #5f746f;
+  min-block-size: 3rem;
+  padding-inline: 1.1rem;
+}
+
+.voyage-compare__category:hover,
+.voyage-compare__category.bg-gray-900 {
+  background: transparent;
+  box-shadow: none;
+  color: #173c37;
+}
+
+.voyage-compare__category.bg-gray-900 {
+  border-block-end-color: #c75c32;
+}
+
+.voyage-compare__parameters {
+  background: #fcfbf9;
+  border-color: #aec5bf;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.voyage-compare__parameters input {
+  border-color: #aec5bf;
+  border-radius: 0;
+  color: #173c37;
+}
+
+.voyage-compare__parameters input:focus {
+  border-color: #157568;
+  box-shadow: 0 0 0 3px rgb(21 117 104 / 0.18);
+}
+
+.voyage-compare__parameters label {
+  color: #41665f;
+  font-weight: 700;
+}
+
+.voyage-compare__parameters .rounded-xl {
+  border-radius: 0;
+}
+
+.voyage-compare__parameters [data-action-button-icon] {
+  color: currentColor;
+}
+
+.voyage-compare__parameters button[type="submit"] {
+  background: #173c37;
+  border-radius: 0;
+  box-shadow: none;
+  min-block-size: 3rem;
+}
+
+.voyage-compare__parameters button[type="submit"]:hover:not(:disabled) {
+  background: #0f2b27;
+}
+
+.voyage-compare__results {
+  counter-reset: comparison;
+}
+
+.voyage-compare__result {
+  background: #fcfbf9;
+  border-color: #c9d7d2;
+  border-radius: 0;
+  box-shadow: none;
+  counter-increment: comparison;
+  padding: 1.2rem;
+  position: relative;
+}
+
+.voyage-compare__result::before {
+  color: #47706a;
+  content: "0" counter(comparison);
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  line-height: 1;
+  position: absolute;
+  right: 1rem;
+  top: 1rem;
+}
+
+.voyage-compare__result:first-child {
+  border-color: #c75c32;
+}
+
+.voyage-compare__result .text-orange-600 {
+  color: #c75c32;
+  font-variant-numeric: tabular-nums;
+}
+
+.voyage-compare__result .bg-orange-100 {
+  background: #f5e7dc;
+  border-radius: 0;
+  color: #934120;
+}
+
+.voyage-compare__result .bg-emerald-50 {
+  background: #e5efeb;
+  border-radius: 0;
+  color: #236b61;
+}
+
+.voyage-compare__result .rounded-md,
+.voyage-compare__result .rounded-xl {
+  border-radius: 0;
+}
+
+.voyage-compare__result button {
+  border-radius: 0;
+  box-shadow: none;
+  min-inline-size: 7rem;
+}
+
+.voyage-compare__result button.bg-orange-600 {
+  background: #173c37;
+}
+
+.voyage-compare__result button.bg-orange-600:hover {
+  background: #0f2b27;
+}
+
+.voyage-compare__disclaimer {
+  border-block-start: 1px solid #c9d7d2;
+  color: #5f746f;
+  padding-block-start: 1rem;
+}
+
+.voyage-guides button:focus-visible,
+.voyage-guides input:focus-visible,
+.voyage-guides select:focus-visible,
+.voyage-food button:focus-visible,
+.voyage-food input:focus-visible,
+.voyage-food select:focus-visible,
+.voyage-compare button:focus-visible,
+.voyage-compare input:focus-visible {
+  outline: 3px solid #e66132;
+  outline-offset: 2px;
+}
+
+@media (max-width: 700px) {
+  .voyage-guides__intro-inner,
+  .voyage-food__intro-inner {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .voyage-guides__publish,
+  .voyage-food__submit {
+    inline-size: 100%;
+  }
+
+  .voyage-guides__search-rail,
+  .voyage-food__search-rail {
+    gap: 0.65rem;
+  }
+
+  .voyage-guides__filter-toggle,
+  .voyage-food__rating-select {
+    inline-size: 100%;
+  }
+
+  .voyage-guides__filter-panel .grid {
+    gap: 1rem;
+  }
+
+  .voyage-guides__index-heading,
+  .voyage-food__listing-heading {
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+
+  .voyage-guide-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .voyage-guide-card__image {
+    block-size: 11rem;
+    min-block-size: 0;
+  }
+
+  .voyage-food-card__image {
+    block-size: 12rem;
+  }
+
+  .voyage-food-modal__panel {
+    max-block-size: 92vh;
+  }
+
+  .voyage-food-modal__image {
+    block-size: 12rem;
+  }
+
+  .voyage-food-modal__content {
+    padding: 1.1rem;
+  }
+
+  .voyage-food-modal__address {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .voyage-food-modal__address button {
+    margin-inline-start: 2.4rem;
+  }
+
+  .voyage-compare {
+    padding-block: 2.5rem;
+  }
+
+  .voyage-compare__intro h1 {
+    font-size: 2.45rem;
+  }
+
+  .voyage-compare__categories {
+    margin-block: 2rem;
+  }
+
+  .voyage-compare__category {
+    padding-inline: 0.8rem;
+  }
+
+  .voyage-compare__parameters {
+    padding: 1rem;
+  }
+
+  .voyage-compare__result {
+    padding: 1rem;
+  }
+
+  .voyage-compare__result::before {
+    right: 0.75rem;
+    top: 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voyage-guide-card,
+  .voyage-food-card,
+  .voyage-food-card__image > img,
+  .voyage-guides__publish,
+  .voyage-food__submit {
+    transition: none;
+  }
+}
+
