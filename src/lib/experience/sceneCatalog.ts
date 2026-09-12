@@ -9,7 +9,7 @@ export interface SceneDefinition {
 const posterSrc = '/motion/route-terrain-poster.png';
 
 const scenes: Record<SceneTone, SceneDefinition> = {
-  home: { videoSrc: '/motion/home-current.mp4', posterSrc, tone: 'home' },
+  home: { videoSrc: '/motion/home-field-notes.mp4', posterSrc: '/motion/home-field-notes-poster.png', tone: 'home' },
   guides: { videoSrc: '/motion/guides-contours.mp4', posterSrc, tone: 'guides' },
   planner: { videoSrc: '/motion/route-terrain.mp4', posterSrc, tone: 'planner' },
   compare: { videoSrc: '/motion/compare-contours.mp4', posterSrc, tone: 'compare' },

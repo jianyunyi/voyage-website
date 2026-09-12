@@ -2,6 +2,14 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { getSceneForPath } from './sceneCatalog';
 
+test('home uses the field-notes video and dedicated poster fallback', () => {
+  assert.deepEqual(getSceneForPath('/'), {
+    videoSrc: '/motion/home-field-notes.mp4',
+    posterSrc: '/motion/home-field-notes-poster.png',
+    tone: 'home',
+  });
+});
+
 test('planner selects the route terrain scene and poster fallback', () => {
   assert.deepEqual(getSceneForPath('/planner'), {
     videoSrc: '/motion/route-terrain.mp4',
