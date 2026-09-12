@@ -73,7 +73,7 @@ export default function Food() {
     });
 
   return (
-    <div className="bg-[#fcfbf9] min-h-screen pb-20">
+    <div className="voyage-content-page min-h-screen pb-20">
       {/* Header */}
       <div className="bg-white border-b border-gray-200/50 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

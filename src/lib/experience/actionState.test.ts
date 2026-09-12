@@ -20,9 +20,21 @@ const expectedStates: Record<ActionName, {
     idle: { label: '发布攻略', icon: 'file-up', liveMessage: '' },
     pending: { label: '正在提交审核', icon: 'shield-check', liveMessage: '攻略正在提交审核' },
   },
+  'publish-food': {
+    idle: { label: '推荐美食', icon: 'file-up', liveMessage: '' },
+    pending: { label: '正在提交审核', icon: 'shield-check', liveMessage: '美食推荐正在提交审核' },
+  },
   'submit-review': {
     idle: { label: '提交评价', icon: 'send', liveMessage: '' },
     pending: { label: '正在提交评价', icon: 'clock-3', liveMessage: '正在提交评价，请稍候' },
+  },
+  'approve-submission': {
+    idle: { label: '通过发布', icon: 'shield-check', liveMessage: '' },
+    pending: { label: '正在发布', icon: 'shield-check', liveMessage: '正在审核通过并发布内容，请稍候' },
+  },
+  'reject-submission': {
+    idle: { label: '驳回删除', icon: 'shield-x', liveMessage: '' },
+    pending: { label: '正在驳回', icon: 'shield-x', liveMessage: '正在驳回并删除投稿，请稍候' },
   },
   'search-price': {
     idle: { label: '搜索价格', icon: 'search', liveMessage: '' },

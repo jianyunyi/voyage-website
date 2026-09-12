@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useFavorites } from "../context/FavoritesContext";
 import { usePreferences } from "../context/PreferencesContext";
 import { useAuth } from "../context/AuthContext";
@@ -8,11 +8,18 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { fetchMySubmissions, type UserSubmission } from "../lib/submissionService";
+import { uploadProfileAvatar } from "../lib/avatarService";
+import {
+  fetchModerationQueue,
+  reviewModerationItem,
+  type ModerationQueueItem,
+} from "../lib/moderationService";
+import { ActionButton } from "../components/ActionButton";
 
 export default function Profile() {
   const { favorites, removeFavorite } = useFavorites();
   const { preferences, updatePreferences } = usePreferences();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [filterType, setFilterType] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('time_desc');
   const [submissions, setSubmissions] = useState<UserSubmission[]>([]);
@@ -20,6 +27,13 @@ export default function Profile() {
   const [submissionsLoading, setSubmissionsLoading] = useState(true);
   const [submissionFilter, setSubmissionFilter] = useState<'all' | 'guide' | 'food'>('all');
   const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
+  const [avatarMessage, setAvatarMessage] = useState('');
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [moderationItems, setModerationItems] = useState<ModerationQueueItem[]>([]);
+  const [moderationLoading, setModerationLoading] = useState(false);
+  const [moderationMessage, setModerationMessage] = useState('');
+  const [reviewingKeys, setReviewingKeys] = useState<Set<string>>(new Set());
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const loadSubmissions = useCallback(async () => {
     if (!user?.id) {
@@ -37,6 +51,22 @@ export default function Profile() {
   useEffect(() => {
     loadSubmissions();
   }, [loadSubmissions]);
+
+  const loadModerationQueue = useCallback(async () => {
+    if (user?.role !== 'admin') {
+      setModerationItems([]);
+      return;
+    }
+
+    setModerationLoading(true);
+    const items = await fetchModerationQueue(user.id);
+    setModerationItems(items);
+    setModerationLoading(false);
+  }, [user?.id, user?.role]);
+
+  useEffect(() => {
+    loadModerationQueue();
+  }, [loadModerationQueue]);
 
   const filteredSubmissions = useMemo(() => {
     if (submissionFilter === 'all') return submissions;
@@ -136,8 +166,49 @@ export default function Profile() {
     updatePreferences({ foodFlavors: newFlavors });
   };
 
+  const handleAvatarChange = async (file: File | undefined) => {
+    if (!file || !user?.id) return;
+
+    setAvatarUploading(true);
+    setAvatarMessage('');
+    const result = await uploadProfileAvatar(user.id, file);
+    setAvatarUploading(false);
+
+    if (result.success === false) {
+      setAvatarMessage(result.message);
+      return;
+    }
+
+    updateUser({ avatar: `${result.avatarUrl}&v=${Date.now()}` });
+    setAvatarMessage('头像已通过格式校验和内容审核');
+  };
+
+  const handleReview = async (item: ModerationQueueItem, decision: 'approve' | 'reject') => {
+    if (!user?.id) return;
+
+    const itemKey = `${item.type}-${item.id}`;
+    setReviewingKeys((previous) => new Set(previous).add(itemKey));
+    setModerationMessage('');
+    try {
+      const result = await reviewModerationItem(user.id, item, decision);
+      if (result.success === false) {
+        setModerationMessage(result.message);
+        return;
+      }
+
+      setModerationMessage(decision === 'approve' ? '内容已审核通过并发布' : '内容已驳回并删除');
+      await loadModerationQueue();
+    } finally {
+      setReviewingKeys((previous) => {
+        const next = new Set(previous);
+        next.delete(itemKey);
+        return next;
+      });
+    }
+  };
+
   return (
-    <div className="bg-[#fcfbf9] min-h-screen pb-20">
+    <div className="voyage-content-page voyage-content-page--profile min-h-screen pb-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="flex items-center gap-6 mb-12">
           {user?.avatar ? (
@@ -156,8 +227,118 @@ export default function Profile() {
               {user ? `你好，${user.name}` : '个人中心'}
             </h1>
             <p className="text-gray-600 font-medium">管理您的投稿、收藏与偏好</p>
+            {user && (
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <ActionButton
+                  action="upload-avatar"
+                  pending={avatarUploading}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-900 text-white text-sm font-bold hover:bg-black transition-colors"
+                  onClick={() => avatarInputRef.current?.click()}
+                />
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="sr-only"
+                  aria-label="选择头像文件"
+                  onChange={(event) => {
+                    void handleAvatarChange(event.target.files?.[0]);
+                    event.currentTarget.value = '';
+                  }}
+                />
+                {avatarMessage && (
+                  <span className="text-sm font-medium text-gray-500">{avatarMessage}</span>
+                )}
+              </div>
+            )}
           </div>
         </div>
+
+        {user?.role === 'admin' && (
+          <div className="bg-white rounded-[32px] shadow-sm border border-gray-100 overflow-hidden mb-12">
+            <div className="p-8 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <FileText className="w-6 h-6 text-rose-600" />
+                <div>
+                  <h2 className="text-2xl font-serif font-bold text-gray-900">内容审核</h2>
+                  <p className="text-sm text-gray-500 mt-1">审核用户投稿，通过后公开发布，驳回后删除投稿记录</p>
+                </div>
+              </div>
+              <button
+                onClick={loadModerationQueue}
+                className="px-4 py-2 rounded-full bg-gray-900 text-white text-sm font-bold hover:bg-black transition-colors"
+              >
+                刷新审核队列
+              </button>
+            </div>
+
+            <div className="p-8">
+              {moderationMessage && (
+                <p className="mb-4 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+                  {moderationMessage}
+                </p>
+              )}
+
+              {moderationLoading ? (
+                <div className="flex items-center justify-center py-12 text-gray-500 gap-3">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>加载审核队列中...</span>
+                </div>
+              ) : moderationItems.length === 0 ? (
+                <div className="text-center py-12 text-gray-500 font-medium">暂无待审核内容</div>
+              ) : (
+                <div className="space-y-4">
+                  {moderationItems.map((item) => (
+                    <div
+                      key={`${item.type}-${item.id}`}
+                      className="flex flex-col md:flex-row gap-4 rounded-2xl border border-gray-100 p-4"
+                    >
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        className="w-full md:w-36 h-28 rounded-xl object-cover bg-gray-100"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="flex-grow">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-rose-50 text-rose-700">
+                            {item.type === 'guide' ? '攻略' : '美食'}
+                          </span>
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700">
+                            {statusLabels[item.status] || item.status}
+                          </span>
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-900">{item.title}</h3>
+                        <p className="text-sm text-gray-500 mt-1">
+                          作者：{item.author} · 目的地：{item.destination} · 风险分：{item.riskScore}
+                        </p>
+                        {item.riskLabels.length > 0 && (
+                          <p className="text-xs text-red-500 mt-2">
+                            风险标签：{item.riskLabels.join(', ')}
+                          </p>
+                        )}
+                      </div>
+                       <div className="flex md:flex-col gap-2 md:w-28">
+                         <ActionButton
+                           action="approve-submission"
+                           pending={reviewingKeys.has(`${item.type}-${item.id}`)}
+                           onClick={() => void handleReview(item, 'approve')}
+                           className="flex-1 px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition-colors"
+                         />
+                         <ActionButton
+                           action="reject-submission"
+                           pending={reviewingKeys.has(`${item.type}-${item.id}`)}
+                           onClick={() => void handleReview(item, 'reject')}
+                           className="flex-1 px-4 py-2 rounded-xl bg-red-50 text-red-600 text-sm font-bold hover:bg-red-100 transition-colors"
+                         />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Preferences Section */}
         <div className="bg-white rounded-[32px] shadow-sm border border-gray-100 overflow-hidden mb-12">

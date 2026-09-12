@@ -1,7 +1,37 @@
-import { useState } from "react";
+import { useState, type FormEvent, type SVGProps } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plane, Train, Car, Building, ArrowRight, Check, Info, Search, MapPin, Calendar, Users, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { ActionButton } from "../components/ActionButton";
+
+interface TransportItem {
+  id: string;
+  platform: string;
+  price: string;
+  type: string;
+  time: string;
+  features: string[];
+  url: string;
+}
+
+interface HotelItem {
+  id: string;
+  platform: string;
+  price: string;
+  name: string;
+  features: string[];
+}
+
+interface CarItem {
+  id: string;
+  platform: string;
+  price: string;
+  name: string;
+  features: string[];
+  url: string;
+}
+
+type CompareItem = TransportItem | HotelItem | CarItem;
 
 const categories = [
   { id: "transport", name: "交通工具", icon: Plane },
@@ -9,7 +39,11 @@ const categories = [
   { id: "car", name: "租车服务", icon: Car },
 ];
 
-const mockData = {
+const mockData: {
+  transport: TransportItem[];
+  hotel: HotelItem[];
+  car: CarItem[];
+} = {
   transport: [
     { id: "t1", platform: "携程旅行", price: "¥850", type: "飞机", time: "10:00 - 13:00", features: ["退改无忧", "含20kg托运"], url: "https://flights.ctrip.com/" },
     { id: "t2", platform: "飞猪旅行", price: "¥820", type: "飞机", time: "10:00 - 13:00", features: ["含20kg托运"], url: "https://fliggy.com/" },
@@ -40,7 +74,7 @@ export default function Compare() {
     origin: "北京",
   });
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     // Simulate API call
@@ -49,16 +83,16 @@ export default function Compare() {
     }, 800);
   };
 
-  const handleBook = (item: any) => {
+  const handleBook = (item: CompareItem) => {
     if (activeCategory === "hotel") {
       navigate(`/hotel/${item.id}`);
-    } else if (item.url) {
+    } else if ('url' in item) {
       window.open(item.url, '_blank');
     }
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen py-12">
+    <div className="voyage-content-page voyage-content-page--compare min-h-screen py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-serif font-bold text-gray-900 mb-4">全网综合比价</h1>
@@ -156,14 +190,13 @@ export default function Compare() {
                   />
                 </div>
               </div>
-              <button 
-                type="submit" 
-                disabled={isLoading}
+              <ActionButton
+                action="search-price"
+                pending={isLoading}
+                type="submit"
                 className="w-full lg:w-auto bg-orange-600 hover:bg-orange-700 text-white px-8 py-3 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 disabled:bg-orange-400"
               >
-                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
-                搜索
-              </button>
+              </ActionButton>
             </form>
           ) : (
             <div className="flex flex-col md:flex-row items-center justify-between py-2">
@@ -214,7 +247,11 @@ export default function Compare() {
                       )}
                     </div>
                     <div className="text-gray-600 mb-3">
-                      {activeCategory === "hotel" && searchParams.destination ? `[${searchParams.destination}] ${item.name}` : ('time' in item ? `${item.type} | ${item.time}` : item.name)}
+                      {activeCategory === "hotel" && searchParams.destination
+                        ? `[${searchParams.destination}] ${'name' in item ? item.name : item.type}`
+                        : 'time' in item
+                          ? `${item.type} | ${item.time}`
+                          : item.name}
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {item.features.map((feature, i) => (
@@ -252,8 +289,7 @@ export default function Compare() {
   );
 }
 
-// Missing Star icon import in Compare.tsx, let's fix it inline
-function Star(props: any) {
+function Star(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}

@@ -37,6 +37,32 @@ body {
   z-index: 0;
 }
 
+.voyage-shell {
+  isolation: isolate;
+  position: relative;
+}
+
+.voyage-backdrop-transition {
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+}
+
+.voyage-content-page {
+  background-color: rgb(252 251 249 / 0.88);
+  position: relative;
+}
+
+.voyage-content-page--compare {
+  background-color: rgb(248 250 252 / 0.88);
+}
+
+.voyage-content-page--profile {
+  background-color: rgb(252 251 249 / 0.92);
+}
+
 .voyage-backdrop__poster,
 .voyage-backdrop__video {
   block-size: 100%;

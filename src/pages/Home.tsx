@@ -158,7 +158,7 @@ export default function Home() {
   const recommendedFood = useMemo(getRecommendedFood, [preferences, foods]);
 
   return (
-    <div className="flex flex-col">
+    <div className="voyage-content-page flex flex-col">
       {/* Hero Section with Carousel */}
       <section className="relative h-[80vh] flex items-center justify-center overflow-hidden bg-black">
         <AnimatePresence mode="wait">

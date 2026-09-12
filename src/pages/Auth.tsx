@@ -1,14 +1,14 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, User as UserIcon, ArrowRight, Loader2, Compass } from 'lucide-react';
+import { Mail, Lock, User as UserIcon, Compass, Smartphone } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { loginUser, registerUser } from '../lib/authService';
+import { ActionButton } from '../components/ActionButton';
+import { loginUser, registerUser, requestSmsLoginCode, verifySmsLoginCode } from '../lib/authService';
 import {
   type AuthField,
   type AuthFieldErrors,
   hasFieldErrors,
-  validateLoginForm,
   validateRegisterForm,
 } from '../lib/authValidation';
 
@@ -34,6 +34,11 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [smsCode, setSmsCode] = useState('');
+  const [smsChallengeId, setSmsChallengeId] = useState('');
+  const [smsDebugCode, setSmsDebugCode] = useState('');
+  const [loginMode, setLoginMode] = useState<'sms' | 'password'>('sms');
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -54,6 +59,9 @@ export default function Auth() {
     setError('');
     setFieldErrors({});
     setConfirmPassword('');
+    setSmsCode('');
+    setSmsChallengeId('');
+    setSmsDebugCode('');
   };
 
   const switchMode = () => {
@@ -65,28 +73,66 @@ export default function Auth() {
     e.preventDefault();
     setError('');
 
-    const formData = { email, password, name, confirmPassword };
-    const errors = isLogin ? validateLoginForm(formData) : validateRegisterForm(formData);
-
-    if (hasFieldErrors(errors)) {
-      setFieldErrors(errors);
-      return;
-    }
-
-    setFieldErrors({});
     setLoading(true);
 
     try {
       await new Promise((resolve) => setTimeout(resolve, 800));
 
       if (isLogin) {
-        const result = await loginUser(email, password);
+        if (loginMode === 'password') {
+          if (!email.trim() || !password) {
+            setError('请输入管理员邮箱和密码');
+            return;
+          }
+
+          const result = await loginUser(email, password);
+          if (result.success === false) {
+            setError(result.message);
+            return;
+          }
+          login(result.user);
+          navigate(from, { replace: true });
+          return;
+        }
+
+        if (!email.trim() || !phone.trim()) {
+          setError('请输入邮箱和手机号');
+          return;
+        }
+
+        if (!smsChallengeId) {
+          const result = await requestSmsLoginCode(email, phone);
+          if (result.success === false) {
+            setError(result.message);
+            return;
+          }
+          setSmsChallengeId(result.challengeId);
+          setSmsDebugCode(result.debugCode || '');
+          setError(result.debugCode ? `验证码已发送，本地开发验证码：${result.debugCode}` : '验证码已发送');
+          return;
+        }
+
+        if (!/^\d{6}$/.test(smsCode.trim())) {
+          setError('请输入 6 位短信验证码');
+          return;
+        }
+
+        const result = await verifySmsLoginCode(smsChallengeId, smsCode);
         if (result.success === false) {
           setError(result.message);
           return;
         }
         login(result.user);
       } else {
+        const formData = { email, password, name, confirmPassword };
+        const errors = validateRegisterForm(formData);
+
+        if (hasFieldErrors(errors)) {
+          setFieldErrors(errors);
+          return;
+        }
+
+        setFieldErrors({});
         const result = await registerUser(email, password, name);
         if (result.success === false) {
           setError(result.message);
@@ -104,7 +150,7 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex grid md:grid-cols-2 bg-[#fcfbf9]">
+    <div className="voyage-content-page min-h-[calc(100vh-4rem)] flex grid md:grid-cols-2">
       <div className="hidden md:flex relative overflow-hidden bg-gray-900 border-r border-gray-200/50">
         <div className="absolute inset-0">
           <img
@@ -191,18 +237,110 @@ export default function Auth() {
               <FieldError message={fieldErrors.email} />
             </div>
 
+            {isLogin && (
+              <>
+                <div className="flex rounded-2xl bg-gray-100 p-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLoginMode('sms');
+                      setError('');
+                    }}
+                    className={`flex-1 rounded-xl py-2 text-sm font-bold transition-colors ${
+                      loginMode === 'sms' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
+                    }`}
+                  >
+                    短信登录
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLoginMode('password');
+                      setError('');
+                    }}
+                    className={`flex-1 rounded-xl py-2 text-sm font-bold transition-colors ${
+                      loginMode === 'password' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
+                    }`}
+                  >
+                    管理员登录
+                  </button>
+                </div>
+
+                {loginMode === 'password' ? (
+                  <div>
+                    <div className="flex justify-between items-center mb-1.5 ml-1">
+                      <label className="block text-sm font-medium text-gray-700">管理员密码</label>
+                    </div>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Lock className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="password"
+                        className={fieldClass(!!fieldErrors.password)}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          clearFieldError('password');
+                        }}
+                        autoComplete="current-password"
+                        maxLength={32}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5 ml-1">手机号</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Smartphone className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="tel"
+                      className={fieldClass(false)}
+                      placeholder="+8613800138000"
+                      value={phone}
+                      onChange={(e) => {
+                        setPhone(e.target.value);
+                        setSmsChallengeId('');
+                        setSmsCode('');
+                        setSmsDebugCode('');
+                      }}
+                      autoComplete="tel"
+                    />
+                  </div>
+                </div>
+
+                {smsChallengeId && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5 ml-1">短信验证码</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Lock className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        className={fieldClass(false)}
+                        placeholder={smsDebugCode || '123456'}
+                        value={smsCode}
+                        onChange={(e) => setSmsCode(e.target.value)}
+                        maxLength={6}
+                      />
+                    </div>
+                  </div>
+                )}
+                </>
+                )}
+              </>
+            )}
+
+            {!isLogin && (
             <div>
               <div className="flex justify-between items-center mb-1.5 ml-1">
                 <label className="block text-sm font-medium text-gray-700">密码</label>
-                {isLogin && (
-                  <button
-                    type="button"
-                    onClick={() => setError('忘记密码功能即将上线，请联系客服或使用演示账号登录')}
-                    className="text-xs font-medium text-orange-600 hover:text-orange-500 transition-colors"
-                  >
-                    忘记密码？
-                  </button>
-                )}
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -228,6 +366,7 @@ export default function Auth() {
                 </p>
               )}
             </div>
+            )}
 
             <AnimatePresence mode="popLayout">
               {!isLogin && (
@@ -273,20 +412,13 @@ export default function Auth() {
               )}
             </AnimatePresence>
 
-            <button
+            <ActionButton
+              action="sign-in"
+              pending={loading}
               type="submit"
-              disabled={loading}
               className="w-full relative flex items-center justify-center py-3.5 px-4 bg-[#1a1918] text-white rounded-2xl font-bold hover:bg-black hover:shadow-lg hover:shadow-black/10 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-gray-200 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed group mt-2"
             >
-              {loading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  <span>{isLogin ? '登录' : '立即注册'}</span>
-                  <ArrowRight className="w-4 h-4 ml-2 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 absolute right-6" />
-                </>
-              )}
-            </button>
+            </ActionButton>
           </form>
 
           <div className="mt-8 text-center sm:text-left">

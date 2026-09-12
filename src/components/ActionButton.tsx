@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Clock3, FileUp, LogIn, MapPin, Route, Search, Send, ShieldCheck, Upload, type LucideIcon } from 'lucide-react';
+import { Clock3, FileUp, LogIn, MapPin, Route, Search, Send, ShieldCheck, ShieldX, Upload, type LucideIcon } from 'lucide-react';
 import { getActionState, type ActionName, type ActionState } from '../lib/experience/actionState';
 import { cn } from '../lib/utils';
 
@@ -9,6 +9,7 @@ const actionIcons: Record<ActionState['icon'], LucideIcon> = {
   route: Route,
   'file-up': FileUp,
   'shield-check': ShieldCheck,
+  'shield-x': ShieldX,
   send: Send,
   'clock-3': Clock3,
   search: Search,
@@ -19,7 +20,10 @@ const actionIcons: Record<ActionState['icon'], LucideIcon> = {
 const actionLabelMinInlineSizes: Record<ActionName, string> = {
   'plan-route': '8ch',
   'publish-guide': '8ch',
+  'publish-food': '8ch',
   'submit-review': '8ch',
+  'approve-submission': '8ch',
+  'reject-submission': '8ch',
   'search-price': '8ch',
   'upload-avatar': '8ch',
   'sign-in': '6ch',

@@ -3,11 +3,14 @@ import { Map, Compass, ArrowLeftRight, Menu, X, Globe, BookOpen, User, Utensils,
 import { useState } from "react";
 import { cn } from "../lib/utils";
 import { useAuth } from "../context/AuthContext";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { ImmersiveBackdrop } from "./ImmersiveBackdrop";
 
 export default function Layout() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const shouldReduceMotion = useReducedMotion();
   const { user, isAuthenticated, logout } = useAuth();
 
   const navItems = [
@@ -19,7 +22,20 @@ export default function Layout() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col font-sans">
+    <div className="voyage-shell min-h-screen flex flex-col font-sans">
+      <AnimatePresence initial={false} mode="sync">
+        <motion.div
+          key={location.pathname}
+          aria-hidden="true"
+          className="voyage-backdrop-transition"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: shouldReduceMotion ? 0 : 0.22, ease: 'easeOut' }}
+        >
+          <ImmersiveBackdrop pathname={location.pathname} />
+        </motion.div>
+      </AnimatePresence>
       <header className="sticky top-0 z-50 bg-[#fcfbf9]/90 backdrop-blur-xl border-b border-gray-200/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
@@ -174,11 +190,11 @@ export default function Layout() {
         )}
       </header>
 
-      <main className="flex-grow">
+      <main className="relative z-10 flex-grow">
         <Outlet />
       </main>
 
-      <footer className="bg-[#1a1918] text-white py-16">
+      <footer className="relative z-10 bg-[#1a1918] text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-12">
           <div className="col-span-1 md:col-span-2">
             <Link to="/" className="flex items-center gap-2 mb-6 group">
