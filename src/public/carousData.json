@@ -1,0 +1,22 @@
+[
+  {
+    "image": "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=2000",
+    "title": "巴黎",
+    "subtitle": "浪漫之都，艺术与历史的交响"
+  },
+  {
+    "image": "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&q=80&w=2000",
+    "title": "地道美食",
+    "subtitle": "舌尖上的世界，品味各地风情"
+  },
+  {
+    "image": "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&q=80&w=2000",
+    "title": "东京",
+    "subtitle": "繁华与传统的完美交织"
+  },
+  {
+    "image": "https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?auto=format&fit=crop&q=80&w=2000",
+    "title": "特色小吃",
+    "subtitle": "寻味街头巷尾的烟火气"
+  }
+]

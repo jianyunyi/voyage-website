@@ -1,0 +1,4 @@
+.tmp-go-cache
+*.test
+Dockerfile
+.git
