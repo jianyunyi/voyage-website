@@ -116,31 +116,31 @@ test('updates each action between idle and pending states without changing butto
         root.render(createElement(ActionButton, { action, pending: false }));
       });
 
-      const idleButton = container.querySelector('button');
-      const idleIcon = container.querySelector('[data-action-button-icon]');
-      const idleLabel = container.querySelector('[data-action-button-label]');
+      const idleButton: HTMLButtonElement | null = container.querySelector('button');
+      const idleIcon: HTMLElement | null = container.querySelector('[data-action-button-icon]');
+      const idleLabel: HTMLElement | null = container.querySelector('[data-action-button-label]');
       assert.ok(idleButton && idleIcon && idleLabel);
       assert.match(idleButton.textContent ?? '', new RegExp(expected.idle.label));
       assert.ok(idleButton.querySelector(`.lucide-${expected.idle.icon}`));
-      const buttonClass = idleButton.className;
-      const buttonStyle = idleButton.getAttribute('style');
-      const iconStyle = idleIcon.getAttribute('style');
-      const labelMinInlineSize = (idleLabel as HTMLElement).style.minInlineSize;
+      const buttonClass: string = idleButton.className;
+      const buttonStyle: string | null = idleButton.getAttribute('style');
+      const iconStyle: string | null = idleIcon.getAttribute('style');
+      const labelMinInlineSize: string = idleLabel.style.minInlineSize;
 
       await act(async () => {
         root.render(createElement(ActionButton, { action, pending: true }));
       });
 
-      const pendingButton = container.querySelector('button');
-      const pendingIcon = container.querySelector('[data-action-button-icon]');
-      const pendingLabel = container.querySelector('[data-action-button-label]');
+      const pendingButton: HTMLButtonElement | null = container.querySelector('button');
+      const pendingIcon: HTMLElement | null = container.querySelector('[data-action-button-icon]');
+      const pendingLabel: HTMLElement | null = container.querySelector('[data-action-button-label]');
       assert.ok(pendingButton && pendingIcon && pendingLabel);
       assert.match(pendingButton.textContent ?? '', new RegExp(expected.pending.label));
       assert.ok(pendingButton.querySelector(`.lucide-${expected.pending.icon}`));
       assert.equal(pendingButton.className, buttonClass);
       assert.equal(pendingButton.getAttribute('style'), buttonStyle);
       assert.equal(pendingIcon.getAttribute('style'), iconStyle);
-      assert.equal((pendingLabel as HTMLElement).style.minInlineSize, labelMinInlineSize);
+      assert.equal(pendingLabel.style.minInlineSize, labelMinInlineSize);
     }
   } finally {
     await act(async () => {
