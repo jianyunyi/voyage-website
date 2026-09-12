@@ -60,6 +60,337 @@ button:has([data-action-button-icon]) {
   }
 }
 
+.voyage-planner {
+  background: #102a28;
+  isolation: isolate;
+  min-block-size: min(52rem, calc(100vh - 5rem));
+  position: relative;
+}
+
+.voyage-planner__frame {
+  display: grid;
+  grid-template-columns: minmax(19rem, 25rem) minmax(0, 1fr);
+  margin: 0 auto;
+  max-inline-size: 90rem;
+  min-block-size: inherit;
+  position: relative;
+  z-index: 1;
+}
+
+.voyage-planner__rail {
+  background: rgb(252 251 249 / 0.96);
+  border-inline-end: 1px solid rgb(18 50 47 / 0.2);
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.voyage-planner__heading,
+.voyage-planner__form,
+.voyage-planner__results {
+  padding: 1.5rem;
+}
+
+.voyage-planner__heading {
+  border-block-end: 1px solid rgb(18 50 47 / 0.14);
+}
+
+.voyage-planner__eyebrow {
+  color: #47706a;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin: 0 0 0.5rem;
+  text-transform: uppercase;
+}
+
+.voyage-planner h1,
+.voyage-planner h2 {
+  color: #112d2a;
+  font-family: var(--font-serif);
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.voyage-planner h1 {
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+.voyage-planner h2 {
+  font-size: 1.25rem;
+}
+
+.voyage-planner__heading > p:last-child {
+  color: #4a625e;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  margin: 0.75rem 0 0;
+}
+
+.voyage-planner__form {
+  display: grid;
+  gap: 1rem;
+}
+
+.voyage-planner__hint {
+  align-items: flex-start;
+  background: #e5efeb;
+  border-inline-start: 3px solid #2e776c;
+  color: #234d47;
+  display: flex;
+  font-size: 0.8125rem;
+  gap: 0.5rem;
+  line-height: 1.5;
+  padding: 0.7rem 0.8rem;
+}
+
+.voyage-planner__hint svg {
+  flex: 0 0 auto;
+  margin-block-start: 0.08rem;
+}
+
+.voyage-planner__field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.voyage-planner__field label {
+  color: #355953;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.voyage-planner__field-control {
+  align-items: center;
+  border: 1px solid #aec5bf;
+  color: #236b61;
+  display: flex;
+  min-block-size: 2.9rem;
+  padding-inline: 0.75rem;
+}
+
+.voyage-planner__field-control--destination {
+  color: #c75c32;
+}
+
+.voyage-planner__field-control select {
+  appearance: auto;
+  background: transparent;
+  border: 0;
+  color: #173c37;
+  flex: 1;
+  font: inherit;
+  font-weight: 600;
+  min-inline-size: 0;
+  padding: 0.7rem;
+}
+
+.voyage-planner__field-control:focus-within {
+  border-color: #157568;
+  box-shadow: 0 0 0 3px rgb(21 117 104 / 0.18);
+}
+
+.voyage-planner__field-control select:disabled {
+  color: #7a8d89;
+  cursor: not-allowed;
+}
+
+.voyage-planner__submit {
+  align-items: center;
+  background: #173c37;
+  color: #fff;
+  display: inline-flex;
+  gap: 0.55rem;
+  justify-content: center;
+  margin-block-start: 0.25rem;
+  padding: 0.75rem 1rem;
+  width: 100%;
+}
+
+.voyage-planner__submit:hover:not(:disabled) {
+  background: #0f2b27;
+}
+
+.voyage-planner__submit:disabled {
+  background: #9aaba7;
+  cursor: not-allowed;
+}
+
+.voyage-planner button:focus-visible,
+.voyage-planner select:focus-visible,
+.voyage-planner__map-fallback:focus-visible {
+  outline: 3px solid #e66132;
+  outline-offset: 2px;
+}
+
+.voyage-planner__results {
+  border-block-start: 1px solid rgb(18 50 47 / 0.14);
+  flex: 1;
+}
+
+.voyage-planner__results-heading {
+  align-items: center;
+  color: #247567;
+  display: flex;
+  justify-content: space-between;
+}
+
+.voyage-planner__route-list {
+  border-block-start: 1px solid #c9d7d2;
+  margin-block-start: 1rem;
+}
+
+.voyage-planner__route {
+  background: transparent;
+  border: 0;
+  border-block-end: 1px solid #d7e1dd;
+  color: #183d38;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 0.85rem 0;
+  text-align: start;
+  width: 100%;
+}
+
+.voyage-planner__route[data-selected="true"] {
+  color: #0d675a;
+}
+
+.voyage-planner__route-main {
+  display: grid;
+  font-size: 0.9rem;
+  font-weight: 700;
+  gap: 0.2rem;
+}
+
+.voyage-planner__route-main small,
+.voyage-planner__route-note {
+  color: #607671;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.voyage-planner__route-value {
+  font-size: 0.825rem;
+  font-weight: 700;
+}
+
+.voyage-planner__route-note {
+  align-items: center;
+  display: flex;
+  gap: 0.2rem;
+  grid-column: 1 / -1;
+  margin-block-start: 0.4rem;
+}
+
+.voyage-planner__empty {
+  align-items: center;
+  color: #5d746f;
+  display: flex;
+  font-size: 0.875rem;
+  gap: 0.65rem;
+  line-height: 1.5;
+  margin-block-start: 1rem;
+}
+
+.voyage-planner__empty p {
+  margin: 0;
+}
+
+.voyage-planner__map-region {
+  min-block-size: 34rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.voyage-planner__map {
+  block-size: 100%;
+  inline-size: 100%;
+}
+
+.voyage-planner__map-fallback {
+  align-items: flex-start;
+  background: rgb(13 43 39 / 0.88);
+  color: #f5f7f6;
+  display: grid;
+  gap: 0.6rem;
+  inset: 0;
+  justify-content: center;
+  padding: 2rem;
+  place-content: center;
+  position: absolute;
+  text-align: center;
+}
+
+.voyage-planner__map-fallback span {
+  color: #d6e4df;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  max-inline-size: 27rem;
+}
+
+.voyage-planner__map-tools {
+  background: rgb(252 251 249 / 0.95);
+  border: 1px solid rgb(18 50 47 / 0.2);
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.3rem;
+  position: absolute;
+  right: 1rem;
+  top: 1rem;
+}
+
+.voyage-planner__map-tools button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: #254842;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.75rem;
+  font-weight: 700;
+  gap: 0.25rem;
+  min-block-size: 2rem;
+  padding-inline: 0.55rem;
+}
+
+.voyage-planner__map-tools button:hover {
+  background: #e5efeb;
+}
+
+@media (max-width: 700px) {
+  .voyage-planner {
+    min-block-size: 0;
+  }
+
+  .voyage-planner__frame {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .voyage-planner__rail {
+    border-block-end: 1px solid rgb(18 50 47 / 0.2);
+    border-inline-end: 0;
+  }
+
+  .voyage-planner__heading,
+  .voyage-planner__form,
+  .voyage-planner__results {
+    padding: 1.15rem;
+  }
+
+  .voyage-planner__map-region {
+    min-block-size: 24rem;
+  }
+
+  .voyage-planner__map-tools {
+    left: 0.75rem;
+    right: auto;
+    top: 0.75rem;
+  }
+}
+
 /* Leaflet map styles */
 @import "leaflet/dist/leaflet.css";
 
