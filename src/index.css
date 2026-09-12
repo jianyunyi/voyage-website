@@ -435,12 +435,45 @@ button:has([data-action-button-icon]) {
   padding-block: clamp(2.75rem, 6vw, 5.5rem);
 }
 
-.voyage-guides__intro-inner,
-.voyage-food__intro-inner {
-  align-items: end;
+.voyage-contribution-rail {
+  margin-inline: auto;
+  max-inline-size: 80rem;
+  padding-inline: 1rem;
+}
+
+.voyage-contribution-rail__heading {
+  align-items: stretch;
   display: flex;
-  gap: 2rem;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.voyage-contribution-rail__action {
+  flex: 0 0 auto;
+}
+
+.voyage-contribution-rail__search,
+.voyage-guides__index,
+.voyage-food__listing {
+  max-inline-size: 80rem;
+}
+
+@media (min-width: 701px) {
+  .voyage-contribution-rail {
+    padding-inline: 1.5rem;
+  }
+
+  .voyage-contribution-rail__heading {
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+}
+
+@media (min-width: 1024px) {
+  .voyage-contribution-rail {
+    padding-inline: 2rem;
+  }
 }
 
 .voyage-guides__intro h1,
@@ -1013,10 +1046,8 @@ button:has([data-action-button-icon]) {
 }
 
 @media (max-width: 700px) {
-  .voyage-guides__intro-inner,
-  .voyage-food__intro-inner {
-    align-items: stretch;
-    flex-direction: column;
+  .voyage-contribution-rail__action > * {
+    inline-size: 100%;
   }
 
   .voyage-guides__publish,
@@ -1109,6 +1140,7 @@ button:has([data-action-button-icon]) {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .home-field-notes-media__video,
   .voyage-guide-card,
   .voyage-food-card,
   .voyage-food-card__image > img,
