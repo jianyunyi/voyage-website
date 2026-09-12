@@ -1,0 +1,57 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: voyagex-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: voyagex
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  mysql:
+    image: mysql:8.4
+    container_name: voyagex-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: voyagex
+      MYSQL_USER: voyagex
+      MYSQL_PASSWORD: voyagex_password
+      MYSQL_ROOT_PASSWORD: voyagex_root_password
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: voyagex-api
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./backend/.env
+    environment:
+      MONGO_URI: mongodb://mongodb:27017
+      DB_DSN: voyagex:voyagex_password@tcp(mysql:3306)/voyagex?charset=utf8mb4&parseTime=True&loc=Local
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+
+volumes:
+  mongo-data:
+  mysql-data:

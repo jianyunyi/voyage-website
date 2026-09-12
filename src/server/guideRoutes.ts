@@ -1,6 +1,13 @@
 import { type Request, type Response, type Router } from 'express';
 import Guide, { type IGuide } from '../lib/database/models/Guide';
+import Submission, { type GuideSubmissionPayload, type ISubmission } from '../lib/database/models/Submission';
 import { DEFAULT_IMAGE } from '../lib/database/seedGuides';
+import {
+  applyModerationDecision,
+  moderateSubmission,
+  type ModeratedContentStatus,
+} from './security/moderationService';
+import { normalizeOptionalObjectId } from './security/mongoIdentity';
 
 function toPublicGuide(doc: IGuide) {
   return {
@@ -16,6 +23,28 @@ function toPublicGuide(doc: IGuide) {
     content: doc.content,
     status: doc.status,
     source: doc.source,
+    riskScore: doc.riskScore,
+    riskLabels: doc.riskLabels,
+  };
+}
+
+function toSubmittedGuide(doc: ISubmission) {
+  const payload = doc.payload as GuideSubmissionPayload;
+  return {
+    id: doc._id.toString(),
+    title: payload.title,
+    author: doc.author,
+    destination: payload.destination,
+    days: payload.days,
+    budget: payload.budget,
+    likes: 0,
+    image: payload.image,
+    tags: payload.tags,
+    content: payload.content,
+    status: doc.status,
+    source: 'user' as const,
+    riskScore: doc.riskScore,
+    riskLabels: doc.riskLabels,
   };
 }
 
@@ -51,8 +80,10 @@ export function registerGuideRoutes(router: Router) {
     }
 
     try {
-      const guides = await Guide.find({ status: 'pending' }).sort({ createdAt: -1 });
-      return res.json({ success: true, guides: guides.map(toPublicGuide) });
+      const guides = await Submission.find({ type: 'guide', status: 'pending_review' }).sort({
+        createdAt: -1,
+      });
+      return res.json({ success: true, guides: guides.map(toSubmittedGuide) });
     } catch (error) {
       console.error('获取待审核攻略失败:', error);
       return res.status(500).json({ success: false, message: '获取待审核攻略失败' });
@@ -82,23 +113,37 @@ export function registerGuideRoutes(router: Router) {
         return res.status(400).json({ success: false, message: '请填写有效的天数和预算' });
       }
 
-      const guide = await Guide.create({
+      const moderation = moderateSubmission({
         title: title.trim(),
-        author: author.trim(),
-        authorId: authorId || undefined,
+        body: content.trim(),
+        imageUrl: image?.trim(),
+      });
+
+      const payload: GuideSubmissionPayload = {
+        title: title.trim(),
         destination: destination.trim(),
         days,
         budget,
         content: content.trim(),
         image: image?.trim() || DEFAULT_IMAGE,
         tags: parseTags(tags),
-        status: 'pending',
-        source: 'user',
+      };
+
+      const submission = await Submission.create({
+        type: 'guide',
+        author: author.trim(),
+        authorId: normalizeOptionalObjectId(authorId),
+        payload,
+        status: moderation.status,
+        riskScore: moderation.riskScore,
+        riskLabels: moderation.riskLabels,
+        moderationReason: moderation.riskLabels.join(',') || 'submitted_for_review',
       });
 
       return res.status(201).json({
         success: true,
-        guide: toPublicGuide(guide),
+        submission: toSubmittedGuide(submission),
+        guide: toSubmittedGuide(submission),
         message: '投稿成功，审核通过后将展示在攻略板块',
       });
     } catch (error) {
@@ -162,25 +207,38 @@ export function registerGuideRoutes(router: Router) {
     }
 
     try {
-      const { status } = req.body as { status?: 'published' | 'rejected' };
-      if (status !== 'published' && status !== 'rejected') {
-        return res.status(400).json({ success: false, message: '无效的状态值' });
-      }
-
-      const guide = await Guide.findByIdAndUpdate(
-        req.params.id,
-        { status },
-        { new: true }
-      );
-
+      const { status } = req.body as { status?: 'approved' | 'published' | 'rejected' | 'removed' };
+      const guide = await Guide.findById(req.params.id);
       if (!guide) {
         return res.status(404).json({ success: false, message: '攻略不存在' });
       }
 
+      const decision =
+        status === 'approved'
+          ? 'approve'
+          : status === 'published'
+            ? 'publish'
+            : status === 'removed'
+              ? 'remove'
+              : status === 'rejected'
+                ? 'reject'
+                : null;
+      const nextStatus = decision
+        ? applyModerationDecision(guide.status as ModeratedContentStatus, decision)
+        : null;
+
+      if (!nextStatus) {
+        return res.status(400).json({ success: false, message: '无效的状态值' });
+      }
+
+      guide.status = nextStatus;
+      guide.moderationReason = status || 'status_update';
+      await guide.save();
+
       return res.json({
         success: true,
         guide: toPublicGuide(guide),
-        message: status === 'published' ? '攻略已审核通过并发布' : '攻略已拒绝',
+        message: nextStatus === 'published' ? '攻略已发布' : '攻略状态已更新',
       });
     } catch (error) {
       console.error('更新攻略状态失败:', error);

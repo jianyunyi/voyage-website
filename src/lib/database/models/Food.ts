@@ -1,6 +1,14 @@
 import mongoose, { type Document, type Model } from 'mongoose';
 
-export type FoodStatus = 'pending' | 'published' | 'rejected';
+export type FoodStatus =
+  | 'draft'
+  | 'pending_review'
+  | 'auto_rejected'
+  | 'needs_manual_review'
+  | 'approved'
+  | 'published'
+  | 'rejected'
+  | 'removed';
 export type FoodSource = 'user' | 'admin';
 
 export interface IFoodReview {
@@ -27,6 +35,9 @@ export interface IFood extends Document {
   authorId?: mongoose.Types.ObjectId;
   status: FoodStatus;
   source: FoodSource;
+  riskScore: number;
+  riskLabels: string[];
+  moderationReason?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -59,14 +70,26 @@ const foodSchema = new mongoose.Schema<IFood>(
     authorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     status: {
       type: String,
-      enum: ['pending', 'published', 'rejected'],
-      default: 'pending',
+      enum: [
+        'draft',
+        'pending_review',
+        'auto_rejected',
+        'needs_manual_review',
+        'approved',
+        'published',
+        'rejected',
+        'removed',
+      ],
+      default: 'pending_review',
     },
     source: {
       type: String,
       enum: ['user', 'admin'],
       default: 'user',
     },
+    riskScore: { type: Number, default: 0 },
+    riskLabels: { type: [String], default: [] },
+    moderationReason: { type: String },
   },
   { timestamps: true }
 );

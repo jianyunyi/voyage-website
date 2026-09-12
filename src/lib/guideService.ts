@@ -9,8 +9,18 @@ export interface TravelGuide {
   image: string;
   tags: string[];
   content?: string;
-  status?: 'pending' | 'published' | 'rejected';
+  status?:
+    | 'draft'
+    | 'pending_review'
+    | 'auto_rejected'
+    | 'needs_manual_review'
+    | 'approved'
+    | 'published'
+    | 'rejected'
+    | 'removed';
   source?: 'user' | 'admin';
+  riskScore?: number;
+  riskLabels?: string[];
 }
 
 export interface GuideSubmitPayload {
@@ -40,8 +50,7 @@ type GuideMutationResponse =
 
 export async function fetchPublishedGuides(): Promise<TravelGuide[]> {
   try {
-    const response = await fetch('/api/guides');
-    const data = (await response.json()) as GuidesListResponse;
+    const data = await idempotentJson<GuidesListResponse>('/api/guides');
     if (!data.success) return [];
     return data.guides;
   } catch {
@@ -51,12 +60,11 @@ export async function fetchPublishedGuides(): Promise<TravelGuide[]> {
 
 export async function submitGuide(payload: GuideSubmitPayload): Promise<GuideMutationResponse> {
   try {
-    const response = await fetch('/api/guides/submit', {
+    return await idempotentJson<GuideMutationResponse>('/api/guides/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    return (await response.json()) as GuideMutationResponse;
   } catch {
     return { success: false, message: '投稿失败，请稍后重试' };
   }
@@ -67,7 +75,7 @@ export async function createGuideAsAdmin(
 ): Promise<GuideMutationResponse> {
   try {
     const { adminKey, ...body } = payload;
-    const response = await fetch('/api/guides', {
+    return await idempotentJson<GuideMutationResponse>('/api/guides', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -75,7 +83,6 @@ export async function createGuideAsAdmin(
       },
       body: JSON.stringify(body),
     });
-    return (await response.json()) as GuideMutationResponse;
   } catch {
     return { success: false, message: '发布失败，请稍后重试' };
   }
@@ -83,11 +90,11 @@ export async function createGuideAsAdmin(
 
 export async function updateGuideStatus(
   id: string,
-  status: 'published' | 'rejected',
+  status: 'approved' | 'published' | 'rejected' | 'removed',
   adminKey: string
 ): Promise<GuideMutationResponse> {
   try {
-    const response = await fetch(`/api/guides/${id}/status`, {
+    return await idempotentJson<GuideMutationResponse>(`/api/guides/${id}/status`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -95,8 +102,8 @@ export async function updateGuideStatus(
       },
       body: JSON.stringify({ status }),
     });
-    return (await response.json()) as GuideMutationResponse;
   } catch {
     return { success: false, message: '操作失败，请稍后重试' };
   }
 }
+import { idempotentJson } from './idempotentFetch';

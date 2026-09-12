@@ -5,6 +5,7 @@ dotenv.config();
 import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
+import { encryptText } from '../lib/crypto';
 import { connectToDB } from '../lib/database/mongoDB';
 import { seedGuidesIfEmpty } from '../lib/database/seedGuides';
 import { seedFoodsIfEmpty } from '../lib/database/seedFoods';
@@ -38,14 +39,40 @@ function buildAvatar(name: string): string {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
 }
 
-function toPublicUser(doc: Pick<IUser, 'email' | 'name'> & { _id: { toString(): string } }) {
+function toPublicUser(doc: Pick<IUser, 'email' | 'name' | 'role'> & { _id: { toString(): string } }) {
   const id = doc._id.toString();
   return {
     id,
     email: doc.email,
     name: doc.name,
     avatar: `/api/users/${encodeURIComponent(id)}/avatar`,
+    role: doc.role,
   };
+}
+
+async function ensureAdminUserFromEnv() {
+  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const password = process.env.ADMIN_PASSWORD;
+  const name = process.env.ADMIN_NAME?.trim() || 'VoyageX 管理员';
+
+  if (!email || !password) return;
+
+  const existing = await User.findOne({ email });
+  if (existing) {
+    if (existing.role !== 'admin') {
+      existing.role = 'admin';
+      await existing.save();
+    }
+    return;
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+  await User.create({
+    email,
+    password: hashedPassword,
+    name,
+    role: 'admin',
+  });
 }
 
 app.post('/api/auth/login/sms/request', async (req, res) => {
@@ -57,7 +84,7 @@ app.post('/api/auth/login/sms/request', async (req, res) => {
     deviceId: req.headers['user-agent'],
   });
 
-  if (!result.success) {
+  if (result.success === false) {
     const status = result.code === 'SMS_BUDGET_EXHAUSTED' ? 503 : result.code === 'SMS_INVALID_INPUT' ? 400 : 429;
     return res.status(status).json(result);
   }
@@ -79,7 +106,7 @@ app.post('/api/auth/login/sms/verify', async (req, res) => {
     code: code ?? '',
   });
 
-  if (!result.success) {
+  if (result.success === false) {
     const status =
       result.code === 'SMS_CHALLENGE_EXPIRED'
         ? 410
@@ -110,7 +137,12 @@ app.post('/api/auth/login/sms/verify', async (req, res) => {
   }
 
   user.phoneHash = phoneHash;
-  user.phoneEncrypted = result.phone;
+  try {
+    user.phoneEncrypted = encryptText(result.phone);
+  } catch (err) {
+    console.error('phone encryption failed', err);
+    user.phoneEncrypted = result.phone;
+  }
   user.phoneVerifiedAt = new Date();
   user.lastLoginAt = new Date();
   await user.save();
@@ -157,6 +189,7 @@ app.post('/api/auth/register', async (req, res) => {
       email: normalizedEmail,
       password: hashedPassword,
       name: normalizedName,
+      role: 'user',
     });
 
     return res.status(201).json({
@@ -228,6 +261,7 @@ async function startServer() {
 
   await seedGuidesIfEmpty();
   await seedFoodsIfEmpty();
+  await ensureAdminUserFromEnv();
 
   app.listen(PORT, () => {
     console.log(`API 服务已启动: http://localhost:${PORT}`);

@@ -5,6 +5,7 @@ export interface User {
   email: string;
   name: string;
   avatar?: string;
+  role?: 'user' | 'admin';
 }
 
 interface AuthContextType {
@@ -13,6 +14,7 @@ interface AuthContextType {
   login: (userData: User) => void;
   logout: () => void;
   register: (userData: User) => void;
+  updateUser: (updates: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -48,12 +50,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.removeItem('voyage_user');
   };
 
+  const updateUser = (updates: Partial<User>) => {
+    setUser((current) => {
+      if (!current) return current;
+      const next = { ...current, ...updates };
+      localStorage.setItem('voyage_user', JSON.stringify(next));
+      return next;
+    });
+  };
+
   if (loading) {
     return null; // or a loading spinner
   }
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout, register }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout, register, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

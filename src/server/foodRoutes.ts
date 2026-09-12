@@ -1,6 +1,13 @@
 import { type Request, type Router } from 'express';
 import Food, { type IFood } from '../lib/database/models/Food';
+import Submission, { type FoodSubmissionPayload, type ISubmission } from '../lib/database/models/Submission';
 import { DEFAULT_FOOD_IMAGE } from '../lib/database/seedFoods';
+import {
+  applyModerationDecision,
+  moderateSubmission,
+  type ModeratedContentStatus,
+} from './security/moderationService';
+import { normalizeOptionalObjectId } from './security/mongoIdentity';
 
 function toPublicFood(doc: IFood) {
   return {
@@ -20,6 +27,32 @@ function toPublicFood(doc: IFood) {
     author: doc.author,
     status: doc.status,
     source: doc.source,
+    riskScore: doc.riskScore,
+    riskLabels: doc.riskLabels,
+  };
+}
+
+function toSubmittedFood(doc: ISubmission) {
+  const payload = doc.payload as FoodSubmissionPayload;
+  return {
+    id: doc._id.toString(),
+    name: payload.name,
+    province: payload.province,
+    city: payload.city,
+    address: payload.address,
+    rating: 0,
+    reviews: 0,
+    type: payload.type,
+    image: payload.image,
+    price: payload.price,
+    description: payload.description,
+    tags: payload.tags,
+    reviewsList: [],
+    author: doc.author,
+    status: doc.status,
+    source: 'user' as const,
+    riskScore: doc.riskScore,
+    riskLabels: doc.riskLabels,
   };
 }
 
@@ -62,8 +95,10 @@ export function registerFoodRoutes(router: Router) {
     }
 
     try {
-      const foods = await Food.find({ status: 'pending' }).sort({ createdAt: -1 });
-      return res.json({ success: true, foods: foods.map(toPublicFood) });
+      const foods = await Submission.find({ type: 'food', status: 'pending_review' }).sort({
+        createdAt: -1,
+      });
+      return res.json({ success: true, foods: foods.map(toSubmittedFood) });
     } catch (error) {
       console.error('获取待审核美食失败:', error);
       return res.status(500).json({ success: false, message: '获取待审核美食失败' });
@@ -114,7 +149,13 @@ export function registerFoodRoutes(router: Router) {
         return res.status(400).json({ success: false, message: '请填写人均消费' });
       }
 
-      const food = await Food.create({
+      const moderation = moderateSubmission({
+        title: name.trim(),
+        body: description.trim(),
+        imageUrl: image?.trim(),
+      });
+
+      const payload: FoodSubmissionPayload = {
         name: name.trim(),
         province: province.trim(),
         city: city.trim(),
@@ -122,17 +163,25 @@ export function registerFoodRoutes(router: Router) {
         type: type.trim(),
         price: formatPrice(price),
         description: description.trim(),
-        author: author.trim(),
-        authorId: authorId || undefined,
         image: image?.trim() || DEFAULT_FOOD_IMAGE,
         tags: parseTags(tags),
-        status: 'pending',
-        source: 'user',
+      };
+
+      const submission = await Submission.create({
+        type: 'food',
+        author: author.trim(),
+        authorId: normalizeOptionalObjectId(authorId),
+        payload,
+        status: moderation.status,
+        riskScore: moderation.riskScore,
+        riskLabels: moderation.riskLabels,
+        moderationReason: moderation.riskLabels.join(',') || 'submitted_for_review',
       });
 
       return res.status(201).json({
         success: true,
-        food: toPublicFood(food),
+        submission: toSubmittedFood(submission),
+        food: toSubmittedFood(submission),
         message: '投稿成功，审核通过后将展示在美食板块',
       });
     } catch (error) {
@@ -225,21 +274,38 @@ export function registerFoodRoutes(router: Router) {
     }
 
     try {
-      const { status } = req.body as { status?: 'published' | 'rejected' };
-      if (status !== 'published' && status !== 'rejected') {
-        return res.status(400).json({ success: false, message: '无效的状态值' });
-      }
-
-      const food = await Food.findByIdAndUpdate(req.params.id, { status }, { new: true });
-
+      const { status } = req.body as { status?: 'approved' | 'published' | 'rejected' | 'removed' };
+      const food = await Food.findById(req.params.id);
       if (!food) {
         return res.status(404).json({ success: false, message: '美食不存在' });
       }
 
+      const decision =
+        status === 'approved'
+          ? 'approve'
+          : status === 'published'
+            ? 'publish'
+            : status === 'removed'
+              ? 'remove'
+              : status === 'rejected'
+                ? 'reject'
+                : null;
+      const nextStatus = decision
+        ? applyModerationDecision(food.status as ModeratedContentStatus, decision)
+        : null;
+
+      if (!nextStatus) {
+        return res.status(400).json({ success: false, message: '无效的状态值' });
+      }
+
+      food.status = nextStatus;
+      food.moderationReason = status || 'status_update';
+      await food.save();
+
       return res.json({
         success: true,
         food: toPublicFood(food),
-        message: status === 'published' ? '美食已审核通过并发布' : '美食已拒绝',
+        message: nextStatus === 'published' ? '美食已发布' : '美食状态已更新',
       });
     } catch (error) {
       console.error('更新美食状态失败:', error);

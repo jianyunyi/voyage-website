@@ -21,8 +21,18 @@ export interface FoodItem {
   tags: string[];
   reviewsList: FoodReview[];
   author?: string;
-  status?: 'pending' | 'published' | 'rejected';
+  status?:
+    | 'draft'
+    | 'pending_review'
+    | 'auto_rejected'
+    | 'needs_manual_review'
+    | 'approved'
+    | 'published'
+    | 'rejected'
+    | 'removed';
   source?: 'user' | 'admin';
+  riskScore?: number;
+  riskLabels?: string[];
 }
 
 export interface FoodSubmitPayload {
@@ -49,8 +59,7 @@ type FoodMutationResponse =
 
 export async function fetchPublishedFoods(): Promise<FoodItem[]> {
   try {
-    const response = await fetch('/api/foods');
-    const data = (await response.json()) as FoodsListResponse;
+    const data = await idempotentJson<FoodsListResponse>('/api/foods');
     if (!data.success) return [];
     return data.foods;
   } catch {
@@ -60,13 +69,13 @@ export async function fetchPublishedFoods(): Promise<FoodItem[]> {
 
 export async function submitFood(payload: FoodSubmitPayload): Promise<FoodMutationResponse> {
   try {
-    const response = await fetch('/api/foods/submit', {
+    return await idempotentJson<FoodMutationResponse>('/api/foods/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    return (await response.json()) as FoodMutationResponse;
   } catch {
     return { success: false, message: '投稿失败，请稍后重试' };
   }
 }
+import { idempotentJson } from './idempotentFetch';

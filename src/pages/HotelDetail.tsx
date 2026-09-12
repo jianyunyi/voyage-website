@@ -1,8 +1,43 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { MapPin, Phone, Star, Wifi, Coffee, Dumbbell, Car, ArrowLeft, Check, ExternalLink } from "lucide-react";
+import { MapPin, Phone, Star, Wifi, Coffee, Dumbbell, Car, ArrowLeft, Check, ExternalLink, type LucideIcon } from "lucide-react";
+
+interface Amenity {
+  icon: LucideIcon;
+  name: string;
+}
+
+interface Room {
+  id: string;
+  name: string;
+  size: string;
+  bed: string;
+  price: string;
+  features: string[];
+}
+
+interface Review {
+  id: number;
+  user: string;
+  rating: number;
+  date: string;
+  content: string;
+}
+
+interface HotelDetailData {
+  name: string;
+  rating: number;
+  reviewsCount: number;
+  address: string;
+  phone: string;
+  description: string;
+  images: string[];
+  amenities: Amenity[];
+  rooms: Room[];
+  reviews: Review[];
+}
 
 // Mock data for hotel details
-const hotelDetails: Record<string, any> = {
+const hotelDetails: Record<string, HotelDetailData> = {
   "hotel-1": {
     name: "市中心豪华酒店",
     rating: 4.8,
@@ -98,7 +133,7 @@ export default function HotelDetail() {
             <section className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <h2 className="text-xl font-bold text-gray-900 mb-4">热门设施</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {hotel.amenities.map((amenity: any, index: number) => (
+                {hotel.amenities.map((amenity: Amenity, index: number) => (
                   <div key={index} className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-xl">
                     <amenity.icon className="w-6 h-6 text-orange-600 mb-2" />
                     <span className="text-sm font-medium text-gray-700">{amenity.name}</span>
@@ -111,7 +146,7 @@ export default function HotelDetail() {
             <section className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <h2 className="text-xl font-bold text-gray-900 mb-4">房型与价格</h2>
               <div className="space-y-4">
-                {hotel.rooms.map((room: any) => (
+                {hotel.rooms.map((room: Room) => (
                   <div key={room.id} className="border border-gray-100 rounded-xl p-4 flex flex-col md:flex-row justify-between gap-4 hover:border-orange-200 transition-colors">
                     <div>
                       <h3 className="font-bold text-lg text-gray-900 mb-1">{room.name}</h3>
@@ -141,7 +176,7 @@ export default function HotelDetail() {
             <section className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <h2 className="text-xl font-bold text-gray-900 mb-4">用户评价</h2>
               <div className="space-y-6">
-                {hotel.reviews.map((review: any) => (
+                {hotel.reviews.map((review: Review) => (
                   <div key={review.id} className="border-b border-gray-50 last:border-0 pb-6 last:pb-0">
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-medium text-gray-900">{review.user}</span>

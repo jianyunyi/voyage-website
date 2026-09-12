@@ -67,8 +67,9 @@ export async function fetchMySubmissions(userId: string): Promise<{
   statusLabels: Record<string, string>;
 }> {
   try {
-    const response = await fetch(`/api/users/${encodeURIComponent(userId)}/submissions`);
-    const data = (await response.json()) as SubmissionsResponse;
+    const data = await idempotentJson<SubmissionsResponse>(
+      `/api/users/${encodeURIComponent(userId)}/submissions`
+    );
     if (!data.success) {
       return { submissions: [], statusLabels: {} };
     }
@@ -85,15 +86,18 @@ export async function syncFavoriteToServer(
   favorited: boolean
 ): Promise<number | null> {
   try {
-    const response = await fetch('/api/favorites/toggle', {
+    const data = await idempotentJson<{ success: boolean; favoritesCount?: number }>(
+      '/api/favorites/toggle',
+      {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, itemId, itemType, favorited }),
-    });
-    const data = (await response.json()) as { success: boolean; favoritesCount?: number };
+      }
+    );
     if (!data.success) return null;
     return data.favoritesCount ?? null;
   } catch {
     return null;
   }
 }
+import { idempotentJson } from './idempotentFetch';

@@ -2,6 +2,8 @@ node_modules/
 build/
 dist/
 coverage/
+.tmp-go-cache/
+.tmp-go-mod/
 .DS_Store
 *.log
 .env*

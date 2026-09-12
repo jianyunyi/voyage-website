@@ -1,6 +1,14 @@
 import mongoose, { type Document, type Model } from 'mongoose';
 
-export type GuideStatus = 'pending' | 'published' | 'rejected';
+export type GuideStatus =
+  | 'draft'
+  | 'pending_review'
+  | 'auto_rejected'
+  | 'needs_manual_review'
+  | 'approved'
+  | 'published'
+  | 'rejected'
+  | 'removed';
 export type GuideSource = 'user' | 'admin';
 
 export interface IGuide extends Document {
@@ -16,6 +24,9 @@ export interface IGuide extends Document {
   content: string;
   status: GuideStatus;
   source: GuideSource;
+  riskScore: number;
+  riskLabels: string[];
+  moderationReason?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -34,14 +45,26 @@ const guideSchema = new mongoose.Schema<IGuide>(
     content: { type: String, required: true },
     status: {
       type: String,
-      enum: ['pending', 'published', 'rejected'],
-      default: 'pending',
+      enum: [
+        'draft',
+        'pending_review',
+        'auto_rejected',
+        'needs_manual_review',
+        'approved',
+        'published',
+        'rejected',
+        'removed',
+      ],
+      default: 'pending_review',
     },
     source: {
       type: String,
       enum: ['user', 'admin'],
       default: 'user',
     },
+    riskScore: { type: Number, default: 0 },
+    riskLabels: { type: [String], default: [] },
+    moderationReason: { type: String },
   },
   { timestamps: true }
 );

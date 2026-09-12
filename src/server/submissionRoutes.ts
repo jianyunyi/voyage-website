@@ -1,25 +1,30 @@
 import mongoose from 'mongoose';
 import { type Router } from 'express';
-import Guide, { type IGuide } from '../lib/database/models/Guide';
-import Food, { type IFood } from '../lib/database/models/Food';
 import Favorite, { type FavoriteItemType } from '../lib/database/models/Favorite';
+import Submission, {
+  type FoodSubmissionPayload,
+  type GuideSubmissionPayload,
+  type ISubmission,
+} from '../lib/database/models/Submission';
 
-function toOwnerGuide(doc: IGuide, favoritesCount: number) {
+function toOwnerGuide(doc: ISubmission, favoritesCount: number) {
+  const payload = doc.payload as GuideSubmissionPayload;
   return {
     id: doc._id.toString(),
     type: 'guide' as const,
-    title: doc.title,
+    publishedItemId: doc.publishedItemId?.toString(),
+    title: payload.title,
     author: doc.author,
-    destination: doc.destination,
-    days: doc.days,
-    budget: doc.budget,
-    likes: doc.likes,
+    destination: payload.destination,
+    days: payload.days,
+    budget: payload.budget,
+    likes: 0,
     favoritesCount,
-    image: doc.image,
-    tags: doc.tags,
-    content: doc.content,
+    image: payload.image,
+    tags: payload.tags,
+    content: payload.content,
     status: doc.status,
-    source: doc.source,
+    source: 'user',
     moderationReason: doc.moderationReason,
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
@@ -27,34 +32,31 @@ function toOwnerGuide(doc: IGuide, favoritesCount: number) {
   };
 }
 
-function toOwnerFood(doc: IFood, favoritesCount: number) {
+function toOwnerFood(doc: ISubmission, favoritesCount: number) {
+  const payload = doc.payload as FoodSubmissionPayload;
   return {
     id: doc._id.toString(),
     type: 'food' as const,
-    title: doc.name,
-    name: doc.name,
-    province: doc.province,
-    city: doc.city,
-    address: doc.address,
-    rating: doc.rating,
-    reviews: doc.reviews,
+    publishedItemId: doc.publishedItemId?.toString(),
+    title: payload.name,
+    name: payload.name,
+    province: payload.province,
+    city: payload.city,
+    address: payload.address,
+    rating: 0,
+    reviews: 0,
     favoritesCount,
-    typeLabel: doc.type,
-    image: doc.image,
-    price: doc.price,
-    description: doc.description,
-    tags: doc.tags,
+    typeLabel: payload.type,
+    image: payload.image,
+    price: payload.price,
+    description: payload.description,
+    tags: payload.tags,
     status: doc.status,
-    source: doc.source,
+    source: 'user',
     moderationReason: doc.moderationReason,
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
-    comments: doc.reviewsList.map((r) => ({
-      user: r.user,
-      content: r.content,
-      date: r.date,
-      rating: r.rating,
-    })),
+    comments: [] as { user: string; content: string; date: string; rating?: number }[],
   };
 }
 
@@ -96,22 +98,31 @@ export function registerSubmissionRoutes(router: Router) {
       }
 
       const authorId = new mongoose.Types.ObjectId(userId);
-      const [guides, foods] = await Promise.all([
-        Guide.find({ authorId }).sort({ createdAt: -1 }),
-        Food.find({ authorId }).sort({ createdAt: -1 }),
-      ]);
+      const submissions = await Submission.find({ authorId }).sort({ createdAt: -1 });
 
-      const favoriteItems = [
-        ...guides.map((g) => ({ id: g._id.toString(), type: 'guide' as const })),
-        ...foods.map((f) => ({ id: f._id.toString(), type: 'food' as const })),
-      ];
+      const favoriteItems = submissions
+        .filter((item) => item.status === 'published' && item.publishedItemId)
+        .map((item) => ({
+          id: item.publishedItemId?.toString() ?? item._id.toString(),
+          type: item.type,
+        }));
       const favoriteCounts = await countFavoritesByItems(favoriteItems);
 
-      const guideSubmissions = guides.map((g) =>
-        toOwnerGuide(g, favoriteCounts.get(g._id.toString()) ?? 0)
+      const guideSubmissions = submissions
+        .filter((item) => item.type === 'guide')
+        .map((item) =>
+          toOwnerGuide(
+            item,
+            favoriteCounts.get(item.publishedItemId?.toString() ?? item._id.toString()) ?? 0
+          )
       );
-      const foodSubmissions = foods.map((f) =>
-        toOwnerFood(f, favoriteCounts.get(f._id.toString()) ?? 0)
+      const foodSubmissions = submissions
+        .filter((item) => item.type === 'food')
+        .map((item) =>
+          toOwnerFood(
+            item,
+            favoriteCounts.get(item.publishedItemId?.toString() ?? item._id.toString()) ?? 0
+          )
       );
 
       const all = [...guideSubmissions, ...foodSubmissions].sort(
