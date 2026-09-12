@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "test": "tsx --test src/**/*.test.ts"
+    "test": "tsx --test src/**/*.test.ts",
+    "render:motion": "remotion render src/remotion/index.ts RouteTerrain public/motion/route-terrain.mp4 --codec=h264 --frames=0-299"
   },
   "dependencies": {
     "@amap/amap-jsapi-loader": "^1.0.1",
