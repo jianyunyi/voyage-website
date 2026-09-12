@@ -6,11 +6,58 @@
   --font-serif: "Playfair Display", ui-serif, Georgia, serif;
 }
 
+:root {
+  --voyage-backdrop-media-opacity: 0.72;
+  --voyage-action-control-min-block-size: 2.75rem;
+}
+
 body {
   background-color: #fcfbf9; /* Warmer, softer off-white */
   color: #1a1918; /* Softer black */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.sr-only {
+  block-size: 1px;
+  clip: rect(0, 0, 0, 0);
+  inline-size: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+}
+
+.voyage-backdrop {
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+}
+
+.voyage-backdrop__poster,
+.voyage-backdrop__video {
+  block-size: 100%;
+  inline-size: 100%;
+  inset: 0;
+  object-fit: cover;
+  position: absolute;
+}
+
+.voyage-backdrop__video {
+  opacity: var(--voyage-backdrop-media-opacity);
+}
+
+button:has([data-action-button-icon]) {
+  min-block-size: var(--voyage-action-control-min-block-size);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voyage-backdrop__video {
+    display: none;
+  }
 }
 
 /* Leaflet map styles */
