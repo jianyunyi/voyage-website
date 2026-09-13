@@ -16,6 +16,7 @@ test("homepage field-notes media has a poster and metadata preload", () => {
   assert.match(html, /home-field-notes\.mp4/);
   assert.match(html, /home-field-notes-poster\.png/);
   assert.match(html, /preload="metadata"/);
+  assert.match(html, /class="home-field-notes-media__video absolute inset-0 h-full w-full object-cover opacity-35"/);
 });
 
 test("homepage field-notes media keeps the destination visual context", () => {

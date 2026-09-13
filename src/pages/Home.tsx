@@ -102,7 +102,7 @@ export function HomeHeroMedia({
         className="absolute inset-0 h-full w-full object-cover opacity-20"
       />
       <video
-        className="absolute inset-0 h-full w-full object-cover opacity-35"
+        className="home-field-notes-media__video absolute inset-0 h-full w-full object-cover opacity-35"
         muted
         loop
         playsInline
