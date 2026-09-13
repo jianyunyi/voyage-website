@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, type SyntheticEvent } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Map, ArrowRight, Star, Compass, ArrowLeftRight, Globe, Navigation, ChevronLeft, ChevronRight, MapPin, Sparkles,ThumbsUp } from "lucide-react";
@@ -6,6 +6,10 @@ import { usePreferences } from "../context/PreferencesContext";
 import { fetchPublishedGuides, type TravelGuide } from "../lib/guideService";
 import { fetchPublishedFoods, type FoodItem } from "../lib/foodService";
 import { getSceneForPath, type SceneDefinition } from "../lib/experience/sceneCatalog";
+import { useWheelSelection } from "../lib/selectionNavigation";
+
+const HERO_ROTATION_INTERVAL = 9000;
+const IMAGE_FALLBACK_SRC = '/images/home-route-observatory.png';
 
 const carouselItems = [
   { 
@@ -88,21 +92,30 @@ export function HomeHeroMedia({
   scene: SceneDefinition;
   destinationImageSrc: string;
 }) {
+  const [isFallbackImage, setIsFallbackImage] = useState(false);
+  const handleImageError = (event: SyntheticEvent<HTMLImageElement>) => {
+    if (event.currentTarget.dataset.fallbackApplied) return;
+    event.currentTarget.dataset.fallbackApplied = 'true';
+    event.currentTarget.src = IMAGE_FALLBACK_SRC;
+    setIsFallbackImage(true);
+  };
+
   return (
     <div aria-hidden="true" className="absolute inset-0 z-0 overflow-hidden">
       <img
         src={destinationImageSrc}
         alt=""
-        className="absolute inset-0 h-full w-full object-cover opacity-70"
+        className="absolute inset-0 h-full w-full object-cover opacity-90"
         referrerPolicy="no-referrer"
+        onError={handleImageError}
       />
-      <img
+      {!isFallbackImage && <img
         src={scene.posterSrc}
         alt=""
-        className="absolute inset-0 h-full w-full object-cover opacity-20"
-      />
+        className="absolute inset-0 h-full w-full object-cover opacity-10"
+      />}
       <video
-        className="home-field-notes-media__video absolute inset-0 h-full w-full object-cover opacity-35"
+        className={`home-field-notes-media__video absolute inset-0 h-full w-full object-cover ${isFallbackImage ? 'opacity-0' : 'opacity-16'}`}
         muted
         loop
         playsInline
@@ -122,6 +135,11 @@ export default function Home() {
   const [guides, setGuides] = useState<TravelGuide[]>([]);
   const [foods, setFoods] = useState<FoodItem[]>([]);
   const { preferences } = usePreferences();
+  const handleContentImageError = (event: SyntheticEvent<HTMLImageElement>) => {
+    if (event.currentTarget.dataset.fallbackApplied) return;
+    event.currentTarget.dataset.fallbackApplied = 'true';
+    event.currentTarget.src = IMAGE_FALLBACK_SRC;
+  };
 
   useEffect(() => {
     fetchPublishedGuides().then(setGuides);
@@ -131,7 +149,7 @@ export default function Home() {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % carouselItems.length);
-    }, 5000);
+    }, HERO_ROTATION_INTERVAL);
     return () => clearInterval(timer);
   }, []);
 
@@ -139,6 +157,7 @@ export default function Home() {
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + carouselItems.length) % carouselItems.length);
 
   const activeRegionData = regions.find(r => r.id === activeRegion);
+  const handleRegionWheel = useWheelSelection(regions.map((region) => region.id), activeRegion, setActiveRegion);
 
   const hasPreferences = preferences.destinations.length > 0 || preferences.travelTypes.length > 0;
 
@@ -304,7 +323,7 @@ export default function Home() {
               {recommendedGuides.map((guide, idx) => (
                 <Link to={`/guides`} key={`guide-${idx}`} className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex items-center gap-4 group">
                   <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
-                    <img src={guide.image} alt={guide.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
+                    <img src={guide.image} alt={guide.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" onError={handleContentImageError} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-bold text-gray-900 truncate" title={guide.title}>{guide.title}</h4>
@@ -331,7 +350,7 @@ export default function Home() {
               {recommendedFood.map((food, idx) => (
                 <Link to={`/food`} key={`food-${idx}`} className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex items-center gap-4 group">
                   <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
-                    <img src={food.image} alt={food.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
+                    <img src={food.image} alt={food.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" onError={handleContentImageError} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-bold text-gray-900 truncate" title={food.name}>{food.name}</h4>
@@ -362,14 +381,15 @@ export default function Home() {
           </div>
 
           {/* Region Tabs */}
-          <div className="flex flex-wrap justify-center gap-4 mb-12">
+          <div className="flex flex-wrap justify-center gap-4 mb-12" onWheel={handleRegionWheel}>
             {regions.map((region) => {
               const isActive = activeRegion === region.id;
               return (
                 <button
                   key={region.id}
                   onClick={() => setActiveRegion(region.id)}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-full text-sm font-medium transition-all ${
+                  aria-pressed={isActive}
+                  className={`voyage-preselectable flex items-center gap-2 px-6 py-3 rounded-full text-sm font-medium transition-all ${
                     isActive 
                       ? "bg-gray-900 text-white shadow-md" 
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900"
@@ -401,8 +421,9 @@ export default function Home() {
                     <img 
                       src={dest.image} 
                       alt={dest.city} 
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      referrerPolicy="no-referrer"
+                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                          referrerPolicy="no-referrer"
+                          onError={handleContentImageError}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#1a1918]/90 via-[#1a1918]/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-500"></div>
                     <div className="absolute bottom-0 left-0 right-0 p-8">

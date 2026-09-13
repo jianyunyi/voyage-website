@@ -1,3 +1,6 @@
+import { foodRecommendations as editorialFoodSeeds } from '../data/food';
+import { idempotentJson } from './idempotentFetch';
+
 export interface FoodReview {
   _id?: string;
   user: string;
@@ -57,13 +60,21 @@ type FoodMutationResponse =
   | { success: true; food: FoodItem; message?: string }
   | { success: false; message: string };
 
+const editorialFoods: FoodItem[] = editorialFoodSeeds.map((food) => ({
+  ...food,
+  id: `editorial-food-${food.id}`,
+  reviewsList: food.reviewsList.map(({ user, rating, date, content }) => ({ user, rating, date, content })),
+  tags: [food.type],
+  source: 'admin',
+  status: 'published',
+}));
+
 export async function fetchPublishedFoods(): Promise<FoodItem[]> {
   try {
     const data = await idempotentJson<FoodsListResponse>('/api/foods');
-    if (!data.success) return [];
-    return data.foods;
+    return data.success && data.foods.length > 0 ? data.foods : editorialFoods;
   } catch {
-    return [];
+    return editorialFoods;
   }
 }
 
@@ -78,4 +89,3 @@ export async function submitFood(payload: FoodSubmitPayload): Promise<FoodMutati
     return { success: false, message: '投稿失败，请稍后重试' };
   }
 }
-import { idempotentJson } from './idempotentFetch';

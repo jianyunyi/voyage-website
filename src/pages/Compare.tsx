@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { ActionButton } from "../components/ActionButton";
+import { useWheelSelection } from "../lib/selectionNavigation";
 
 interface TransportItem {
   id: string;
@@ -50,6 +51,8 @@ const categories = [
   { id: "hotel", name: "酒店住宿", icon: Building },
   { id: "car", name: "租车服务", icon: Car },
 ];
+
+const categoryIds = categories.map((category) => category.id);
 
 const mockData: {
   transport: TransportItem[];
@@ -92,6 +95,7 @@ export default function Compare() {
       ),
     [activeCategory]
   );
+  const handleCategoryWheel = useWheelSelection(categoryIds, activeCategory, setActiveCategory);
 
   const handleSearch = (e: FormEvent) => {
     e.preventDefault();
@@ -121,7 +125,7 @@ export default function Compare() {
         </div>
 
         {/* Category Tabs */}
-        <div className="voyage-compare__categories flex justify-center mb-12">
+        <div className="voyage-compare__categories flex justify-center mb-12" onWheel={handleCategoryWheel}>
           <div className="bg-white p-1 rounded-2xl shadow-sm inline-flex">
             {categories.map((cat) => {
               const isActive = activeCategory === cat.id;
@@ -129,7 +133,8 @@ export default function Compare() {
                 <button
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
-                  className={`voyage-compare__category flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition-all ${
+                  aria-pressed={isActive}
+                  className={`voyage-preselectable voyage-compare__category flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition-all ${
                     isActive 
                       ? "bg-gray-900 text-white shadow-md" 
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
