@@ -12,7 +12,7 @@
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "test": "npm run test:node && npm run test:vitest",
-    "test:node": "tsx --test src/lib/experience/*.test.ts src/lib/idempotentFetch.test.ts src/lib/selectionNavigation.test.ts src/lib/catalogFallback.test.ts src/pages/mapPlannerState.test.ts src/pages/mapPlannerTerrainStyle.test.ts src/pages/homeFieldNotes.test.tsx src/components/ContributionRailIntro.test.ts src/worker/wranglerConfig.node.ts src/remotion/*.test.ts",
+    "test:node": "tsx --test src/lib/experience/*.test.ts src/lib/idempotentFetch.test.ts src/pages/mapPlannerState.test.ts src/pages/homeFieldNotes.test.tsx src/components/ContributionRailIntro.test.ts src/worker/wranglerConfig.node.ts src/remotion/*.test.ts",
     "test:vitest": "vitest run --config vitest.config.ts",
     "render:motion": "remotion render src/remotion/index.ts RouteTerrain public/motion/route-terrain.mp4 --codec=h264 --frames=0-299",
     "render:home-field-notes": "remotion render src/remotion/index.ts HomeFieldNotes public/motion/home-field-notes.mp4 --codec=h264 --frames=0-359"

@@ -10,7 +10,6 @@ export default function Layout() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const isPlannerWorkspace = location.pathname === "/planner";
   const shouldReduceMotion = useReducedMotion();
   const { user, isAuthenticated, logout } = useAuth();
 
@@ -23,7 +22,7 @@ export default function Layout() {
   ];
 
   return (
-    <div className={cn("voyage-shell min-h-screen flex flex-col font-sans", isPlannerWorkspace && "voyage-shell--planner-workspace")}>
+    <div className="voyage-shell min-h-screen flex flex-col font-sans">
       <AnimatePresence initial={false} mode="sync">
         <motion.div
           key={location.pathname}
@@ -32,12 +31,12 @@ export default function Layout() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: shouldReduceMotion ? 0 : 0.12, ease: 'easeOut' }}
+          transition={{ duration: shouldReduceMotion ? 0 : 0.22, ease: 'easeOut' }}
         >
           <ImmersiveBackdrop pathname={location.pathname} />
         </motion.div>
       </AnimatePresence>
-      {!isPlannerWorkspace && <header className="sticky top-0 z-50 bg-[#fcfbf9]/90 backdrop-blur-xl border-b border-gray-200/50">
+      <header className="sticky top-0 z-50 bg-[#fcfbf9]/90 backdrop-blur-xl border-b border-gray-200/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center">
@@ -189,13 +188,13 @@ export default function Layout() {
             </div>
           </div>
         )}
-      </header>}
+      </header>
 
       <main className="relative z-10 flex-grow">
         <Outlet />
       </main>
 
-      {!isPlannerWorkspace && <footer className="relative z-10 bg-[#1a1918] text-white py-16">
+      <footer className="relative z-10 bg-[#1a1918] text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-12">
           <div className="col-span-1 md:col-span-2">
             <Link to="/" className="flex items-center gap-2 mb-6 group">
@@ -234,7 +233,7 @@ export default function Layout() {
             <a href="#" className="hover:text-gray-300 transition-colors">WeChat</a>
           </div>
         </div>
-      </footer>}
+      </footer>
     </div>
   );
 }

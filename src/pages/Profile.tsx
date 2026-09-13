@@ -15,12 +15,6 @@ import {
   type ModerationQueueItem,
 } from "../lib/moderationService";
 import { ActionButton } from "../components/ActionButton";
-import { useWheelSelection } from "../lib/selectionNavigation";
-
-const preferenceDestinations = ['北京', '上海', '广州', '成都', '西安', '杭州', '三亚', '丽江'];
-const preferenceTravelTypes = ['探险', '休闲', '文化', '亲子', '情侣', '美食', '购物'];
-const preferenceSpiciness = ['不限', '不辣', '微辣', '中辣', '特辣'];
-const preferenceFlavors = ['清淡', '重口', '甜口', '酸口', '海鲜', '肉食', '素食'];
 
 export default function Profile() {
   const { favorites, removeFavorite } = useFavorites();
@@ -39,16 +33,7 @@ export default function Profile() {
   const [moderationLoading, setModerationLoading] = useState(false);
   const [moderationMessage, setModerationMessage] = useState('');
   const [reviewingKeys, setReviewingKeys] = useState<Set<string>>(new Set());
-  const [destinationPreview, setDestinationPreview] = useState('');
-  const [travelTypePreview, setTravelTypePreview] = useState('');
-  const [spicinessPreview, setSpicinessPreview] = useState('');
-  const [flavorPreview, setFlavorPreview] = useState('');
   const avatarInputRef = useRef<HTMLInputElement>(null);
-
-  const handleDestinationPreviewWheel = useWheelSelection(preferenceDestinations, destinationPreview || preferenceDestinations[0], setDestinationPreview);
-  const handleTravelTypePreviewWheel = useWheelSelection(preferenceTravelTypes, travelTypePreview || preferenceTravelTypes[0], setTravelTypePreview);
-  const handleSpicinessPreviewWheel = useWheelSelection(preferenceSpiciness, spicinessPreview || preferenceSpiciness[0], setSpicinessPreview);
-  const handleFlavorPreviewWheel = useWheelSelection(preferenceFlavors, flavorPreview || preferenceFlavors[0], setFlavorPreview);
 
   const loadSubmissions = useCallback(async () => {
     if (!user?.id) {
@@ -365,15 +350,12 @@ export default function Profile() {
           {/* Destinations */}
           <div>
             <h3 className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-wider">偏好目的地</h3>
-            <div className="flex flex-wrap gap-2" onWheel={handleDestinationPreviewWheel} onMouseLeave={() => setDestinationPreview('')}>
-              {preferenceDestinations.map(dest => (
+            <div className="flex flex-wrap gap-2">
+              {['北京', '上海', '广州', '成都', '西安', '杭州', '三亚', '丽江'].map(dest => (
                 <button
                   key={dest}
                   onClick={() => handleDestinationToggle(dest)}
-                  onMouseEnter={() => setDestinationPreview(dest)}
-                  aria-pressed={preferences.destinations.includes(dest)}
-                  data-preview={destinationPreview === dest}
-                  className={`voyage-preselectable px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                     preferences.destinations.includes(dest)
                       ? 'bg-blue-600 text-white shadow-sm'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -388,15 +370,12 @@ export default function Profile() {
           {/* Travel Types */}
           <div>
             <h3 className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-wider">旅行类型</h3>
-            <div className="flex flex-wrap gap-2" onWheel={handleTravelTypePreviewWheel} onMouseLeave={() => setTravelTypePreview('')}>
-              {preferenceTravelTypes.map(type => (
+            <div className="flex flex-wrap gap-2">
+              {['探险', '休闲', '文化', '亲子', '情侣', '美食', '购物'].map(type => (
                 <button
                   key={type}
                   onClick={() => handleTravelTypeToggle(type)}
-                  onMouseEnter={() => setTravelTypePreview(type)}
-                  aria-pressed={preferences.travelTypes.includes(type)}
-                  data-preview={travelTypePreview === type}
-                  className={`voyage-preselectable px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                     preferences.travelTypes.includes(type)
                       ? 'bg-emerald-600 text-white shadow-sm'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -414,15 +393,12 @@ export default function Profile() {
             <div className="space-y-4">
               <div>
                 <p className="text-xs text-gray-500 mb-2">辣度接受能力</p>
-                <div className="flex flex-wrap gap-2" onWheel={handleSpicinessPreviewWheel} onMouseLeave={() => setSpicinessPreview('')}>
-                  {preferenceSpiciness.map(level => (
+                <div className="flex flex-wrap gap-2">
+                  {['不限', '不辣', '微辣', '中辣', '特辣'].map(level => (
                     <button
                       key={level}
                       onClick={() => updatePreferences({ foodSpiciness: level })}
-                      onMouseEnter={() => setSpicinessPreview(level)}
-                      aria-pressed={preferences.foodSpiciness === level}
-                      data-preview={spicinessPreview === level}
-                      className={`voyage-preselectable px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                         preferences.foodSpiciness === level
                           ? 'bg-red-500 text-white shadow-sm'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -435,15 +411,12 @@ export default function Profile() {
               </div>
               <div>
                 <p className="text-xs text-gray-500 mb-2">口味偏好</p>
-                <div className="flex flex-wrap gap-2" onWheel={handleFlavorPreviewWheel} onMouseLeave={() => setFlavorPreview('')}>
-                  {preferenceFlavors.map(flavor => (
+                <div className="flex flex-wrap gap-2">
+                  {['清淡', '重口', '甜口', '酸口', '海鲜', '肉食', '素食'].map(flavor => (
                     <button
                       key={flavor}
                       onClick={() => handleFlavorToggle(flavor)}
-                      onMouseEnter={() => setFlavorPreview(flavor)}
-                      aria-pressed={preferences.foodFlavors.includes(flavor)}
-                      data-preview={flavorPreview === flavor}
-                      className={`voyage-preselectable px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                         preferences.foodFlavors.includes(flavor)
                           ? 'bg-orange-500 text-white shadow-sm'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'

@@ -55,10 +55,8 @@ declare namespace AMap {
   interface MapOptions {
     zoom?: number;
     center?: [number, number];
-  layers?: TileLayer[];
-  pitch?: number;
-  rotation?: number;
-  viewMode?: string;
+    layers?: TileLayer[];
+    viewMode?: string;
   }
 
   interface MapEvent {

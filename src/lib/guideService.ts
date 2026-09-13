@@ -1,6 +1,3 @@
-import { travelGuides as editorialGuideSeeds } from '../data/guides';
-import { idempotentJson } from './idempotentFetch';
-
 export interface TravelGuide {
   id: string;
   title: string;
@@ -51,19 +48,13 @@ type GuideMutationResponse =
   | { success: true; guide: TravelGuide; message?: string }
   | { success: false; message: string };
 
-const editorialGuides: TravelGuide[] = editorialGuideSeeds.map((guide) => ({
-  ...guide,
-  content: guide.content.join('\n\n'),
-  source: 'admin',
-  status: 'published',
-}));
-
 export async function fetchPublishedGuides(): Promise<TravelGuide[]> {
   try {
     const data = await idempotentJson<GuidesListResponse>('/api/guides');
-    return data.success && data.guides.length > 0 ? data.guides : editorialGuides;
+    if (!data.success) return [];
+    return data.guides;
   } catch {
-    return editorialGuides;
+    return [];
   }
 }
 
@@ -115,3 +106,4 @@ export async function updateGuideStatus(
     return { success: false, message: '操作失败，请稍后重试' };
   }
 }
+import { idempotentJson } from './idempotentFetch';
