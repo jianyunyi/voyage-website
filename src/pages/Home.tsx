@@ -5,6 +5,7 @@ import { Map, ArrowRight, Star, Compass, ArrowLeftRight, Globe, Navigation, Chev
 import { usePreferences } from "../context/PreferencesContext";
 import { fetchPublishedGuides, type TravelGuide } from "../lib/guideService";
 import { fetchPublishedFoods, type FoodItem } from "../lib/foodService";
+import { getSceneForPath, type SceneDefinition } from "../lib/experience/sceneCatalog";
 
 const carouselItems = [
   { 
@@ -79,6 +80,41 @@ const regions = [
     ]
   }
 ];
+
+export function HomeHeroMedia({
+  scene,
+  destinationImageSrc,
+}: {
+  scene: SceneDefinition;
+  destinationImageSrc: string;
+}) {
+  return (
+    <div aria-hidden="true" className="absolute inset-0 z-0 overflow-hidden">
+      <img
+        src={destinationImageSrc}
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover opacity-70"
+        referrerPolicy="no-referrer"
+      />
+      <img
+        src={scene.posterSrc}
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover opacity-20"
+      />
+      <video
+        className="home-field-notes-media__video absolute inset-0 h-full w-full object-cover opacity-35"
+        muted
+        loop
+        playsInline
+        autoPlay
+        preload="metadata"
+        poster={scene.posterSrc}
+      >
+        <source src={scene.videoSrc} type="video/mp4" />
+      </video>
+    </div>
+  );
+}
 
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -170,21 +206,26 @@ export default function Home() {
             transition={{ duration: 1.2 }}
             className="absolute inset-0 z-0"
           >
-            <img
-              src={carouselItems[currentSlide].image}
-              alt={carouselItems[currentSlide].title}
-              className="w-full h-full object-cover opacity-70"
-              referrerPolicy="no-referrer"
+            <HomeHeroMedia
+              scene={getSceneForPath("/")}
+              destinationImageSrc={carouselItems[currentSlide].image}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
           </motion.div>
         </AnimatePresence>
         
         {/* Carousel Controls */}
-        <button onClick={prevSlide} className="absolute left-4 z-20 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all">
+        <button
+          onClick={prevSlide}
+          aria-label={`查看上一站：${carouselItems[(currentSlide - 1 + carouselItems.length) % carouselItems.length].title}`}
+          className="absolute left-4 z-20 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all"
+        >
           <ChevronLeft className="w-6 h-6" />
         </button>
-        <button onClick={nextSlide} className="absolute right-4 z-20 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all">
+        <button
+          onClick={nextSlide}
+          aria-label={`查看下一站：${carouselItems[(currentSlide + 1) % carouselItems.length].title}`}
+          className="absolute right-4 z-20 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all"
+        >
           <ChevronRight className="w-6 h-6" />
         </button>
 
@@ -225,10 +266,11 @@ export default function Home() {
 
         {/* Carousel Indicators */}
         <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-3 z-20">
-          {carouselItems.map((_, idx) => (
+          {carouselItems.map((item, idx) => (
             <button
               key={idx}
               onClick={() => setCurrentSlide(idx)}
+              aria-label={`切换至${item.title}`}
               className={`w-2.5 h-2.5 rounded-full transition-all ${idx === currentSlide ? "bg-white w-8" : "bg-white/50 hover:bg-white/80"}`}
             />
           ))}

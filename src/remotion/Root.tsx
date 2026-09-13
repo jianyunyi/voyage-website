@@ -1,4 +1,5 @@
 import { Composition } from 'remotion';
+import { HOME_FIELD_NOTES_DURATION, HOME_FIELD_NOTES_FPS, HomeFieldNotes } from './HomeFieldNotes';
 import { RouteTerrain } from './RouteTerrain';
 
 const compositionProps = {
@@ -16,5 +17,13 @@ export const RemotionRoot = () => (
     <Composition id="GuidesContours" {...compositionProps} defaultProps={{ tone: 'guides' }} />
     <Composition id="CompareContours" {...compositionProps} defaultProps={{ tone: 'compare' }} />
     <Composition id="ProfileArchive" {...compositionProps} defaultProps={{ tone: 'profile' }} />
+    <Composition
+      id="HomeFieldNotes"
+      component={HomeFieldNotes}
+      durationInFrames={HOME_FIELD_NOTES_DURATION}
+      fps={HOME_FIELD_NOTES_FPS}
+      width={1920}
+      height={1080}
+    />
   </>
 );

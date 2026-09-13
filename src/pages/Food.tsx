@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ContributionRailIntro } from "../components/ContributionRailIntro";
 import { useFavorites } from "../context/FavoritesContext";
 import { usePreferences } from "../context/PreferencesContext";
 import SubmissionModal from "../components/SubmissionModal";
@@ -88,12 +89,11 @@ export default function Food() {
     <main className="voyage-content-page voyage-food">
       {/* Header */}
       <div className="voyage-food__intro bg-white border-b border-gray-200/50 py-16">
-        <div className="voyage-food__intro-inner max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-            <div>
-              <h1 className="text-4xl md:text-5xl font-serif font-bold text-gray-900 mb-4">探索地道美食</h1>
-              <p className="text-lg text-gray-600 max-w-3xl font-medium">发现全国各地最地道的美食，基于真实用户评价星级排序，绝不踩雷。</p>
-            </div>
+        <ContributionRailIntro
+          className="voyage-food__intro-inner"
+          title="探索地道美食"
+          description="发现全国各地最地道的美食，基于真实用户评价星级排序，绝不踩雷。"
+          action={
             <button 
               onClick={() => setIsSubmissionModalOpen(true)}
               className="voyage-food__submit flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3.5 rounded-full font-bold transition-all duration-300 shadow-lg shadow-orange-600/20 whitespace-nowrap hover:-translate-y-1"
@@ -101,8 +101,8 @@ export default function Food() {
               <PlusCircle className="w-5 h-5" />
               推荐美食
             </button>
-          </div>
-          
+          }
+        >
           <div className="voyage-food__search-rail mt-8 flex flex-col sm:flex-row gap-4">
             <div className="voyage-food__search-field relative flex-grow max-w-md">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -132,7 +132,7 @@ export default function Food() {
               </div>
             </div>
           </div>
-        </div>
+        </ContributionRailIntro>
       </div>
 
       <section className="voyage-food__listing max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">

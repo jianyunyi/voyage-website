@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ContributionRailIntro } from "../components/ContributionRailIntro";
 import SubmissionModal from "../components/SubmissionModal";
 import { usePreferences } from "../context/PreferencesContext";
 import { fetchPublishedGuides, type TravelGuide } from "../lib/guideService";
@@ -107,16 +108,11 @@ export default function Guides() {
   return (
     <main className="voyage-content-page voyage-guides">
       <div className="voyage-guides__intro bg-white border-b border-gray-200/50 py-16">
-        <div className="voyage-guides__intro-inner max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-            <div>
-              <h1 className="text-4xl md:text-5xl font-serif font-bold text-gray-900 mb-4">
-                精选旅行攻略
-              </h1>
-              <p className="text-lg text-gray-600 max-w-3xl font-medium">
-                发现真实旅行者的足迹，获取详细的行程安排、预算规划和避坑指南。
-              </p>
-            </div>
+        <ContributionRailIntro
+          className="voyage-guides__intro-inner"
+          title="精选旅行攻略"
+          description="发现真实旅行者的足迹，获取详细的行程安排、预算规划和避坑指南。"
+          action={
             <button
               onClick={() => setIsSubmissionModalOpen(true)}
               className="voyage-guides__publish flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3.5 rounded-full font-bold transition-all duration-300 shadow-lg shadow-orange-600/20 whitespace-nowrap hover:-translate-y-1"
@@ -124,8 +120,8 @@ export default function Guides() {
               <PlusCircle className="w-5 h-5" />
               发布攻略
             </button>
-          </div>
-
+          }
+        >
           <div className="voyage-guides__search-rail mt-8 flex flex-col sm:flex-row gap-4">
             <div className="voyage-guides__search-field relative flex-grow max-w-md">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -249,7 +245,7 @@ export default function Guides() {
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+        </ContributionRailIntro>
       </div>
 
       <section className="voyage-guides__index max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">

@@ -3,6 +3,9 @@
 	"name": "voyagex",
 	"main": "src/worker/index.ts",
 	"compatibility_date": "2026-04-08",
+	"build": {
+		"command": "npm run build"
+	},
 	"vars": {
 		"ALLOWED_ORIGINS": "https://voyagex.us.ci",
 		"ADMIN_IDS": "u_f60551e5487b42f4818a865652fc8eb5",

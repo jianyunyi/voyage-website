@@ -4,6 +4,7 @@ dist/
 coverage/
 .tmp-go-cache/
 .tmp-go-mod/
+.worktrees/
 .DS_Store
 *.log
 .env*
