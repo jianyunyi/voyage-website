@@ -458,7 +458,7 @@ button:has([data-action-button-icon]) {
   max-inline-size: 80rem;
 }
 
-@media (min-width: 701px) {
+@media (min-width: 768px) {
   .voyage-contribution-rail {
     padding-inline: 1.5rem;
   }
@@ -1045,7 +1045,7 @@ button:has([data-action-button-icon]) {
   outline-offset: 2px;
 }
 
-@media (max-width: 700px) {
+@media (max-width: 767px) {
   .voyage-contribution-rail__action > * {
     inline-size: 100%;
   }

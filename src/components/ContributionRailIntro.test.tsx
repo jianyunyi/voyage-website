@@ -34,3 +34,16 @@ test("contribution intro anchors title, action, and search content to one rail",
   assert.match(html, /搜索/);
   assert.match(html, /精选旅行攻略/);
 });
+
+test("contribution rail switches layouts at the md breakpoint", () => {
+  const css = readFileSync(new URL("../index.css", import.meta.url), "utf8");
+
+  assert.match(
+    css,
+    /@media \(min-width: 768px\) \{[\s\S]*?\.voyage-contribution-rail__heading\s*\{[\s\S]*?flex-direction: row;/,
+  );
+  assert.match(
+    css,
+    /@media \(max-width: 767px\) \{[\s\S]*?\.voyage-contribution-rail__action > \*\s*\{\s*inline-size: 100%;/,
+  );
+});
