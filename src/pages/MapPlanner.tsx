@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import AMapLoader from '@amap/amap-jsapi-loader';
-import { CheckCircle2, ChevronRight, Clock3, Info, MapPin, Navigation, Satellite, Star, TriangleAlert } from 'lucide-react';
+import { CheckCircle2, ChevronRight, Clock3, Compass, Info, Map, MapPin, Menu, Navigation, Plus, Search, Satellite, Star, TriangleAlert, UserRound } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { ActionButton } from '../components/ActionButton';
 import { ImmersiveBackdrop } from '../components/ImmersiveBackdrop';
 import { canPlanRoute } from './mapPlannerState';
@@ -46,6 +47,8 @@ export default function MapPlanner() {
   const [mapStatus, setMapStatus] = useState<MapStatus>(hasAmapCredentials ? 'loading' : 'unavailable');
   const [isPlanning, setIsPlanning] = useState(false);
   const [selectedRouteId, setSelectedRouteId] = useState('r1');
+  const [travelDate, setTravelDate] = useState('2026-10-01');
+  const [travelMode, setTravelMode] = useState('自驾');
 
   const mapRef = useRef<HTMLDivElement>(null);
   const [mapInstance, setMapInstance] = useState<AMap.Map | null>(null);
@@ -100,18 +103,27 @@ export default function MapPlanner() {
     AMapLoader.load({
       key: amapKey!,
       version: '2.0',
-      plugins: ['AMap.Driving', 'AMap.ToolBar', 'AMap.Scale', 'AMap.Geocoder'],
+      plugins: ['AMap.Driving', 'AMap.Geocoder'],
     })
       .then((AMap) => {
         if (disposed || !mapRef.current) return;
 
+        const SatelliteLayer = AMap.TileLayer.Satellite;
+        const RoadNetLayer = AMap.TileLayer.RoadNet;
+        if (!SatelliteLayer || !RoadNetLayer) {
+          setMapStatus('error');
+          return;
+        }
+
         const map = new AMap.Map(mapRef.current, {
-          zoom: 5,
-          center: [104.1954, 35.8617],
+          center: [101.85, 30.1],
+          layers: [new SatelliteLayer(), new RoadNetLayer()],
+          pitch: 42,
+          rotation: -10,
+          viewMode: '3D',
+          zoom: 6.8,
         });
         createdMap = map;
-        map.addControl(new AMap.ToolBar());
-        map.addControl(new AMap.Scale());
 
         const driving = new AMap.Driving({ map, hideMarkers: false, showTraffic: true });
         drivingRef.current = driving;
@@ -273,9 +285,28 @@ export default function MapPlanner() {
         : '';
 
   return (
-    <section className="voyage-planner" aria-labelledby="planner-title">
+    <section className="voyage-planner voyage-planner--terrain" aria-labelledby="planner-title">
       <ImmersiveBackdrop pathname="/planner" />
       <div className="voyage-planner__frame">
+        <nav className="voyage-planner__tool-rail" aria-label="地图工作台导航">
+          <Link to="/planner" aria-current="page" aria-label="路线规划"><Map size={21} /></Link>
+          <Link to="/" aria-label="探索"><Compass size={21} /></Link>
+          <Link to="/guides" aria-label="旅行攻略"><Star size={21} /></Link>
+          <Link to="/profile" aria-label="个人中心"><UserRound size={21} /></Link>
+        </nav>
+
+        <div className="voyage-planner__map-heading" aria-hidden="true">
+          <p>探索更辽阔的中国</p>
+          <span>从城市出发，走进山河</span>
+        </div>
+
+        <div className="voyage-planner__map-search">
+          <Search size={18} aria-hidden="true" />
+          <span>搜索目的地、地名或路线</span>
+          <UserRound size={18} aria-hidden="true" />
+          <Menu size={19} aria-hidden="true" />
+        </div>
+
         <aside className="voyage-planner__rail" aria-label="路线规划控制台">
           <header className="voyage-planner__heading">
             <p className="voyage-planner__eyebrow">Wayfinding Observatory</p>
@@ -283,7 +314,7 @@ export default function MapPlanner() {
             <p>为你的下一段旅程整理方向、时间与决策线索。</p>
           </header>
 
-          <form className="voyage-planner__form" onSubmit={(event) => { event.preventDefault(); handleSearch(); }}>
+          <form className="voyage-planner__form voyage-planner__planning-panel" onSubmit={(event) => { event.preventDefault(); handleSearch(); }}>
             <div className="voyage-planner__hint" role="status">
               <Info aria-hidden="true" size={17} />
               <span>{mapReady ? `可在地图点击选择${selectingType === 'origin' ? '出发地' : '目的地'}` : mapMessage}</span>
@@ -306,6 +337,31 @@ export default function MapPlanner() {
                 >
                   <option value="">选择出发地</option>
                   {availableCities.map((city) => <option key={city.id} value={city.id}>{city.name}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="voyage-planner__field voyage-planner__field--date">
+              <label htmlFor="planner-date">出发日期</label>
+              <div className="voyage-planner__field-control">
+                <Clock3 aria-hidden="true" size={18} />
+                <input
+                  id="planner-date"
+                  type="date"
+                  value={travelDate}
+                  onChange={(event) => setTravelDate(event.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="voyage-planner__field voyage-planner__field--mode">
+              <label htmlFor="planner-mode">出行方式</label>
+              <div className="voyage-planner__field-control">
+                <Navigation aria-hidden="true" size={18} />
+                <select id="planner-mode" value={travelMode} onChange={(event) => setTravelMode(event.target.value)}>
+                  <option>自驾</option>
+                  <option>公共交通</option>
+                  <option>骑行</option>
                 </select>
               </div>
             </div>
@@ -340,7 +396,7 @@ export default function MapPlanner() {
             />
           </form>
 
-          <section className="voyage-planner__results" aria-labelledby="planner-results-title">
+          <section className="voyage-planner__results" data-visible={showRoutes} aria-labelledby="planner-results-title">
             <div className="voyage-planner__results-heading">
               <div>
                 <p className="voyage-planner__eyebrow">Route signals</p>
@@ -381,6 +437,11 @@ export default function MapPlanner() {
 
         <section className="voyage-planner__map-region" aria-label="高德地图路线视图">
           <div ref={mapRef} className="voyage-planner__map" aria-hidden={!mapReady} />
+          <div className="voyage-planner__route-line" aria-hidden="true">
+            <span className="voyage-planner__route-stop voyage-planner__route-stop--start">稻城<small>海拔 3750 m</small></span>
+            <span className="voyage-planner__route-stop voyage-planner__route-stop--middle">新都桥<small>3460 m</small></span>
+            <span className="voyage-planner__route-stop voyage-planner__route-stop--end">成都<small>海拔 500 m</small></span>
+          </div>
           {mapStatus !== 'ready' && (
             <div className="voyage-planner__map-fallback" role="status" tabIndex={0}>
               <TriangleAlert aria-hidden="true" size={22} />
@@ -389,9 +450,9 @@ export default function MapPlanner() {
             </div>
           )}
 
-          {showRoutes && mapReady && mapInstance && amap && (
+          {mapReady && mapInstance && amap && (
             <div className="voyage-planner__map-tools" aria-label="地图图层">
-              <button type="button" onClick={() => { mapInstance.setLayers([new amap.TileLayer()]); mapInstance.setPitch(0); mapInstance.setRotation(0); }}>标准</button>
+              <button type="button" aria-label="放大地图" onClick={() => mapInstance.setZoom(7.5)}><Plus size={18} /></button>
               <button
                 type="button"
                 onClick={() => {
@@ -399,13 +460,13 @@ export default function MapPlanner() {
                   const RoadNetLayer = amap.TileLayer.RoadNet;
                   if (!SatelliteLayer || !RoadNetLayer) return;
                   mapInstance.setLayers([new SatelliteLayer(), new RoadNetLayer()]);
-                  mapInstance.setPitch(0);
-                  mapInstance.setRotation(0);
+                  mapInstance.setPitch(42);
+                  mapInstance.setRotation(-10);
                 }}
               >
-                <Satellite aria-hidden="true" size={15} /> 卫星
+                <Satellite aria-hidden="true" size={17} />
               </button>
-              <button type="button" onClick={() => { mapInstance.setLayers([new amap.TileLayer()]); mapInstance.setPitch(55); mapInstance.setRotation(35); }}>3D 视角</button>
+              <button type="button" aria-label="缩小地图" onClick={() => mapInstance.setZoom(6.2)}>−</button>
             </div>
           )}
         </section>
